@@ -35,7 +35,7 @@ export interface Database {
           id: string
           title: string
           description: string
-          cover_image: string
+          cover_image: string | null
           age_range: string
           orientation: 'landscape' | 'portrait'
           status: 'draft' | 'published' | 'archived'
@@ -48,7 +48,7 @@ export interface Database {
           id?: string
           title: string
           description: string
-          cover_image: string
+          cover_image?: string | null
           age_range?: string
           orientation?: 'landscape' | 'portrait'
           status?: 'draft' | 'published' | 'archived'
@@ -61,7 +61,7 @@ export interface Database {
           id?: string
           title?: string
           description?: string
-          cover_image?: string
+          cover_image?: string | null
           age_range?: string
           orientation?: 'landscape' | 'portrait'
           status?: 'draft' | 'published' | 'archived'
@@ -76,36 +76,21 @@ export interface Database {
           id: string
           story_id: string | null
           page_number: number
-          background: string
-          text: string
-          narration: string | null
-          interactions: any
-          auto_advance: boolean
-          duration: number | null
+          content: any
           created_at: string
         }
         Insert: {
           id?: string
           story_id?: string | null
           page_number: number
-          background: string
-          text: string
-          narration?: string | null
-          interactions?: any
-          auto_advance?: boolean
-          duration?: number | null
+          content: any
           created_at?: string
         }
         Update: {
           id?: string
           story_id?: string | null
           page_number?: number
-          background?: string
-          text?: string
-          narration?: string | null
-          interactions?: any
-          auto_advance?: boolean
-          duration?: number | null
+          content?: any
           created_at?: string
         }
       }

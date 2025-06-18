@@ -24,6 +24,7 @@
     const newStory = {
       title: 'Untitled Story',
       description: '',
+      cover_image: null,
       author_id: $authStore.user.id,
       status: 'draft' as const,
       orientation: 'landscape' as const
@@ -95,9 +96,9 @@
         <Card class="overflow-hidden hover:shadow-lg transition-shadow">
           <!-- Cover Image -->
           <div class="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            {#if story.cover_image_url}
+            {#if story.cover_image}
               <img 
-                src={story.cover_image_url} 
+                src={story.cover_image} 
                 alt={story.title}
                 class="w-full h-full object-cover"
               />
