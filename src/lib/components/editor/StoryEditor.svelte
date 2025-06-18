@@ -7,7 +7,7 @@
   import PageEditor from './PageEditor.svelte'
   import OrientationToggle from './OrientationToggle.svelte'
   import CollaboratorManager from './CollaboratorManager.svelte'
-  import { Plus, Play, Save, Settings, Users, Crown, Edit, Eye } from 'lucide-svelte'
+  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye } from 'lucide-svelte'
 
   export let storyId: string
 

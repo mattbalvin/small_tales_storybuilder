@@ -4,7 +4,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Users, Plus, Trash2, Crown, Edit, Eye, Mail } from 'lucide-svelte'
+  import { Users, Plus, Trash2, Crown, FileEdit as Edit, Eye, Mail } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
