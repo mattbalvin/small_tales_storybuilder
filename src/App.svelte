@@ -22,9 +22,13 @@
     authService.initialize()
   })
 
-  // Redirect authenticated users from landing page to dashboard
-  $: if ($authStore.user && window.location.hash === '#/') {
-    window.location.hash = '#/dashboard'
+  // Handle authentication state changes for routing
+  $: if ($authStore.user && !$authStore.loading) {
+    // If user is authenticated and we're on landing page or auth page, redirect to dashboard
+    const currentHash = window.location.hash
+    if (currentHash === '#/' || currentHash === '#/auth' || currentHash === '') {
+      window.location.hash = '#/dashboard'
+    }
   }
 </script>
 

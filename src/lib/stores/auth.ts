@@ -37,21 +37,46 @@ export const authService = {
 
   async loadUserProfile(user: User) {
     try {
+      // First, try to get existing profile
       const { data: profile, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .maybeSingle()
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error loading user profile:', error)
       }
 
-      authStore.set({
-        user,
-        loading: false,
-        profile
-      })
+      // If no profile exists, create one
+      if (!profile) {
+        const { data: newProfile, error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || null,
+            avatar_url: user.user_metadata?.avatar_url || null
+          })
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError)
+        }
+
+        authStore.set({
+          user,
+          loading: false,
+          profile: newProfile
+        })
+      } else {
+        authStore.set({
+          user,
+          loading: false,
+          profile
+        })
+      }
     } catch (error) {
       console.error('Failed to load user profile:', error)
       authStore.set({

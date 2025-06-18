@@ -8,13 +8,19 @@
 
   onMount(() => {
     // Redirect to dashboard if already authenticated
-    if ($authStore.user) {
-      window.location.hash = '#/'
+    if ($authStore.user && !$authStore.loading) {
+      window.location.hash = '#/dashboard'
     }
   })
 
+  // Watch for authentication state changes
+  $: if ($authStore.user && !$authStore.loading) {
+    window.location.hash = '#/dashboard'
+  }
+
   function handleAuthSuccess() {
-    window.location.hash = '#/'
+    // The reactive statement above will handle the redirect
+    // when the auth store updates
   }
 </script>
 
