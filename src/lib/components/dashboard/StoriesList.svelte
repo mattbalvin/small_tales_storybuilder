@@ -31,17 +31,14 @@
     }
 
     const story = await storiesService.createStory(newStory)
-    console.log("storyId="+storyId)
-    dispatch('edit-story', { id: story.id })
+    dispatch('edit-story', { storyId: story.id })
   }
 
   function editStory(storyId: string) {
-    console.log("storyId="+storyId)
-    dispatch('edit-story', { id: storyId })
+    dispatch('edit-story', { storyId })
   }
 
   function previewStory(storyId: string) {
-    console.log("storyId="+storyId)
     dispatch('preview-story', { storyId })
   }
 
