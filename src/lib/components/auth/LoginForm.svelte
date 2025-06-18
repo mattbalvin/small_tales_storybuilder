@@ -46,6 +46,7 @@
           id="email"
           type="email"
           placeholder="Enter your email"
+          autocomplete="email"
           bind:value={email}
           disabled={loading}
         />
@@ -57,6 +58,7 @@
           id="password"
           type="password"
           placeholder="Enter your password"
+          autocomplete="current-password"
           bind:value={password}
           disabled={loading}
         />

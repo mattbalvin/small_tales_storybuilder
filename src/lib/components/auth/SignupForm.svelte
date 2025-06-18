@@ -13,6 +13,63 @@
   let confirmPassword = ''
   let loading = false
   let error = ''
+  let passwordStrength = 0
+  let passwordFeedback = ''
+
+  function checkPasswordStrength(pwd: string) {
+    let strength = 0
+    let feedback = []
+
+    if (pwd.length >= 8) {
+      strength += 1
+    } else {
+      feedback.push('at least 8 characters')
+    }
+
+    if (/[a-z]/.test(pwd)) {
+      strength += 1
+    } else {
+      feedback.push('lowercase letter')
+    }
+
+    if (/[A-Z]/.test(pwd)) {
+      strength += 1
+    } else {
+      feedback.push('uppercase letter')
+    }
+
+    if (/[0-9]/.test(pwd)) {
+      strength += 1
+    } else {
+      feedback.push('number')
+    }
+
+    if (/[^A-Za-z0-9]/.test(pwd)) {
+      strength += 1
+    } else {
+      feedback.push('special character')
+    }
+
+    passwordStrength = strength
+    
+    if (strength < 3) {
+      passwordFeedback = `Weak password. Add: ${feedback.join(', ')}`
+    } else if (strength < 4) {
+      passwordFeedback = `Good password. Consider adding: ${feedback.join(', ')}`
+    } else {
+      passwordFeedback = 'Strong password!'
+    }
+  }
+
+  $: if (password) {
+    checkPasswordStrength(password)
+  }
+
+  function getStrengthColor(strength: number) {
+    if (strength < 2) return 'bg-red-500'
+    if (strength < 4) return 'bg-yellow-500'
+    return 'bg-green-500'
+  }
 
   async function handleSubmit() {
     if (!email || !password || !fullName || !confirmPassword) {
@@ -25,8 +82,8 @@
       return
     }
 
-    if (password.length < 6) {
-      error = 'Password must be at least 6 characters'
+    if (passwordStrength < 3) {
+      error = 'Please choose a stronger password'
       return
     }
 
@@ -58,6 +115,7 @@
           id="fullName"
           type="text"
           placeholder="Enter your full name"
+          autocomplete="name"
           bind:value={fullName}
           disabled={loading}
         />
@@ -69,6 +127,7 @@
           id="email"
           type="email"
           placeholder="Enter your email"
+          autocomplete="email"
           bind:value={email}
           disabled={loading}
         />
@@ -79,10 +138,29 @@
         <Input
           id="password"
           type="password"
-          placeholder="Create a password"
+          placeholder="Create a secure password"
+          autocomplete="new-password"
           bind:value={password}
           disabled={loading}
         />
+        
+        {#if password}
+          <div class="space-y-2">
+            <!-- Password strength indicator -->
+            <div class="flex space-x-1">
+              {#each Array(5) as _, i}
+                <div 
+                  class="h-1 flex-1 rounded-full {i < passwordStrength ? getStrengthColor(passwordStrength) : 'bg-gray-200'}"
+                ></div>
+              {/each}
+            </div>
+            
+            <!-- Password feedback -->
+            <p class="text-xs {passwordStrength >= 4 ? 'text-green-600' : passwordStrength >= 3 ? 'text-yellow-600' : 'text-red-600'}">
+              {passwordFeedback}
+            </p>
+          </div>
+        {/if}
       </div>
 
       <div class="space-y-2">
@@ -91,9 +169,14 @@
           id="confirmPassword"
           type="password"
           placeholder="Confirm your password"
+          autocomplete="new-password"
           bind:value={confirmPassword}
           disabled={loading}
         />
+        
+        {#if confirmPassword && password !== confirmPassword}
+          <p class="text-xs text-red-600">Passwords do not match</p>
+        {/if}
       </div>
 
       {#if error}
@@ -102,7 +185,11 @@
         </div>
       {/if}
 
-      <Button type="submit" class="w-full" disabled={loading}>
+      <Button 
+        type="submit" 
+        class="w-full" 
+        disabled={loading || passwordStrength < 3 || password !== confirmPassword}
+      >
         {loading ? 'Creating account...' : 'Create Account'}
       </Button>
     </form>
