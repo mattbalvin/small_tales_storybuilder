@@ -97,4 +97,3 @@
     {/if}
   </main>
 </div>
-</svelte:head>
