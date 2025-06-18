@@ -283,6 +283,5 @@
         <p>&copy; 2025 Small Tales. All rights reserved.</p>
       </div>
     </div>
-  </div>
-</footer>
+  </footer>
 </div>
