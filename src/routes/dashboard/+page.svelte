@@ -8,7 +8,7 @@
   import { LogIn, BookOpen } from 'lucide-svelte'
 
   function handleEditStory(event: CustomEvent) {
-    conslole.log(event.detail.storyId)
+    console.log(event.detail.storyId)
     const storyId = event.detail.storyId
     console.log(storyId)
     window.location.hash = `#/editor/${storyId}`
