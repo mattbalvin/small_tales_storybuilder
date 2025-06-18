@@ -94,6 +94,38 @@ export interface Database {
           created_at?: string
         }
       }
+      story_collaborators: {
+        Row: {
+          id: string
+          story_id: string
+          user_id: string
+          permission_level: 'owner' | 'editor' | 'viewer'
+          invited_by: string | null
+          invited_at: string
+          accepted_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          user_id: string
+          permission_level?: 'owner' | 'editor' | 'viewer'
+          invited_by?: string | null
+          invited_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          user_id?: string
+          permission_level?: 'owner' | 'editor' | 'viewer'
+          invited_by?: string | null
+          invited_at?: string
+          accepted_at?: string | null
+          created_at?: string
+        }
+      }
       media_assets: {
         Row: {
           id: string

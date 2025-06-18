@@ -2,10 +2,13 @@
   import { createEventDispatcher } from 'svelte'
 
   export let element: any
+  export let readonly = false
 
   const dispatch = createEventDispatcher()
 
   function handleTextChange(event: Event) {
+    if (readonly) return
+    
     const target = event.target as HTMLElement
     dispatch('update', {
       properties: {
@@ -26,11 +29,12 @@
     resize: none;
     background: transparent;
     line-height: 1.4;
+    ${readonly ? 'pointer-events: none;' : ''}
   `
 </script>
 
 <div
-  contenteditable="true"
+  contenteditable={!readonly}
   {style}
   on:blur={handleTextChange}
   on:input={handleTextChange}

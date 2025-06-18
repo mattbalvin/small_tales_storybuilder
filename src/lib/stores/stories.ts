@@ -4,11 +4,13 @@ import type { Database } from '../types/database'
 
 type Story = Database['public']['Tables']['stories']['Row']
 type StoryPage = Database['public']['Tables']['story_pages']['Row']
+type StoryCollaborator = Database['public']['Tables']['story_collaborators']['Row']
 
 interface StoriesState {
   stories: Story[]
   currentStory: Story | null
   currentPages: StoryPage[]
+  currentCollaborators: StoryCollaborator[]
   loading: boolean
   currentStoryLoading: boolean
 }
@@ -17,6 +19,7 @@ const initialState: StoriesState = {
   stories: [],
   currentStory: null,
   currentPages: [],
+  currentCollaborators: [],
   loading: false,
   currentStoryLoading: false
 }
@@ -27,10 +30,18 @@ export const storiesService = {
   async loadStories(userId: string) {
     storiesStore.update(state => ({ ...state, loading: true }))
     
+    // Load stories where user is a collaborator (including owned stories)
     const { data: stories, error } = await supabase
       .from('stories')
-      .select('*')
-      .eq('author_id', userId)
+      .select(`
+        *,
+        story_collaborators!inner(
+          permission_level,
+          accepted_at
+        )
+      `)
+      .eq('story_collaborators.user_id', userId)
+      .not('story_collaborators.accepted_at', 'is', null)
       .order('updated_at', { ascending: false })
 
     if (error) throw error
@@ -48,54 +59,69 @@ export const storiesService = {
     try {
       console.log('Loading story:', storyId, 'for user:', userId)
       
-      // First, try to load the story without the author_id check to see if it exists
-      const { data: storyCheck, error: checkError } = await supabase
+      // Load story with collaborator information
+      const { data: storyData, error: storyError } = await supabase
         .from('stories')
-        .select('*')
+        .select(`
+          *,
+          story_collaborators!inner(
+            permission_level,
+            accepted_at
+          )
+        `)
         .eq('id', storyId)
+        .eq('story_collaborators.user_id', userId)
+        .not('story_collaborators.accepted_at', 'is', null)
         .single()
 
-      console.log('Story check result:', storyCheck, checkError)
-
-      if (checkError) {
-        console.error('Story check error:', checkError)
+      if (storyError) {
+        console.error('Story access error:', storyError)
         storiesStore.update(state => ({
           ...state,
           currentStory: null,
           currentStoryLoading: false
         }))
-        throw new Error(`Story not found: ${checkError.message}`)
+        throw new Error(`You don't have access to this story: ${storyError.message}`)
       }
 
-      if (!storyCheck) {
+      if (!storyData) {
         storiesStore.update(state => ({
           ...state,
           currentStory: null,
           currentStoryLoading: false
         }))
-        throw new Error('Story does not exist')
+        throw new Error('Story not found or access denied')
       }
 
-      // Check if the user owns this story
-      if (storyCheck.author_id !== userId) {
-        console.error('Access denied. Story author_id:', storyCheck.author_id, 'User ID:', userId)
-        storiesStore.update(state => ({
-          ...state,
-          currentStory: null,
-          currentStoryLoading: false
-        }))
-        throw new Error('You do not have permission to access this story')
+      // Load all collaborators for this story
+      const { data: collaborators, error: collabError } = await supabase
+        .from('story_collaborators')
+        .select(`
+          *,
+          users(
+            id,
+            email,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('story_id', storyId)
+        .not('accepted_at', 'is', null)
+
+      if (collabError) {
+        console.warn('Failed to load collaborators:', collabError)
       }
 
-      // If we get here, the user owns the story
       storiesStore.update(state => ({
         ...state,
-        currentStory: storyCheck,
+        currentStory: storyData,
+        currentCollaborators: collaborators || [],
         currentStoryLoading: false
       }))
 
-      console.log('Story loaded successfully:', storyCheck)
-      return storyCheck
+      console.log('Story loaded successfully:', storyData)
+      console.log('User permission level:', storyData.story_collaborators[0]?.permission_level)
+      return storyData
     } catch (error) {
       console.error('Error in loadSingleStory:', error)
       storiesStore.update(state => ({
@@ -199,11 +225,116 @@ export const storiesService = {
     return data
   },
 
+  async inviteCollaborator(storyId: string, email: string, permissionLevel: 'editor' | 'viewer' = 'editor') {
+    // First, find the user by email
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
+
+    if (userError || !user) {
+      throw new Error('User not found with that email address')
+    }
+
+    // Add collaborator
+    const { data, error } = await supabase
+      .from('story_collaborators')
+      .insert({
+        story_id: storyId,
+        user_id: user.id,
+        permission_level: permissionLevel,
+        invited_by: (await supabase.auth.getUser()).data.user?.id,
+        accepted_at: new Date().toISOString() // Auto-accept for now
+      })
+      .select(`
+        *,
+        users(
+          id,
+          email,
+          full_name,
+          avatar_url
+        )
+      `)
+      .single()
+
+    if (error) throw error
+
+    // Update store
+    storiesStore.update(state => ({
+      ...state,
+      currentCollaborators: [...state.currentCollaborators, data]
+    }))
+
+    return data
+  },
+
+  async removeCollaborator(storyId: string, userId: string) {
+    const { error } = await supabase
+      .from('story_collaborators')
+      .delete()
+      .eq('story_id', storyId)
+      .eq('user_id', userId)
+
+    if (error) throw error
+
+    // Update store
+    storiesStore.update(state => ({
+      ...state,
+      currentCollaborators: state.currentCollaborators.filter(
+        collab => collab.user_id !== userId
+      )
+    }))
+  },
+
+  async updateCollaboratorPermission(storyId: string, userId: string, permissionLevel: 'owner' | 'editor' | 'viewer') {
+    const { data, error } = await supabase
+      .from('story_collaborators')
+      .update({ permission_level: permissionLevel })
+      .eq('story_id', storyId)
+      .eq('user_id', userId)
+      .select(`
+        *,
+        users(
+          id,
+          email,
+          full_name,
+          avatar_url
+        )
+      `)
+      .single()
+
+    if (error) throw error
+
+    // Update store
+    storiesStore.update(state => ({
+      ...state,
+      currentCollaborators: state.currentCollaborators.map(collab =>
+        collab.user_id === userId ? data : collab
+      )
+    }))
+
+    return data
+  },
+
+  getUserPermissionLevel(userId: string): 'owner' | 'editor' | 'viewer' | null {
+    const store = storiesStore
+    let currentCollaborators: StoryCollaborator[] = []
+    
+    store.subscribe(state => {
+      currentCollaborators = state.currentCollaborators
+    })()
+
+    const collaborator = currentCollaborators.find(collab => collab.user_id === userId)
+    return collaborator?.permission_level as 'owner' | 'editor' | 'viewer' | null
+  },
+
   setCurrentStory(story: Story | null) {
     storiesStore.update(state => ({
       ...state,
       currentStory: story,
-      currentStoryLoading: false
+      currentStoryLoading: false,
+      currentCollaborators: story ? state.currentCollaborators : []
     }))
   }
 }
