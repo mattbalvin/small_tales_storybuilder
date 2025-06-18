@@ -134,6 +134,13 @@ export const storiesService = {
   },
 
   async createStory(story: Database['public']['Tables']['stories']['Insert']) {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    // Create the story
     const { data, error } = await supabase
       .from('stories')
       .insert(story)
@@ -141,6 +148,24 @@ export const storiesService = {
       .single()
 
     if (error) throw error
+
+    // Explicitly add the author as owner in story_collaborators
+    // This ensures RLS policies are satisfied immediately
+    const { error: collaboratorError } = await supabase
+      .from('story_collaborators')
+      .insert({
+        story_id: data.id,
+        user_id: user.id,
+        permission_level: 'owner',
+        invited_by: user.id,
+        accepted_at: new Date().toISOString()
+      })
+
+    if (collaboratorError) {
+      console.warn('Failed to add story owner as collaborator:', collaboratorError)
+      // Don't throw here as the story was created successfully
+      // The trigger should handle this, but we're being explicit
+    }
 
     storiesStore.update(state => ({
       ...state,
