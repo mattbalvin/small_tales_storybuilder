@@ -8,15 +8,15 @@
   import { LogIn, BookOpen } from 'lucide-svelte'
 
   function handleEditStory(event: CustomEvent) {
+    alert("handleEditStory: " + event.detail.storyId)
+    conslole.log(event.detail.storyId)
     const storyId = event.detail.storyId
+    console.log(storyId)
     window.location.hash = `#/editor/${storyId}`
   }
 
   function handlePreviewStory(event: CustomEvent) {
-    alert("handlePreviewStory: " + event.detail.storyId)
-    conslole.log(event.detail.storyId)
     const storyId = event.detail.storyId
-    console.log(storyId)
     window.location.hash = `#/preview/${storyId}`
   }
 
