@@ -13,7 +13,9 @@
   }
 
   function handlePreviewStory(event: CustomEvent) {
+    conslole.log(event.detail.storyId)
     const storyId = event.detail.storyId
+    console.log(storyId)
     window.location.hash = `#/preview/${storyId}`
   }
 
