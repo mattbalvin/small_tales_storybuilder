@@ -13,6 +13,12 @@
   $: storyId = id
   $: story = $storiesStore.currentStory
 
+  function load({params}) {
+    return {
+      id: params.id
+    };
+  }
+  
   function navigateToAuth() {
     window.location.hash = '#/auth'
   }
