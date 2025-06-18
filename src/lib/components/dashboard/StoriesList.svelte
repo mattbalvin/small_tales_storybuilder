@@ -27,7 +27,14 @@
       cover_image: null,
       author_id: $authStore.user.id,
       status: 'draft' as const,
-      orientation: 'landscape' as const
+      orientation: 'landscape' as const,
+      age_range: '3-8 years',
+      settings: {
+        volume: 0.7,
+        autoRead: true,
+        showText: true,
+        readingSpeed: 1.0
+      }
     }
 
     const story = await storiesService.createStory(newStory)
