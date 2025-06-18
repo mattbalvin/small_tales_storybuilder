@@ -8,7 +8,6 @@
   import { LogIn, BookOpen } from 'lucide-svelte'
 
   function handleEditStory(event: CustomEvent) {
-    alert("handleEditStory: " + event.detail.storyId)
     conslole.log(event.detail.storyId)
     const storyId = event.detail.storyId
     console.log(storyId)
