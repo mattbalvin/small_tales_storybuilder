@@ -34,70 +34,73 @@ export interface Database {
         Row: {
           id: string
           title: string
-          description: string | null
+          description: string
+          cover_image: string
+          age_range: string
+          settings: any
           author_id: string
-          cover_image_url: string | null
-          status: 'draft' | 'published' | 'archived'
-          orientation: 'landscape' | 'portrait' | 'adaptive'
           created_at: string
           updated_at: string
-          published_at: string | null
         }
         Insert: {
           id?: string
           title: string
-          description?: string | null
+          description: string
+          cover_image: string
+          age_range?: string
+          settings?: any
           author_id: string
-          cover_image_url?: string | null
-          status?: 'draft' | 'published' | 'archived'
-          orientation?: 'landscape' | 'portrait' | 'adaptive'
           created_at?: string
           updated_at?: string
-          published_at?: string | null
         }
         Update: {
           id?: string
           title?: string
-          description?: string | null
+          description?: string
+          cover_image?: string
+          age_range?: string
+          settings?: any
           author_id?: string
-          cover_image_url?: string | null
-          status?: 'draft' | 'published' | 'archived'
-          orientation?: 'landscape' | 'portrait' | 'adaptive'
           created_at?: string
           updated_at?: string
-          published_at?: string | null
         }
       }
       story_pages: {
         Row: {
           id: string
-          story_id: string
+          story_id: string | null
           page_number: number
-          content: any
-          audio_url: string | null
+          background: string
+          text: string
+          narration: string | null
+          interactions: any
+          auto_advance: boolean
           duration: number | null
           created_at: string
-          updated_at: string
         }
         Insert: {
           id?: string
-          story_id: string
+          story_id?: string | null
           page_number: number
-          content: any
-          audio_url?: string | null
+          background: string
+          text: string
+          narration?: string | null
+          interactions?: any
+          auto_advance?: boolean
           duration?: number | null
           created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
-          story_id?: string
+          story_id?: string | null
           page_number?: number
-          content?: any
-          audio_url?: string | null
+          background?: string
+          text?: string
+          narration?: string | null
+          interactions?: any
+          auto_advance?: boolean
           duration?: number | null
           created_at?: string
-          updated_at?: string
         }
       }
       media_assets: {
