@@ -145,4 +145,3 @@
     </Card>
   </div>
 {/if}
-</script>
