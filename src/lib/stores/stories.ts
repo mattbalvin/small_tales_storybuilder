@@ -10,13 +10,15 @@ interface StoriesState {
   currentStory: Story | null
   currentPages: StoryPage[]
   loading: boolean
+  currentStoryLoading: boolean
 }
 
 const initialState: StoriesState = {
   stories: [],
   currentStory: null,
   currentPages: [],
-  loading: false
+  loading: false,
+  currentStoryLoading: false
 }
 
 export const storiesStore = writable<StoriesState>(initialState)
@@ -40,6 +42,43 @@ export const storiesService = {
     }))
   },
 
+  async loadSingleStory(storyId: string, userId: string) {
+    storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
+    
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('id', storyId)
+        .eq('author_id', userId) // Security check: only load stories owned by the user
+        .single()
+
+      if (error || !data) {
+        storiesStore.update(state => ({
+          ...state,
+          currentStory: null,
+          currentStoryLoading: false
+        }))
+        throw new Error(error?.message || 'Story not found')
+      }
+
+      storiesStore.update(state => ({
+        ...state,
+        currentStory: data,
+        currentStoryLoading: false
+      }))
+
+      return data
+    } catch (error) {
+      storiesStore.update(state => ({
+        ...state,
+        currentStory: null,
+        currentStoryLoading: false
+      }))
+      throw error
+    }
+  },
+
   async createStory(story: Database['public']['Tables']['stories']['Insert']) {
     const { data, error } = await supabase
       .from('stories')
@@ -52,7 +91,8 @@ export const storiesService = {
     storiesStore.update(state => ({
       ...state,
       stories: [data, ...state.stories],
-      currentStory: data
+      currentStory: data,
+      currentStoryLoading: false
     }))
 
     return data
@@ -134,7 +174,8 @@ export const storiesService = {
   setCurrentStory(story: Story | null) {
     storiesStore.update(state => ({
       ...state,
-      currentStory: story
+      currentStory: story,
+      currentStoryLoading: false
     }))
   }
 }
