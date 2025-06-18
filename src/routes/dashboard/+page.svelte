@@ -1,10 +1,19 @@
 <script lang="ts">
-  import { authStore, authService } from '$lib/stores/auth'
   import { onMount } from 'svelte'
-  import MediaLibrary from '$lib/components/media/MediaLibrary.svelte'
+  import { authStore, authService } from '$lib/stores/auth'
+  import { storiesService } from '$lib/stores/stories'
+  import StoriesList from '$lib/components/dashboard/StoriesList.svelte'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { LogIn, Image } from 'lucide-svelte'
+  import { LogIn, BookOpen } from 'lucide-svelte'
+
+  function handleEditStory(event: CustomEvent) {
+    window.location.hash = `#/editor/${event.detail.storyId}`
+  }
+
+  function handlePreviewStory(event: CustomEvent) {
+    window.location.hash = `#/preview/${event.detail.storyId}`
+  }
 
   function navigateToAuth() {
     window.location.hash = '#/auth'
@@ -22,12 +31,17 @@
       }
     })
 
+    // Set current story to null when returning to dashboard
+    if ($authStore.user) {
+      storiesService.setCurrentStory(null)
+    }
+
     return unsubscribe
   })
 </script>
 
 <svelte:head>
-  <title>Media Library - Small Tales</title>
+  <title>Dashboard - Small Tales Story Builder</title>
 </svelte:head>
 
 <div class="min-h-screen bg-background">
@@ -39,8 +53,8 @@
         </button>
         {#if $authStore.user}
           <nav class="flex items-center gap-6">
-            <a href="#/dashboard" class="text-sm font-medium text-muted-foreground hover:text-foreground">Dashboard</a>
-            <a href="#/media" class="text-sm font-medium">Media Library</a>
+            <a href="#/dashboard" class="text-sm font-medium">Dashboard</a>
+            <a href="#/media" class="text-sm font-medium text-muted-foreground hover:text-foreground">Media Library</a>
             <a href="#/analytics" class="text-sm font-medium text-muted-foreground hover:text-foreground">Analytics</a>
           </nav>
         {/if}
@@ -84,11 +98,11 @@
       <div class="flex items-center justify-center min-h-[60vh] p-4">
         <Card class="w-full max-w-md p-8 text-center">
           <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Image class="w-8 h-8 text-primary" />
+            <BookOpen class="w-8 h-8 text-primary" />
           </div>
           <h1 class="text-2xl font-bold mb-3">Authentication Required</h1>
           <p class="text-muted-foreground mb-6">
-            Please sign in to access your media library and manage your assets.
+            Please sign in to access your dashboard and manage your stories.
           </p>
           <div class="space-y-3">
             <Button class="w-full" on:click={navigateToAuth}>
@@ -102,8 +116,11 @@
         </Card>
       </div>
     {:else}
-      <!-- Authenticated - show media library -->
-      <MediaLibrary />
+      <!-- Authenticated - show dashboard -->
+      <StoriesList 
+        on:edit-story={handleEditStory}
+        on:preview-story={handlePreviewStory}
+      />
     {/if}
   </main>
 </div>

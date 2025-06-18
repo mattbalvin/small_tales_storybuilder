@@ -5,7 +5,7 @@
 
   // Import routes
   import LandingPage from './lib/components/landing/LandingPage.svelte'
-  import Dashboard from './routes/+page.svelte'
+  import Dashboard from './routes/dashboard/+page.svelte'
   import Auth from './routes/auth/+page.svelte'
   import StoryEditor from './routes/editor/[id]/+page.svelte'
   import MediaLibrary from './routes/media/+page.svelte'
@@ -23,15 +23,6 @@
   onMount(() => {
     authService.initialize()
   })
-
-  // Handle authentication state changes for routing
-  $: if ($authStore.user && !$authStore.loading) {
-    // If user is authenticated and we're on landing page or auth page, redirect to dashboard
-    const currentHash = window.location.hash
-    if (currentHash === '#/' || currentHash === '#/auth' || currentHash === '') {
-      window.location.hash = '#/dashboard'
-    }
-  }
 </script>
 
 <main>

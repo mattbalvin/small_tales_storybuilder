@@ -26,6 +26,8 @@
       dispatch('success')
     } catch (err: any) {
       error = err.message || 'Login failed'
+      // Dispatch error event for parent to handle
+      dispatch('error', { message: error })
     } finally {
       loading = false
     }

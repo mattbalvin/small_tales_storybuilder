@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import { BookOpen, Palette, Volume2, Smartphone, Users, BarChart3, ArrowRight, Star, Play } from 'lucide-svelte'
@@ -6,6 +8,21 @@
   function navigateToAuth() {
     window.location.hash = '#/auth'
   }
+
+  function navigateToDashboard() {
+    window.location.hash = '#/dashboard'
+  }
+
+  // Redirect authenticated users to dashboard
+  onMount(() => {
+    const unsubscribe = authStore.subscribe(($authStore) => {
+      if ($authStore.user && !$authStore.loading) {
+        window.location.hash = '#/dashboard'
+      }
+    })
+
+    return unsubscribe
+  })
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
@@ -20,12 +37,21 @@
       </div>
       
       <div class="flex items-center gap-4">
-        <Button variant="ghost" on:click={navigateToAuth}>
-          Sign In
-        </Button>
-        <Button on:click={navigateToAuth}>
-          Get Started
-        </Button>
+        {#if $authStore.user}
+          <Button variant="ghost" on:click={navigateToDashboard}>
+            Dashboard
+          </Button>
+          <Button on:click={navigateToDashboard}>
+            Go to Dashboard
+          </Button>
+        {:else}
+          <Button variant="ghost" on:click={navigateToAuth}>
+            Sign In
+          </Button>
+          <Button on:click={navigateToAuth}>
+            Get Started
+          </Button>
+        {/if}
       </div>
     </div>
   </header>
@@ -41,11 +67,19 @@
           Build engaging multimedia storybooks with drag-and-drop simplicity. Add images, audio narration, and interactive elements to captivate your audience across all devices.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToAuth}>
-            <BookOpen class="w-5 h-5 mr-2" />
-            Create Your First Story
-            <ArrowRight class="w-5 h-5 ml-2" />
-          </Button>
+          {#if $authStore.user}
+            <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToDashboard}>
+              <BookOpen class="w-5 h-5 mr-2" />
+              Go to Dashboard
+              <ArrowRight class="w-5 h-5 ml-2" />
+            </Button>
+          {:else}
+            <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToAuth}>
+              <BookOpen class="w-5 h-5 mr-2" />
+              Create Your First Story
+              <ArrowRight class="w-5 h-5 ml-2" />
+            </Button>
+          {/if}
           <Button variant="outline" size="lg" class="text-lg px-8 py-6">
             <Play class="w-5 h-5 mr-2" />
             Watch Demo
@@ -219,11 +253,19 @@
           Start creating today with our intuitive story builder.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToAuth}>
-            <BookOpen class="w-5 h-5 mr-2" />
-            Create Your Own Story
-            <ArrowRight class="w-5 h-5 ml-2" />
-          </Button>
+          {#if $authStore.user}
+            <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToDashboard}>
+              <BookOpen class="w-5 h-5 mr-2" />
+              Go to Your Dashboard
+              <ArrowRight class="w-5 h-5 ml-2" />
+            </Button>
+          {:else}
+            <Button size="lg" class="text-lg px-8 py-6" on:click={navigateToAuth}>
+              <BookOpen class="w-5 h-5 mr-2" />
+              Create Your Own Story
+              <ArrowRight class="w-5 h-5 ml-2" />
+            </Button>
+          {/if}
           <Button variant="outline" size="lg" class="text-lg px-8 py-6">
             Learn More
           </Button>
