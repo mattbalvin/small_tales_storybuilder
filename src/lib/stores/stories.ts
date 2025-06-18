@@ -134,47 +134,75 @@ export const storiesService = {
   },
 
   async createStory(story: Database['public']['Tables']['stories']['Insert']) {
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) {
-      throw new Error('User not authenticated')
+    try {
+      // Verify user is authenticated and get fresh session
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        throw new Error('User not authenticated')
+      }
+
+      console.log('Creating story for user:', user.id)
+      console.log('Story data:', story)
+
+      // Ensure author_id is set correctly
+      const storyData = {
+        ...story,
+        author_id: user.id
+      }
+
+      // Create the story with explicit author_id
+      const { data, error } = await supabase
+        .from('stories')
+        .insert(storyData)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Story creation error:', error)
+        throw new Error(`Failed to create story: ${error.message}`)
+      }
+
+      console.log('Story created successfully:', data)
+
+      // The trigger should automatically add the author as owner,
+      // but let's verify and add explicitly if needed
+      const { data: existingCollaborator, error: checkError } = await supabase
+        .from('story_collaborators')
+        .select('*')
+        .eq('story_id', data.id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (checkError && checkError.code === 'PGRST116') {
+        // No collaborator record exists, create one
+        console.log('Adding author as collaborator explicitly')
+        const { error: collaboratorError } = await supabase
+          .from('story_collaborators')
+          .insert({
+            story_id: data.id,
+            user_id: user.id,
+            permission_level: 'owner',
+            invited_by: user.id,
+            accepted_at: new Date().toISOString()
+          })
+
+        if (collaboratorError) {
+          console.warn('Failed to add story owner as collaborator:', collaboratorError)
+        }
+      }
+
+      storiesStore.update(state => ({
+        ...state,
+        stories: [data, ...state.stories],
+        currentStory: data,
+        currentStoryLoading: false
+      }))
+
+      return data
+    } catch (error) {
+      console.error('Error in createStory:', error)
+      throw error
     }
-
-    // Create the story
-    const { data, error } = await supabase
-      .from('stories')
-      .insert(story)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    // Explicitly add the author as owner in story_collaborators
-    // This ensures RLS policies are satisfied immediately
-    const { error: collaboratorError } = await supabase
-      .from('story_collaborators')
-      .insert({
-        story_id: data.id,
-        user_id: user.id,
-        permission_level: 'owner',
-        invited_by: user.id,
-        accepted_at: new Date().toISOString()
-      })
-
-    if (collaboratorError) {
-      console.warn('Failed to add story owner as collaborator:', collaboratorError)
-      // Don't throw here as the story was created successfully
-      // The trigger should handle this, but we're being explicit
-    }
-
-    storiesStore.update(state => ({
-      ...state,
-      stories: [data, ...state.stories],
-      currentStory: data,
-      currentStoryLoading: false
-    }))
-
-    return data
   },
 
   async updateStory(id: string, updates: Database['public']['Tables']['stories']['Update']) {
