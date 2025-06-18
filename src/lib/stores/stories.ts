@@ -46,30 +46,58 @@ export const storiesService = {
     storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
     
     try {
-      const { data, error } = await supabase
+      console.log('Loading story:', storyId, 'for user:', userId)
+      
+      // First, try to load the story without the author_id check to see if it exists
+      const { data: storyCheck, error: checkError } = await supabase
         .from('stories')
         .select('*')
         .eq('id', storyId)
-        .eq('author_id', userId) // Security check: only load stories owned by the user
         .single()
 
-      if (error || !data) {
+      console.log('Story check result:', storyCheck, checkError)
+
+      if (checkError) {
+        console.error('Story check error:', checkError)
         storiesStore.update(state => ({
           ...state,
           currentStory: null,
           currentStoryLoading: false
         }))
-        throw new Error(error?.message || 'Story not found')
+        throw new Error(`Story not found: ${checkError.message}`)
       }
 
+      if (!storyCheck) {
+        storiesStore.update(state => ({
+          ...state,
+          currentStory: null,
+          currentStoryLoading: false
+        }))
+        throw new Error('Story does not exist')
+      }
+
+      // Check if the user owns this story
+      if (storyCheck.author_id !== userId) {
+        console.error('Access denied. Story author_id:', storyCheck.author_id, 'User ID:', userId)
+        storiesStore.update(state => ({
+          ...state,
+          currentStory: null,
+          currentStoryLoading: false
+        }))
+        throw new Error('You do not have permission to access this story')
+      }
+
+      // If we get here, the user owns the story
       storiesStore.update(state => ({
         ...state,
-        currentStory: data,
+        currentStory: storyCheck,
         currentStoryLoading: false
       }))
 
-      return data
+      console.log('Story loaded successfully:', storyCheck)
+      return storyCheck
     } catch (error) {
+      console.error('Error in loadSingleStory:', error)
       storiesStore.update(state => ({
         ...state,
         currentStory: null,
