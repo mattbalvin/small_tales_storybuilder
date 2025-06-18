@@ -91,9 +91,9 @@
           <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
             <BookOpen class="w-8 h-8 text-primary" />
           </div>
-          <h1 class="text-2xl font-bold mb-3">Welcome to Your Dashboard</h1>
+          <h1 class="text-2xl font-bold mb-3">Log in or Sign up to create a Story!</h1>
           <p class="text-muted-foreground mb-6">
-            Sign in to access your stories, media library, and create new interactive content.
+            Please sign in to access your stories, media library, and create new interactive content.
           </p>
           <div class="space-y-3">
             <Button class="w-full" on:click={navigateToAuth}>
