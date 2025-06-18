@@ -209,15 +209,21 @@
             {storyId}
             on:collaborator-added={() => {
               // Refresh collaborators list
-              storiesService.loadSingleStory(storyId, $authStore.user!.id)
+              if ($authStore.user) {
+                storiesService.loadSingleStory(storyId, $authStore.user.id)
+              }
             }}
             on:collaborator-removed={() => {
               // Refresh collaborators list
-              storiesService.loadSingleStory(storyId, $authStore.user!.id)
+              if ($authStore.user) {
+                storiesService.loadSingleStory(storyId, $authStore.user.id)
+              }
             }}
             on:permission-updated={() => {
               // Refresh collaborators list
-              storiesService.loadSingleStory(storyId, $authStore.user!.id)
+              if ($authStore.user) {
+                storiesService.loadSingleStory(storyId, $authStore.user.id)
+              }
             }}
           />
         </aside>
