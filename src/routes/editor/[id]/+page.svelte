@@ -6,7 +6,7 @@
   import { supabase } from '$lib/config/supabase'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { LogIn, Edit } from 'lucide-svelte'
+  import { LogIn, FileEdit as Edit } from 'lucide-svelte'
 
   export let storyId: string
 
