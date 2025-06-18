@@ -9,13 +9,15 @@
   import Auth from './routes/auth/+page.svelte'
   import StoryEditor from './routes/editor/[id]/+page.svelte'
   import MediaLibrary from './routes/media/+page.svelte'
+  import Analytics from './routes/analytics/+page.svelte'
 
   const routes = {
     '/': LandingPage,
     '/dashboard': Dashboard,
     '/auth': Auth,
     '/editor/:id': StoryEditor,
-    '/media': MediaLibrary
+    '/media': MediaLibrary,
+    '/analytics': Analytics
   }
 
   onMount(() => {
