@@ -21,41 +21,43 @@
     window.location.hash = '#/'
   }
 
-  onMount(async () => {
-    // Check if storyId is valid before proceeding
-    if (!storyId || storyId === 'undefined' || storyId.trim() === '') {
-      console.error('Invalid story ID:', storyId)
-      window.location.hash = '#/dashboard'
-      return
-    }
+  // Reactive statement to handle authentication redirect
+  $: if (!$authStore.loading && !$authStore.user) {
+    window.location.hash = '#/auth'
+  }
 
-    // Redirect to auth if not authenticated
-    const unsubscribe = authStore.subscribe(async ($authStore) => {
-      if (!$authStore.loading && !$authStore.user) {
-        window.location.hash = '#/auth'
+  // Reactive statement to load story when conditions are met
+  $: if ($authStore.user && storyId && storyId !== 'undefined' && storyId.trim() !== '' && (!story || story.id !== storyId)) {
+    loadStory(storyId)
+  }
+
+  async function loadStory(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('id', id)
+        .eq('author_id', $authStore.user?.id) // Security check: only load stories owned by the user
+        .single()
+
+      if (error || !data) {
+        console.error('Failed to load story:', error)
+        window.location.hash = '#/dashboard'
         return
       }
 
-      // Load the story if we have a user and don't have the story
-      if ($authStore.user && (!story || story.id !== storyId)) {
-        const { data, error } = await supabase
-          .from('stories')
-          .select('*')
-          .eq('id', storyId)
-          .single()
+      storiesService.setCurrentStory(data)
+    } catch (err) {
+      console.error('Error loading story:', err)
+      window.location.hash = '#/dashboard'
+    }
+  }
 
-        if (error || !data) {
-          console.error('Failed to load story:', error)
-          window.location.hash = '#/dashboard'
-          return
-        }
-
-        storiesService.setCurrentStory(data)
-      }
-    })
-
-    return unsubscribe
-  })
+  // Check for invalid story ID after component is mounted and ID is available
+  $: if (storyId && (storyId === 'undefined' || storyId.trim() === '')) {
+    console.error('Invalid story ID:', storyId)
+    window.location.hash = '#/dashboard'
+  }
 </script>
 
 <svelte:head>
@@ -70,7 +72,7 @@
     </div>
   </div>
 {:else if !$authStore.user}
-  <!-- Not authenticated - redirect handled in onMount -->
+  <!-- Not authenticated - redirect handled by reactive statement -->
   <div class="h-screen flex items-center justify-center p-4">
     <Card class="w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
