@@ -36,17 +36,30 @@ export const authService = {
   },
 
   async loadUserProfile(user: User) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    try {
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
 
-    authStore.set({
-      user,
-      loading: false,
-      profile
-    })
+      if (error) {
+        console.error('Error loading user profile:', error)
+      }
+
+      authStore.set({
+        user,
+        loading: false,
+        profile
+      })
+    } catch (error) {
+      console.error('Failed to load user profile:', error)
+      authStore.set({
+        user,
+        loading: false,
+        profile: null
+      })
+    }
   },
 
   async signUp(email: string, password: string, fullName: string) {
