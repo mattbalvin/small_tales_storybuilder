@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { page } from '$app/stores'
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import StoryEditor from '$lib/components/editor/StoryEditor.svelte'
@@ -8,8 +9,9 @@
   import Card from '$lib/components/ui/card.svelte'
   import { LogIn, FileEdit as Edit } from 'lucide-svelte'
 
-  export let storyId: string
+  export let data: { id: string }
 
+  $: storyId = data?.id || $page.params.id
   $: story = $storiesStore.currentStory
 
   function navigateToAuth() {
@@ -21,6 +23,13 @@
   }
 
   onMount(async () => {
+    // Check if storyId is valid before proceeding
+    if (!storyId || storyId === 'undefined' || storyId.trim() === '') {
+      console.error('Invalid story ID:', storyId)
+      window.location.hash = '#/dashboard'
+      return
+    }
+
     // Redirect to auth if not authenticated
     const unsubscribe = authStore.subscribe(async ($authStore) => {
       if (!$authStore.loading && !$authStore.user) {
@@ -37,6 +46,7 @@
           .single()
 
         if (error || !data) {
+          console.error('Failed to load story:', error)
           window.location.hash = '#/dashboard'
           return
         }
