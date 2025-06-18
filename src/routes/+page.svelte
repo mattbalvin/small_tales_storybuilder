@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authStore } from '$lib/stores/auth'
+  import { authStore, authService } from '$lib/stores/auth'
   import { storiesService } from '$lib/stores/stories'
   import StoriesList from '$lib/components/dashboard/StoriesList.svelte'
 
