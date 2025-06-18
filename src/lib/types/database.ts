@@ -37,6 +37,7 @@ export interface Database {
           description: string
           cover_image: string
           age_range: string
+          orientation: 'landscape' | 'portrait'
           settings: any
           author_id: string
           created_at: string
@@ -48,6 +49,7 @@ export interface Database {
           description: string
           cover_image: string
           age_range?: string
+          orientation?: 'landscape' | 'portrait'
           settings?: any
           author_id: string
           created_at?: string
@@ -59,6 +61,7 @@ export interface Database {
           description?: string
           cover_image?: string
           age_range?: string
+          orientation?: 'landscape' | 'portrait'
           settings?: any
           author_id?: string
           created_at?: string
