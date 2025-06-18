@@ -13,6 +13,7 @@
   }
 
   function handlePreviewStory(event: CustomEvent) {
+    alert("handlePreviewStory: " + event.detail.storyId)
     conslole.log(event.detail.storyId)
     const storyId = event.detail.storyId
     console.log(storyId)
