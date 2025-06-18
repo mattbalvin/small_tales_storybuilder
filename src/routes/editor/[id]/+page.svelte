@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { page } from '$app/stores'
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import StoryEditor from '$lib/components/editor/StoryEditor.svelte'
@@ -9,9 +8,9 @@
   import Card from '$lib/components/ui/card.svelte'
   import { LogIn, FileEdit as Edit } from 'lucide-svelte'
 
-  export let data: { id: string }
+  export let id: string
 
-  $: storyId = data?.id || $page.params.id
+  $: storyId = id
   $: story = $storiesStore.currentStory
 
   function navigateToAuth() {
