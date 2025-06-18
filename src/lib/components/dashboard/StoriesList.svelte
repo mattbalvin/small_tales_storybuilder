@@ -4,7 +4,7 @@
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, Edit, Eye, Trash2, Calendar, Clock } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
