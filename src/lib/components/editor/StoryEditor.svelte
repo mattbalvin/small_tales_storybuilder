@@ -262,10 +262,9 @@
     <div class="flex items-center gap-4">
       <!-- Home Icon -->
       <Button 
-        variant="ghost" 
-        size="sm" 
+        variant="outline" 
+        size="sm"
         on:click={navigateToDashboard}
-        class="text-muted-foreground hover:text-foreground"
         title="Return to dashboard"
       >
         <Home class="w-4 h-4" />
