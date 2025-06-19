@@ -92,12 +92,11 @@
   }
 
   function handleAnimationChange(event: Event) {
-    const target = event.target as HTMLSelectElement
-    if (target && selectedElement) {
+    if (event.target instanceof HTMLSelectElement && selectedElement) {
       updateElement({ 
-        animation: target.value === 'none' 
+        animation: event.target.value === 'none' 
           ? null 
-          : { type: target.value, duration: 1000 } 
+          : { type: event.target.value, duration: 1000 } 
       })
     }
   }
@@ -144,9 +143,8 @@
                 type="number"
                 value={localX}
                 on:input={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    handlePositionChange('x', target.value);
+                  if (e.target instanceof HTMLInputElement) {
+                    handlePositionChange('x', e.target.value);
                   }
                 }}
               />
@@ -157,9 +155,8 @@
                 type="number"
                 value={localY}
                 on:input={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    handlePositionChange('y', target.value);
+                  if (e.target instanceof HTMLInputElement) {
+                    handlePositionChange('y', e.target.value);
                   }
                 }}
               />
@@ -170,9 +167,8 @@
                 type="number"
                 value={localWidth}
                 on:input={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    handlePositionChange('width', target.value);
+                  if (e.target instanceof HTMLInputElement) {
+                    handlePositionChange('width', e.target.value);
                   }
                 }}
               />
@@ -183,9 +179,8 @@
                 type="number"
                 value={localHeight}
                 on:input={(e) => {
-                  const target = e.target as HTMLInputElement;
-                  if (target) {
-                    handlePositionChange('height', target.value);
+                  if (e.target instanceof HTMLInputElement) {
+                    handlePositionChange('height', e.target.value);
                   }
                 }}
               />
@@ -203,9 +198,8 @@
                 <Input
                   value={localText}
                   on:input={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) {
-                      handleTextPropertyChange('text', target.value);
+                    if (e.target instanceof HTMLInputElement) {
+                      handleTextPropertyChange('text', e.target.value);
                     }
                   }}
                 />
@@ -217,9 +211,8 @@
                     type="number"
                     value={localFontSize}
                     on:input={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      if (target) {
-                        handleTextPropertyChange('fontSize', parseInt(target.value) || 16);
+                      if (e.target instanceof HTMLInputElement) {
+                        handleTextPropertyChange('fontSize', parseInt(e.target.value) || 16);
                       }
                     }}
                   />
@@ -230,9 +223,8 @@
                     type="color"
                     value={localColor}
                     on:input={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      if (target) {
-                        handleTextPropertyChange('color', target.value);
+                      if (e.target instanceof HTMLInputElement) {
+                        handleTextPropertyChange('color', e.target.value);
                       }
                     }}
                   />
@@ -250,9 +242,8 @@
                   value={localSrc}
                   placeholder="https://..."
                   on:input={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) {
-                      handleImagePropertyChange('src', target.value);
+                    if (e.target instanceof HTMLInputElement) {
+                      handleImagePropertyChange('src', e.target.value);
                     }
                   }}
                 />
@@ -262,9 +253,8 @@
                 <Input
                   value={localAlt}
                   on:input={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) {
-                      handleImagePropertyChange('alt', target.value);
+                    if (e.target instanceof HTMLInputElement) {
+                      handleImagePropertyChange('alt', e.target.value);
                     }
                   }}
                 />
@@ -281,9 +271,8 @@
                   value={localSrc}
                   placeholder="https://..."
                   on:input={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) {
-                      handleAudioPropertyChange('src', target.value);
+                    if (e.target instanceof HTMLInputElement) {
+                      handleAudioPropertyChange('src', e.target.value);
                     }
                   }}
                 />
@@ -293,9 +282,8 @@
                   type="checkbox"
                   checked={localAutoplay}
                   on:change={(e) => {
-                    const target = e.target as HTMLInputElement;
-                    if (target) {
-                      handleAudioPropertyChange('autoplay', target.checked);
+                    if (e.target instanceof HTMLInputElement) {
+                      handleAudioPropertyChange('autoplay', e.target.checked);
                     }
                   }}
                 />
