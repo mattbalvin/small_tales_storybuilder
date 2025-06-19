@@ -54,6 +54,11 @@
     currentPageIndex = pages.length - 1
   }
 
+  // Reset to first page when pages are first loaded
+  $: if (pages.length > 0 && currentPageIndex < 0) {
+    currentPageIndex = 0
+  }
+
   async function createDefaultPage() {
     if (!story || !$authStore.user || !canEdit()) {
       console.log('Cannot create default page:', { hasStory: !!story, hasUser: !!$authStore.user, canEdit: canEdit() })
@@ -183,7 +188,10 @@
   }
 
   function goToPage(index: number) {
-    currentPageIndex = Math.max(0, Math.min(index, pages.length - 1))
+    console.log('goToPage called with index:', index, 'current pages length:', pages.length)
+    const newIndex = Math.max(0, Math.min(index, pages.length - 1))
+    console.log('Setting currentPageIndex to:', newIndex)
+    currentPageIndex = newIndex
   }
 
   function canEdit(): boolean {
@@ -229,6 +237,7 @@
     storyTitle: story?.title,
     pagesCount: pages.length,
     currentPageIndex,
+    currentPageId: currentPage?.id,
     userPermission,
     canEdit: canEdit(),
     canManage: canManage(),
@@ -356,10 +365,22 @@
         {:else}
           <!-- Pages List -->
           <div class="space-y-2 flex-1 overflow-y-auto">
-            {#each pages as page, index}
+            {#each pages as page, index (page.id)}
               <Card 
                 class="p-3 cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
-                on:click={() => goToPage(index)}
+                on:click={() => {
+                  console.log('Page clicked:', index, 'page id:', page.id)
+                  goToPage(index)
+                }}
+                on:keydown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    goToPage(index)
+                  }
+                }}
+                tabindex="0"
+                role="button"
+                aria-label="Go to page {index + 1}"
               >
                 <div class="text-sm font-medium">Page {index + 1}</div>
                 <div class="text-xs text-muted-foreground">
@@ -373,7 +394,10 @@
                       variant="ghost" 
                       size="sm" 
                       class="h-6 w-6 p-0"
-                      on:click={(event) => { event.stopPropagation(); duplicatePage(index); }}
+                      on:click={(event) => { 
+                        event.stopPropagation(); 
+                        duplicatePage(index); 
+                      }}
                       title="Duplicate page"
                     >
                       <Copy class="w-3 h-3" />
@@ -383,7 +407,10 @@
                         variant="ghost" 
                         size="sm" 
                         class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        on:click={(event) => { event.stopPropagation(); deletePage(index); }}
+                        on:click={(event) => { 
+                          event.stopPropagation(); 
+                          deletePage(index); 
+                        }}
                         title="Delete page"
                       >
                         <Trash2 class="w-3 h-3" />
@@ -473,7 +500,7 @@
             <Card class="p-8 text-center">
               <h2 class="text-xl font-medium mb-2">Page not found</h2>
               <p class="text-muted-foreground mb-4">
-                The selected page doesn't exist.
+                The selected page doesn't exist. Current index: {currentPageIndex}, Pages: {pages.length}
               </p>
               <Button on:click={() => goToPage(0)}>
                 Go to First Page
