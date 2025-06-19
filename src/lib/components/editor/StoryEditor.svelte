@@ -178,6 +178,26 @@
     </div>
 
     <div class="flex items-center gap-2">
+      <!-- Page management buttons in header -->
+      {#if canEdit()}
+        <div class="flex items-center gap-1 border rounded-md">
+          <Button variant="ghost" size="sm" on:click={addNewPage} title="Add new page">
+            <Plus class="w-4 h-4" />
+          </Button>
+          {#if pages.length > 1 && currentPage}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              on:click={() => deletePage(currentPageIndex)}
+              title="Delete current page"
+              class="text-destructive hover:text-destructive"
+            >
+              <Trash2 class="w-4 h-4" />
+            </Button>
+          {/if}
+        </div>
+      {/if}
+
       <OrientationToggle bind:orientation bind:showSafetyZones />
       
       {#if canEdit()}
@@ -216,66 +236,92 @@
         <div class="flex items-center justify-between">
           <h2 class="font-medium">Pages</h2>
           {#if canEdit()}
-            <Button size="sm" on:click={addNewPage}>
+            <Button size="sm" on:click={addNewPage} title="Add new page">
               <Plus class="w-4 h-4" />
             </Button>
           {/if}
         </div>
 
-        <div class="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-          {#each pages as page, index}
-            <Card 
-              class="p-3 cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
-              on:click={() => goToPage(index)}
-            >
-              <div class="text-sm font-medium">Page {index + 1}</div>
-              <div class="text-xs text-muted-foreground">
-                {page.content?.elements?.length || 0} elements
-              </div>
-              
-              <!-- Page actions (show on hover) -->
-              {#if canEdit()}
-                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    class="h-6 w-6 p-0"
-                    on:click={(event) => { event.stopPropagation(); duplicatePage(index); }}
-                    title="Duplicate page"
-                  >
-                    <Copy class="w-3 h-3" />
-                  </Button>
-                  {#if pages.length > 1}
+        <!-- Show message when no pages exist -->
+        {#if pages.length === 0}
+          <Card class="p-4 text-center">
+            <p class="text-sm text-muted-foreground mb-3">No pages yet</p>
+            {#if canEdit()}
+              <Button size="sm" on:click={addNewPage} class="w-full">
+                <Plus class="w-4 h-4 mr-2" />
+                Add First Page
+              </Button>
+            {:else}
+              <p class="text-xs text-muted-foreground">This story has no pages</p>
+            {/if}
+          </Card>
+        {:else}
+          <div class="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+            {#each pages as page, index}
+              <Card 
+                class="p-3 cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
+                on:click={() => goToPage(index)}
+              >
+                <div class="text-sm font-medium">Page {index + 1}</div>
+                <div class="text-xs text-muted-foreground">
+                  {page.content?.elements?.length || 0} elements
+                </div>
+                
+                <!-- Page actions (show on hover) -->
+                {#if canEdit()}
+                  <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                      on:click={(event) => { event.stopPropagation(); deletePage(index); }}
-                      title="Delete page"
+                      class="h-6 w-6 p-0"
+                      on:click={(event) => { event.stopPropagation(); duplicatePage(index); }}
+                      title="Duplicate page"
                     >
-                      <Trash2 class="w-3 h-3" />
+                      <Copy class="w-3 h-3" />
                     </Button>
-                  {/if}
-                </div>
-              {/if}
-            </Card>
-          {/each}
-        </div>
-
-        <!-- Page management actions -->
-        {#if canEdit() && pages.length > 0}
-          <div class="pt-2 border-t space-y-2">
-            <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
-              <Plus class="w-4 h-4 mr-2" />
-              Add Page
-            </Button>
-            {#if currentPage}
-              <Button variant="outline" size="sm" class="w-full" on:click={() => duplicatePage(currentPageIndex)}>
-                <Copy class="w-4 h-4 mr-2" />
-                Duplicate Current
-              </Button>
-            {/if}
+                    {#if pages.length > 1}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                        on:click={(event) => { event.stopPropagation(); deletePage(index); }}
+                        title="Delete page"
+                      >
+                        <Trash2 class="w-3 h-3" />
+                      </Button>
+                    {/if}
+                  </div>
+                {/if}
+              </Card>
+            {/each}
           </div>
+
+          <!-- Page management actions -->
+          {#if canEdit()}
+            <div class="pt-2 border-t space-y-2">
+              <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
+                <Plus class="w-4 h-4 mr-2" />
+                Add Page
+              </Button>
+              {#if currentPage}
+                <Button variant="outline" size="sm" class="w-full" on:click={() => duplicatePage(currentPageIndex)}>
+                  <Copy class="w-4 h-4 mr-2" />
+                  Duplicate Current
+                </Button>
+                {#if pages.length > 1}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    class="w-full text-destructive hover:text-destructive" 
+                    on:click={() => deletePage(currentPageIndex)}
+                  >
+                    <Trash2 class="w-4 h-4 mr-2" />
+                    Delete Current
+                  </Button>
+                {/if}
+              {/if}
+            </div>
+          {/if}
         {/if}
       </div>
     </aside>
@@ -300,7 +346,7 @@
           />
         {:else if pages.length === 0}
           <div class="h-full flex items-center justify-center">
-            <Card class="p-8 text-center">
+            <Card class="p-8 text-center max-w-md">
               <h2 class="text-xl font-medium mb-2">No pages yet</h2>
               <p class="text-muted-foreground mb-4">
                 {canEdit() 
@@ -309,10 +355,15 @@
                 }
               </p>
               {#if canEdit()}
-                <Button on:click={addNewPage}>
-                  <Plus class="w-4 h-4 mr-2" />
-                  Add First Page
-                </Button>
+                <div class="space-y-2">
+                  <Button on:click={addNewPage} class="w-full">
+                    <Plus class="w-4 h-4 mr-2" />
+                    Add First Page
+                  </Button>
+                  <p class="text-xs text-muted-foreground">
+                    You can also use the + button in the sidebar or header
+                  </p>
+                </div>
               {/if}
             </Card>
           </div>
