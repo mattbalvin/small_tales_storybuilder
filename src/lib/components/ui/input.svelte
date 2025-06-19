@@ -15,8 +15,10 @@
   
   function handleInput(event: Event) {
     const target = event.target as HTMLInputElement
-    value = target.value
-    dispatch('input', event)
+    if (target) {
+      value = target.value
+      dispatch('input', event)
+    }
   }
   
   function handleChange(event: Event) {
