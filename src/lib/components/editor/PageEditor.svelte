@@ -21,6 +21,8 @@
   let dragOffset = { x: 0, y: 0 }
   let isResizing = false
   let resizeHandle = ''
+  let resizeStartData = { x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 }
+  let canvasElement: HTMLElement
 
   // Make elements reactive to page changes
   $: elements = page.content?.elements || []
@@ -94,7 +96,12 @@
     })
   }
 
-  // Mouse event handlers for dragging
+  function getCanvasRect() {
+    if (!canvasElement) return { left: 0, top: 0, width: 800, height: 450 }
+    return canvasElement.getBoundingClientRect()
+  }
+
+  // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
     if (readonly) return
     
@@ -110,14 +117,29 @@
     const target = event.target as HTMLElement
     const resizeHandleEl = target.closest('.resize-handle')
     
+    const canvasRect = getCanvasRect()
+    
     if (resizeHandleEl) {
       isResizing = true
       resizeHandle = resizeHandleEl.getAttribute('data-handle') || ''
+      
+      // Store initial resize data
+      resizeStartData = {
+        x: element.x,
+        y: element.y,
+        width: element.width,
+        height: element.height,
+        mouseX: event.clientX,
+        mouseY: event.clientY
+      }
     } else {
       isDragging = true
+      
+      // Calculate offset relative to canvas
+      const elementRect = (event.currentTarget as HTMLElement).getBoundingClientRect()
       dragOffset = {
-        x: event.clientX - element.x,
-        y: event.clientY - element.y
+        x: event.clientX - elementRect.left,
+        y: event.clientY - elementRect.top
       }
     }
 
@@ -131,52 +153,83 @@
     const element = elements.find(el => el.id === selectedElementId)
     if (!element) return
 
+    const canvasRect = getCanvasRect()
+
     if (isDragging) {
-      const newX = Math.max(0, event.clientX - dragOffset.x)
-      const newY = Math.max(0, event.clientY - dragOffset.y)
+      // Calculate new position relative to canvas
+      const newX = Math.max(0, Math.min(
+        event.clientX - canvasRect.left - dragOffset.x,
+        canvasRect.width - element.width
+      ))
+      const newY = Math.max(0, Math.min(
+        event.clientY - canvasRect.top - dragOffset.y,
+        canvasRect.height - element.height
+      ))
       
       updateElement(selectedElementId, {
-        x: newX,
-        y: newY
+        x: Math.round(newX),
+        y: Math.round(newY)
       })
     } else if (isResizing) {
-      const rect = event.currentTarget?.getBoundingClientRect?.() || { left: 0, top: 0 }
-      const relativeX = event.clientX - rect.left
-      const relativeY = event.clientY - rect.top
+      // Calculate mouse movement delta
+      const deltaX = event.clientX - resizeStartData.mouseX
+      const deltaY = event.clientY - resizeStartData.mouseY
       
-      let newWidth = element.width
-      let newHeight = element.height
-      let newX = element.x
-      let newY = element.y
+      let newWidth = resizeStartData.width
+      let newHeight = resizeStartData.height
+      let newX = resizeStartData.x
+      let newY = resizeStartData.y
 
+      // Apply resize based on handle
       switch (resizeHandle) {
         case 'se': // bottom-right
-          newWidth = Math.max(50, relativeX - element.x)
-          newHeight = Math.max(30, relativeY - element.y)
+          newWidth = Math.max(50, resizeStartData.width + deltaX)
+          newHeight = Math.max(30, resizeStartData.height + deltaY)
           break
         case 'sw': // bottom-left
-          newWidth = Math.max(50, element.width + (element.x - relativeX))
-          newHeight = Math.max(30, relativeY - element.y)
-          newX = Math.min(element.x, relativeX)
+          newWidth = Math.max(50, resizeStartData.width - deltaX)
+          newHeight = Math.max(30, resizeStartData.height + deltaY)
+          newX = Math.max(0, resizeStartData.x + deltaX)
+          // Adjust X if width hit minimum
+          if (newWidth === 50) {
+            newX = resizeStartData.x + resizeStartData.width - 50
+          }
           break
         case 'ne': // top-right
-          newWidth = Math.max(50, relativeX - element.x)
-          newHeight = Math.max(30, element.height + (element.y - relativeY))
-          newY = Math.min(element.y, relativeY)
+          newWidth = Math.max(50, resizeStartData.width + deltaX)
+          newHeight = Math.max(30, resizeStartData.height - deltaY)
+          newY = Math.max(0, resizeStartData.y + deltaY)
+          // Adjust Y if height hit minimum
+          if (newHeight === 30) {
+            newY = resizeStartData.y + resizeStartData.height - 30
+          }
           break
         case 'nw': // top-left
-          newWidth = Math.max(50, element.width + (element.x - relativeX))
-          newHeight = Math.max(30, element.height + (element.y - relativeY))
-          newX = Math.min(element.x, relativeX)
-          newY = Math.min(element.y, relativeY)
+          newWidth = Math.max(50, resizeStartData.width - deltaX)
+          newHeight = Math.max(30, resizeStartData.height - deltaY)
+          newX = Math.max(0, resizeStartData.x + deltaX)
+          newY = Math.max(0, resizeStartData.y + deltaY)
+          // Adjust positions if dimensions hit minimum
+          if (newWidth === 50) {
+            newX = resizeStartData.x + resizeStartData.width - 50
+          }
+          if (newHeight === 30) {
+            newY = resizeStartData.y + resizeStartData.height - 30
+          }
           break
       }
 
+      // Ensure element stays within canvas bounds
+      newX = Math.max(0, Math.min(newX, canvasRect.width - newWidth))
+      newY = Math.max(0, Math.min(newY, canvasRect.height - newHeight))
+      newWidth = Math.min(newWidth, canvasRect.width - newX)
+      newHeight = Math.min(newHeight, canvasRect.height - newY)
+
       updateElement(selectedElementId, {
-        x: newX,
-        y: newY,
-        width: newWidth,
-        height: newHeight
+        x: Math.round(newX),
+        y: Math.round(newY),
+        width: Math.round(newWidth),
+        height: Math.round(newHeight)
       })
     }
   }
@@ -195,7 +248,7 @@
     
     // Only deselect if clicking on the canvas itself, not on an element
     const target = event.target as HTMLElement
-    if (target.classList.contains('canvas-area')) {
+    if (target === canvasElement || target.classList.contains('canvas-area')) {
       selectedElementId = null
     }
   }
@@ -205,8 +258,9 @@
   <!-- Canvas -->
   <div class="flex-1 flex items-center justify-center p-8">
     <div 
+      bind:this={canvasElement}
       class={cn(
-        "relative bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area",
+        "relative bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area overflow-hidden",
         safetyZoneClass,
         orientation === 'landscape' && 'aspect-[16/9]',
         orientation === 'portrait' && 'aspect-[9/16]',
@@ -221,10 +275,10 @@
           class:border-2={selectedElementId === element.id && !readonly}
           class:border-primary={selectedElementId === element.id && !readonly}
           class:border-transparent={selectedElementId !== element.id || readonly}
-          class:cursor-move={!readonly && selectedElementId === element.id}
+          class:cursor-move={!readonly && selectedElementId === element.id && !isResizing}
           class:cursor-pointer={!readonly && selectedElementId !== element.id}
           class:cursor-default={readonly}
-          style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px;"
+          style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
           on:mousedown={(e) => !readonly && handleMouseDown(e, element.id)}
           on:click|stopPropagation={() => !readonly && selectElement(element.id)}
         >
@@ -248,10 +302,26 @@
 
           <!-- Resize handles (only show when selected and not readonly) -->
           {#if selectedElementId === element.id && !readonly}
-            <div class="resize-handle absolute -top-1 -left-1 w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize" data-handle="nw"></div>
-            <div class="resize-handle absolute -top-1 -right-1 w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize" data-handle="ne"></div>
-            <div class="resize-handle absolute -bottom-1 -left-1 w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize" data-handle="sw"></div>
-            <div class="resize-handle absolute -bottom-1 -right-1 w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize" data-handle="se"></div>
+            <div 
+              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
+              style="left: -6px; top: -6px; z-index: 20;"
+              data-handle="nw"
+            ></div>
+            <div 
+              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
+              style="right: -6px; top: -6px; z-index: 20;"
+              data-handle="ne"
+            ></div>
+            <div 
+              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
+              style="left: -6px; bottom: -6px; z-index: 20;"
+              data-handle="sw"
+            ></div>
+            <div 
+              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
+              style="right: -6px; bottom: -6px; z-index: 20;"
+              data-handle="se"
+            ></div>
           {/if}
         </div>
       {/each}
@@ -288,13 +358,3 @@
     />
   {/if}
 </div>
-
-<style>
-  .resize-handle {
-    z-index: 10;
-  }
-  
-  .resize-handle:hover {
-    transform: scale(1.2);
-  }
-</style>

@@ -10,7 +10,7 @@
 
   const dispatch = createEventDispatcher()
 
-  // Local variables for two-way binding
+  // Local variables for controlled inputs
   let localX: number = 0
   let localY: number = 0
   let localWidth: number = 0
@@ -22,7 +22,7 @@
   let localAlt: string = ''
   let localAutoplay: boolean = false
 
-  // Initialize local variables when selectedElement changes
+  // Update local variables when selectedElement changes
   $: if (selectedElement) {
     localX = selectedElement.x || 0
     localY = selectedElement.y || 0
@@ -36,77 +36,6 @@
     localAutoplay = selectedElement.properties?.autoplay || false
   }
 
-  // Reactive statements to update element when local variables change
-  $: if (selectedElement && localX !== selectedElement.x) {
-    updateElement({ x: localX })
-  }
-
-  $: if (selectedElement && localY !== selectedElement.y) {
-    updateElement({ y: localY })
-  }
-
-  $: if (selectedElement && localWidth !== selectedElement.width) {
-    updateElement({ width: localWidth })
-  }
-
-  $: if (selectedElement && localHeight !== selectedElement.height) {
-    updateElement({ height: localHeight })
-  }
-
-  $: if (selectedElement && selectedElement.type === 'text' && localText !== selectedElement.properties?.text) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        text: localText 
-      } 
-    })
-  }
-
-  $: if (selectedElement && selectedElement.type === 'text' && localFontSize !== selectedElement.properties?.fontSize) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        fontSize: localFontSize 
-      } 
-    })
-  }
-
-  $: if (selectedElement && selectedElement.type === 'text' && localColor !== selectedElement.properties?.color) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        color: localColor 
-      } 
-    })
-  }
-
-  $: if (selectedElement && (selectedElement.type === 'image' || selectedElement.type === 'audio') && localSrc !== selectedElement.properties?.src) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        src: localSrc 
-      } 
-    })
-  }
-
-  $: if (selectedElement && selectedElement.type === 'image' && localAlt !== selectedElement.properties?.alt) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        alt: localAlt 
-      } 
-    })
-  }
-
-  $: if (selectedElement && selectedElement.type === 'audio' && localAutoplay !== selectedElement.properties?.autoplay) {
-    updateElement({ 
-      properties: { 
-        ...selectedElement.properties, 
-        autoplay: localAutoplay 
-      } 
-    })
-  }
-
   function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
   }
@@ -117,6 +46,49 @@
 
   function deleteElement() {
     dispatch('delete')
+  }
+
+  // Input handlers that validate and update immediately
+  function handlePositionChange(field: 'x' | 'y' | 'width' | 'height', value: string) {
+    const numValue = parseInt(value) || 0
+    const constrainedValue = field === 'width' ? Math.max(50, numValue) : 
+                           field === 'height' ? Math.max(30, numValue) : 
+                           Math.max(0, numValue)
+    
+    updateElement({ [field]: constrainedValue })
+  }
+
+  function handleTextPropertyChange(property: string, value: any) {
+    if (!selectedElement || selectedElement.type !== 'text') return
+    
+    updateElement({
+      properties: {
+        ...selectedElement.properties,
+        [property]: value
+      }
+    })
+  }
+
+  function handleImagePropertyChange(property: string, value: any) {
+    if (!selectedElement || selectedElement.type !== 'image') return
+    
+    updateElement({
+      properties: {
+        ...selectedElement.properties,
+        [property]: value
+      }
+    })
+  }
+
+  function handleAudioPropertyChange(property: string, value: any) {
+    if (!selectedElement || selectedElement.type !== 'audio') return
+    
+    updateElement({
+      properties: {
+        ...selectedElement.properties,
+        [property]: value
+      }
+    })
   }
 
   function handleAnimationChange(event: Event) {
@@ -170,28 +142,32 @@
               <label class="text-xs text-muted-foreground">X</label>
               <Input
                 type="number"
-                bind:value={localX}
+                value={localX}
+                on:input={(e) => handlePositionChange('x', e.target.value)}
               />
             </div>
             <div>
               <label class="text-xs text-muted-foreground">Y</label>
               <Input
                 type="number"
-                bind:value={localY}
+                value={localY}
+                on:input={(e) => handlePositionChange('y', e.target.value)}
               />
             </div>
             <div>
               <label class="text-xs text-muted-foreground">Width</label>
               <Input
                 type="number"
-                bind:value={localWidth}
+                value={localWidth}
+                on:input={(e) => handlePositionChange('width', e.target.value)}
               />
             </div>
             <div>
               <label class="text-xs text-muted-foreground">Height</label>
               <Input
                 type="number"
-                bind:value={localHeight}
+                value={localHeight}
+                on:input={(e) => handlePositionChange('height', e.target.value)}
               />
             </div>
           </div>
@@ -205,7 +181,8 @@
               <div>
                 <label class="text-xs text-muted-foreground">Content</label>
                 <Input
-                  bind:value={localText}
+                  value={localText}
+                  on:input={(e) => handleTextPropertyChange('text', e.target.value)}
                 />
               </div>
               <div class="grid grid-cols-2 gap-2">
@@ -213,14 +190,16 @@
                   <label class="text-xs text-muted-foreground">Font Size</label>
                   <Input
                     type="number"
-                    bind:value={localFontSize}
+                    value={localFontSize}
+                    on:input={(e) => handleTextPropertyChange('fontSize', parseInt(e.target.value) || 16)}
                   />
                 </div>
                 <div>
                   <label class="text-xs text-muted-foreground">Color</label>
                   <Input
                     type="color"
-                    bind:value={localColor}
+                    value={localColor}
+                    on:input={(e) => handleTextPropertyChange('color', e.target.value)}
                   />
                 </div>
               </div>
@@ -233,14 +212,16 @@
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  bind:value={localSrc}
+                  value={localSrc}
                   placeholder="https://..."
+                  on:input={(e) => handleImagePropertyChange('src', e.target.value)}
                 />
               </div>
               <div>
                 <label class="text-xs text-muted-foreground">Alt Text</label>
                 <Input
-                  bind:value={localAlt}
+                  value={localAlt}
+                  on:input={(e) => handleImagePropertyChange('alt', e.target.value)}
                 />
               </div>
             </div>
@@ -252,14 +233,16 @@
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  bind:value={localSrc}
+                  value={localSrc}
                   placeholder="https://..."
+                  on:input={(e) => handleAudioPropertyChange('src', e.target.value)}
                 />
               </div>
               <div class="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  bind:checked={localAutoplay}
+                  checked={localAutoplay}
+                  on:change={(e) => handleAudioPropertyChange('autoplay', e.target.checked)}
                 />
                 <label class="text-sm">Autoplay</label>
               </div>
