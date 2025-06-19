@@ -33,6 +33,7 @@
   }
 
   function handleTextPropertyChange(property: string, value: any) {
+    console.log("handleTextPropertyChange: " + property + ' => ' + value)
     if (!selectedElement || selectedElement.type !== 'text') return
     
     updateElement({
