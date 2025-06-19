@@ -92,7 +92,7 @@
   }
 
   function handleAnimationChange(event: Event) {
-    const target = <HTMLSelectElement>event.target
+    const target = event.target as HTMLSelectElement
     if (target && selectedElement) {
       updateElement({ 
         animation: target.value === 'none' 
@@ -144,7 +144,7 @@
                 type="number"
                 value={localX}
                 on:input={(e) => {
-                  const target = <HTMLInputElement>e.target;
+                  const target = e.target as HTMLInputElement;
                   if (target) {
                     handlePositionChange('x', target.value);
                   }
@@ -157,7 +157,7 @@
                 type="number"
                 value={localY}
                 on:input={(e) => {
-                  const target = <HTMLInputElement>e.target;
+                  const target = e.target as HTMLInputElement;
                   if (target) {
                     handlePositionChange('y', target.value);
                   }
@@ -170,7 +170,7 @@
                 type="number"
                 value={localWidth}
                 on:input={(e) => {
-                  const target = <HTMLInputElement>e.target;
+                  const target = e.target as HTMLInputElement;
                   if (target) {
                     handlePositionChange('width', target.value);
                   }
@@ -183,7 +183,7 @@
                 type="number"
                 value={localHeight}
                 on:input={(e) => {
-                  const target = <HTMLInputElement>e.target;
+                  const target = e.target as HTMLInputElement;
                   if (target) {
                     handlePositionChange('height', target.value);
                   }
@@ -203,7 +203,7 @@
                 <Input
                   value={localText}
                   on:input={(e) => {
-                    const target = <HTMLInputElement>e.target;
+                    const target = e.target as HTMLInputElement;
                     if (target) {
                       handleTextPropertyChange('text', target.value);
                     }
@@ -217,7 +217,7 @@
                     type="number"
                     value={localFontSize}
                     on:input={(e) => {
-                      const target = <HTMLInputElement>e.target;
+                      const target = e.target as HTMLInputElement;
                       if (target) {
                         handleTextPropertyChange('fontSize', parseInt(target.value) || 16);
                       }
@@ -230,7 +230,7 @@
                     type="color"
                     value={localColor}
                     on:input={(e) => {
-                      const target = <HTMLInputElement>e.target;
+                      const target = e.target as HTMLInputElement;
                       if (target) {
                         handleTextPropertyChange('color', target.value);
                       }
@@ -250,7 +250,7 @@
                   value={localSrc}
                   placeholder="https://..."
                   on:input={(e) => {
-                    const target = <HTMLInputElement>e.target;
+                    const target = e.target as HTMLInputElement;
                     if (target) {
                       handleImagePropertyChange('src', target.value);
                     }
@@ -262,7 +262,7 @@
                 <Input
                   value={localAlt}
                   on:input={(e) => {
-                    const target = <HTMLInputElement>e.target;
+                    const target = e.target as HTMLInputElement;
                     if (target) {
                       handleImagePropertyChange('alt', target.value);
                     }
@@ -281,7 +281,7 @@
                   value={localSrc}
                   placeholder="https://..."
                   on:input={(e) => {
-                    const target = <HTMLInputElement>e.target;
+                    const target = e.target as HTMLInputElement;
                     if (target) {
                       handleAudioPropertyChange('src', target.value);
                     }
@@ -293,7 +293,7 @@
                   type="checkbox"
                   checked={localAutoplay}
                   on:change={(e) => {
-                    const target = <HTMLInputElement>e.target;
+                    const target = e.target as HTMLInputElement;
                     if (target) {
                       handleAudioPropertyChange('autoplay', target.checked);
                     }
