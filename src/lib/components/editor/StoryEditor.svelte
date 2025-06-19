@@ -240,7 +240,7 @@
                     variant="ghost" 
                     size="sm" 
                     class="h-6 w-6 p-0"
-                    on:click|stopPropagation={() => duplicatePage(index)}
+                    on:click={(event) => { event.stopPropagation(); duplicatePage(index); }}
                     title="Duplicate page"
                   >
                     <Copy class="w-3 h-3" />
@@ -250,7 +250,7 @@
                       variant="ghost" 
                       size="sm" 
                       class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                      on:click|stopPropagation={() => deletePage(index)}
+                      on:click={(event) => { event.stopPropagation(); deletePage(index); }}
                       title="Delete page"
                     >
                       <Trash2 class="w-3 h-3" />
