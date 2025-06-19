@@ -366,20 +366,14 @@
           <!-- Pages List -->
           <div class="space-y-2 flex-1 overflow-y-auto">
             {#each pages as page, index (page.id)}
-              <Card 
-                class="p-3 cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
+              <!-- Use a button instead of Card for better click handling -->
+              <button
+                class="w-full p-3 text-left rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
                 on:click={() => {
                   console.log('Page clicked:', index, 'page id:', page.id)
                   goToPage(index)
                 }}
-                on:keydown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    goToPage(index)
-                  }
-                }}
-                tabindex="0"
-                role="button"
+                type="button"
                 aria-label="Go to page {index + 1}"
               >
                 <div class="text-sm font-medium">Page {index + 1}</div>
@@ -418,7 +412,7 @@
                     {/if}
                   </div>
                 {/if}
-              </Card>
+              </button>
             {/each}
           </div>
         {/if}
