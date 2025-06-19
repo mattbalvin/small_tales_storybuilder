@@ -1,24 +1,32 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { storiesStore, storiesService } from '$lib/stores/stories'
+  import { mediaStore, mediaService } from '$lib/stores/media'
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
+  import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
 
   $: stories = $storiesStore.stories
   $: loading = $storiesStore.loading
+  $: mediaAssets = $mediaStore.assets
 
   let deletingStoryId: string | null = null
   let showDeleteConfirm = false
   let storyToDelete: any = null
+  let editingStoryId: string | null = null
+  let editingTitle = ''
+  let showCoverSelector: string | null = null
+  let fileInput: HTMLInputElement
 
   onMount(async () => {
     if ($authStore.user) {
       await storiesService.loadStories($authStore.user.id)
+      await mediaService.loadAssets($authStore.user.id)
     }
   })
 
@@ -53,6 +61,102 @@
     dispatch('preview-story', { storyId })
   }
 
+  function startEditingTitle(story: any) {
+    editingStoryId = story.id
+    editingTitle = story.title
+  }
+
+  function cancelEditingTitle() {
+    editingStoryId = null
+    editingTitle = ''
+  }
+
+  async function saveTitle() {
+    if (!editingStoryId || !editingTitle.trim()) return
+
+    try {
+      await storiesService.updateStory(editingStoryId, {
+        title: editingTitle.trim(),
+        updated_at: new Date().toISOString()
+      })
+      editingStoryId = null
+      editingTitle = ''
+    } catch (error) {
+      console.error('Failed to update story title:', error)
+      alert('Failed to update story title. Please try again.')
+    }
+  }
+
+  function handleTitleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      saveTitle()
+    } else if (event.key === 'Escape') {
+      cancelEditingTitle()
+    }
+  }
+
+  function showCoverImageSelector(storyId: string) {
+    showCoverSelector = storyId
+  }
+
+  function hideCoverImageSelector() {
+    showCoverSelector = null
+  }
+
+  async function selectCoverImage(storyId: string, imageUrl: string) {
+    try {
+      await storiesService.updateStory(storyId, {
+        cover_image: imageUrl,
+        updated_at: new Date().toISOString()
+      })
+      showCoverSelector = null
+    } catch (error) {
+      console.error('Failed to update cover image:', error)
+      alert('Failed to update cover image. Please try again.')
+    }
+  }
+
+  async function removeCoverImage(storyId: string) {
+    try {
+      await storiesService.updateStory(storyId, {
+        cover_image: null,
+        updated_at: new Date().toISOString()
+      })
+      showCoverSelector = null
+    } catch (error) {
+      console.error('Failed to remove cover image:', error)
+      alert('Failed to remove cover image. Please try again.')
+    }
+  }
+
+  async function uploadCoverImage(storyId: string, file: File) {
+    if (!$authStore.user) return
+
+    try {
+      const asset = await mediaService.uploadAsset(file, $authStore.user.id, ['cover-image'])
+      await selectCoverImage(storyId, asset.url)
+    } catch (error) {
+      console.error('Failed to upload cover image:', error)
+      alert('Failed to upload cover image. Please try again.')
+    }
+  }
+
+  function triggerFileUpload(storyId: string) {
+    fileInput.setAttribute('data-story-id', storyId)
+    fileInput.click()
+  }
+
+  function handleFileUpload(event: Event) {
+    const target = event.target as HTMLInputElement
+    const files = target.files
+    const storyId = target.getAttribute('data-story-id')
+    
+    if (!files || !files[0] || !storyId) return
+
+    uploadCoverImage(storyId, files[0])
+    target.value = ''
+  }
+
   function confirmDeleteStory(story: any) {
     storyToDelete = story
     showDeleteConfirm = true
@@ -70,10 +174,7 @@
     showDeleteConfirm = false
 
     try {
-      // Delete the story - this will cascade delete all pages due to foreign key constraints
       await storiesService.deleteStory(storyToDelete.id)
-      
-      // Reload stories to update the UI
       await storiesService.loadStories($authStore.user.id)
     } catch (error) {
       console.error('Failed to delete story:', error)
@@ -96,6 +197,9 @@
       default: return 'text-gray-600 bg-gray-100'
     }
   }
+
+  // Filter media assets to only show images
+  $: imageAssets = mediaAssets.filter(asset => asset.type === 'image')
 </script>
 
 <div class="p-6">
@@ -109,6 +213,15 @@
       New Story
     </Button>
   </div>
+
+  <!-- Hidden file input for cover image upload -->
+  <input
+    bind:this={fileInput}
+    type="file"
+    accept="image/*"
+    on:change={handleFileUpload}
+    class="hidden"
+  />
 
   {#if loading}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -136,8 +249,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each stories as story}
         <Card class="overflow-hidden hover:shadow-lg transition-shadow">
-          <!-- Cover Image -->
-          <div class="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+          <!-- Cover Image with Edit Overlay -->
+          <div class="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative group">
             {#if story.cover_image}
               <img 
                 src={story.cover_image} 
@@ -146,17 +259,59 @@
               />
             {:else}
               <div class="text-center text-muted-foreground">
-                <Edit class="w-12 h-12 mx-auto mb-2" />
+                <Image class="w-12 h-12 mx-auto mb-2" />
                 <p class="text-sm">No cover image</p>
               </div>
             {/if}
+            
+            <!-- Cover image edit overlay -->
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Button 
+                variant="secondary" 
+                size="sm"
+                on:click={() => showCoverImageSelector(story.id)}
+              >
+                <Image class="w-4 h-4 mr-2" />
+                Change Cover
+              </Button>
+            </div>
           </div>
 
           <!-- Content -->
           <div class="p-4">
             <div class="flex items-start justify-between mb-2">
-              <h3 class="font-semibold text-lg truncate">{story.title}</h3>
-              <span class="px-2 py-1 rounded-full text-xs font-medium {getStatusColor(story.status)}">
+              <!-- Editable Title -->
+              {#if editingStoryId === story.id}
+                <div class="flex-1 flex items-center gap-2">
+                  <Input
+                    bind:value={editingTitle}
+                    on:keydown={handleTitleKeydown}
+                    on:blur={saveTitle}
+                    class="text-lg font-semibold"
+                    autofocus
+                  />
+                  <Button variant="ghost" size="sm" on:click={saveTitle}>
+                    <Check class="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" on:click={cancelEditingTitle}>
+                    <X class="w-3 h-3" />
+                  </Button>
+                </div>
+              {:else}
+                <div class="flex-1 flex items-center gap-2 group">
+                  <h3 class="font-semibold text-lg truncate">{story.title}</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    class="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                    on:click={() => startEditingTitle(story)}
+                  >
+                    <Pencil class="w-3 h-3" />
+                  </Button>
+                </div>
+              {/if}
+              
+              <span class="px-2 py-1 rounded-full text-xs font-medium {getStatusColor(story.status)} ml-2">
                 {story.status}
               </span>
             </div>
@@ -209,6 +364,71 @@
     </div>
   {/if}
 </div>
+
+<!-- Cover Image Selector Modal -->
+{#if showCoverSelector}
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Card class="w-full max-w-4xl max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">Select Cover Image</h3>
+          <Button variant="ghost" size="sm" on:click={hideCoverImageSelector}>
+            <X class="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <!-- Upload new image -->
+        <div class="mb-6">
+          <Button on:click={() => triggerFileUpload(showCoverSelector)} class="w-full">
+            <Upload class="w-4 h-4 mr-2" />
+            Upload New Image
+          </Button>
+        </div>
+
+        <!-- Remove current cover -->
+        <div class="mb-6">
+          <Button 
+            variant="outline" 
+            on:click={() => removeCoverImage(showCoverSelector)} 
+            class="w-full"
+          >
+            <X class="w-4 h-4 mr-2" />
+            Remove Cover Image
+          </Button>
+        </div>
+
+        <!-- Existing images grid -->
+        {#if imageAssets.length > 0}
+          <div>
+            <h4 class="font-medium mb-3">Choose from your media library</h4>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {#each imageAssets as asset}
+                <button
+                  class="aspect-square bg-gray-100 rounded-lg overflow-hidden hover:ring-2 hover:ring-primary transition-all"
+                  on:click={() => selectCoverImage(showCoverSelector, asset.url)}
+                >
+                  <img 
+                    src={asset.url} 
+                    alt={asset.filename}
+                    class="w-full h-full object-cover"
+                  />
+                </button>
+              {/each}
+            </div>
+          </div>
+        {:else}
+          <div class="text-center py-8 text-muted-foreground">
+            <Image class="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No images in your media library</p>
+            <p class="text-sm">Upload an image to use as a cover</p>
+          </div>
+        {/if}
+      </div>
+    </Card>
+  </div>
+{/if}
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm && storyToDelete}
