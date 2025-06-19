@@ -48,5 +48,9 @@
   on:change={handleChange}
   on:focus={handleFocus}
   on:blur={handleBlur}
+  on:input
+  on:change
+  on:focus
+  on:blur
   {...$$restProps}
 />
