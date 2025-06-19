@@ -10,32 +10,6 @@
 
   const dispatch = createEventDispatcher()
 
-  // Local variables for controlled inputs
-  let localX: number = 0
-  let localY: number = 0
-  let localWidth: number = 0
-  let localHeight: number = 0
-  let localText: string = ''
-  let localFontSize: number = 16
-  let localColor: string = '#000000'
-  let localSrc: string = ''
-  let localAlt: string = ''
-  let localAutoplay: boolean = false
-
-  // Update local variables when selectedElement changes
-  $: if (selectedElement) {
-    localX = selectedElement.x || 0
-    localY = selectedElement.y || 0
-    localWidth = selectedElement.width || 0
-    localHeight = selectedElement.height || 0
-    localText = selectedElement.properties?.text || ''
-    localFontSize = selectedElement.properties?.fontSize || 16
-    localColor = selectedElement.properties?.color || '#000000'
-    localSrc = selectedElement.properties?.src || ''
-    localAlt = selectedElement.properties?.alt || ''
-    localAutoplay = selectedElement.properties?.autoplay || false
-  }
-
   function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
   }
@@ -141,7 +115,7 @@
               <label class="text-xs text-muted-foreground">X</label>
               <Input
                 type="number"
-                value={localX}
+                value={selectedElement.x || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('x', e.target.value);
@@ -153,7 +127,7 @@
               <label class="text-xs text-muted-foreground">Y</label>
               <Input
                 type="number"
-                value={localY}
+                value={selectedElement.y || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('y', e.target.value);
@@ -165,7 +139,7 @@
               <label class="text-xs text-muted-foreground">Width</label>
               <Input
                 type="number"
-                value={localWidth}
+                value={selectedElement.width || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('width', e.target.value);
@@ -177,7 +151,7 @@
               <label class="text-xs text-muted-foreground">Height</label>
               <Input
                 type="number"
-                value={localHeight}
+                value={selectedElement.height || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('height', e.target.value);
@@ -196,7 +170,7 @@
               <div>
                 <label class="text-xs text-muted-foreground">Content</label>
                 <Input
-                  value={localText}
+                  value={selectedElement.properties?.text || ''}
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleTextPropertyChange('text', e.target.value);
@@ -209,7 +183,7 @@
                   <label class="text-xs text-muted-foreground">Font Size</label>
                   <Input
                     type="number"
-                    value={localFontSize}
+                    value={selectedElement.properties?.fontSize || 16}
                     on:input={(e) => {
                       if (e.target instanceof HTMLInputElement) {
                         handleTextPropertyChange('fontSize', parseInt(e.target.value) || 16);
@@ -221,7 +195,7 @@
                   <label class="text-xs text-muted-foreground">Color</label>
                   <Input
                     type="color"
-                    value={localColor}
+                    value={selectedElement.properties?.color || '#000000'}
                     on:input={(e) => {
                       if (e.target instanceof HTMLInputElement) {
                         handleTextPropertyChange('color', e.target.value);
@@ -239,7 +213,7 @@
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  value={localSrc}
+                  value={selectedElement.properties?.src || ''}
                   placeholder="https://..."
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
@@ -251,7 +225,7 @@
               <div>
                 <label class="text-xs text-muted-foreground">Alt Text</label>
                 <Input
-                  value={localAlt}
+                  value={selectedElement.properties?.alt || ''}
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleImagePropertyChange('alt', e.target.value);
@@ -268,7 +242,7 @@
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  value={localSrc}
+                  value={selectedElement.properties?.src || ''}
                   placeholder="https://..."
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
@@ -280,7 +254,7 @@
               <div class="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={localAutoplay}
+                  checked={selectedElement.properties?.autoplay || false}
                   on:change={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleAudioPropertyChange('autoplay', e.target.checked);
