@@ -464,8 +464,7 @@
             on:update={(event) => {
               if (canEdit()) {
                 storiesService.updatePage(currentPage.id, {
-                  content: event.detail.content,
-                  updated_at: new Date().toISOString()
+                  content: event.detail.content
                 })
               }
             }}
