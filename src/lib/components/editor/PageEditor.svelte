@@ -24,13 +24,36 @@
   let resizeStartData = { x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 }
   let canvasElement: HTMLElement
 
-  // Make elements reactive to page changes
-  $: elements = page.content?.elements || []
+  // Use local elements state that gets updated immediately
+  let elements = page.content?.elements || []
+
+  // Watch for page changes and update local elements
+  $: if (page.content?.elements) {
+    elements = [...page.content.elements]
+  }
 
   $: aspectRatio = orientation === 'landscape' ? '16/9' : '9/16'
   $: safetyZoneClass = showSafetyZones 
     ? (orientation === 'landscape' ? 'safety-zone-16-9' : 'safety-zone-9-16')
     : ''
+
+  function updatePageContent() {
+    const newContent = {
+      ...page.content,
+      elements: [...elements]
+    }
+    
+    // Update the page object immediately for local reactivity
+    page = {
+      ...page,
+      content: newContent
+    }
+    
+    // Dispatch the update to save to database
+    dispatch('update', {
+      content: newContent
+    })
+  }
 
   function addElement(type: 'text' | 'image' | 'audio') {
     if (readonly) return
@@ -49,15 +72,9 @@
         : { src: '', autoplay: false }
     }
 
-    const newElements = [...elements, newElement]
+    elements = [...elements, newElement]
     selectedElementId = newElement.id
-    
-    dispatch('update', {
-      content: {
-        ...page.content,
-        elements: newElements
-      }
-    })
+    updatePageContent()
   }
 
   function selectElement(id: string) {
@@ -68,32 +85,24 @@
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
-    const newElements = elements.map(el => 
+    console.log('Updating element:', id, 'with updates:', updates)
+    
+    elements = elements.map(el => 
       el.id === id ? { ...el, ...updates } : el
     )
     
-    dispatch('update', {
-      content: {
-        ...page.content,
-        elements: newElements
-      }
-    })
+    console.log('Updated elements array:', elements)
+    updatePageContent()
   }
 
   function deleteElement(id: string) {
     if (readonly) return
     
-    const newElements = elements.filter(el => el.id !== id)
+    elements = elements.filter(el => el.id !== id)
     if (selectedElementId === id) {
       selectedElementId = null
     }
-    
-    dispatch('update', {
-      content: {
-        ...page.content,
-        elements: newElements
-      }
-    })
+    updatePageContent()
   }
 
   function getCanvasRect() {
