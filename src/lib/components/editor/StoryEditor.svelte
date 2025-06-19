@@ -3,11 +3,12 @@
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
+  import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import PageEditor from './PageEditor.svelte'
   import OrientationToggle from './OrientationToggle.svelte'
   import CollaboratorManager from './CollaboratorManager.svelte'
-  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home } from 'lucide-svelte'
+  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home, Pencil, Check, X } from 'lucide-svelte'
 
   export let storyId: string
 
@@ -15,6 +16,8 @@
   let orientation: 'landscape' | 'portrait' = 'landscape'
   let showSafetyZones = true
   let showCollaborators = false
+  let editingTitle = false
+  let editingTitleValue = ''
 
   $: story = $storiesStore.currentStory
   $: pages = $storiesStore.currentPages
@@ -37,6 +40,41 @@
 
   function navigateToDashboard() {
     window.location.hash = '#/dashboard'
+  }
+
+  function startEditingTitle() {
+    if (!canEdit() || !story) return
+    editingTitle = true
+    editingTitleValue = story.title
+  }
+
+  function cancelEditingTitle() {
+    editingTitle = false
+    editingTitleValue = ''
+  }
+
+  async function saveTitle() {
+    if (!story || !editingTitleValue.trim() || !canEdit()) return
+
+    try {
+      await storiesService.updateStory(story.id, {
+        title: editingTitleValue.trim(),
+        updated_at: new Date().toISOString()
+      })
+      editingTitle = false
+      editingTitleValue = ''
+    } catch (error) {
+      console.error('Failed to update story title:', error)
+      alert('Failed to update story title. Please try again.')
+    }
+  }
+
+  function handleTitleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      saveTitle()
+    } else if (event.key === 'Escape') {
+      cancelEditingTitle()
+    }
   }
 
   onMount(async () => {
@@ -272,7 +310,40 @@
 
       <!-- Story title and info -->
       <div class="flex items-center gap-3">
-        <h1 class="text-lg font-semibold">{story?.title || 'Untitled Story'}</h1>
+        <!-- Editable Story Title -->
+        {#if editingTitle}
+          <div class="flex items-center gap-2">
+            <Input
+              bind:value={editingTitleValue}
+              on:keydown={handleTitleKeydown}
+              on:blur={saveTitle}
+              class="text-lg font-semibold min-w-[200px]"
+              autofocus
+            />
+            <Button variant="ghost" size="sm" on:click={saveTitle} title="Save title">
+              <Check class="w-3 h-3" />
+            </Button>
+            <Button variant="ghost" size="sm" on:click={cancelEditingTitle} title="Cancel editing">
+              <X class="w-3 h-3" />
+            </Button>
+          </div>
+        {:else}
+          <div class="flex items-center gap-2 group">
+            <h1 class="text-lg font-semibold">{story?.title || 'Untitled Story'}</h1>
+            {#if canEdit()}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                class="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                on:click={startEditingTitle}
+                title="Edit story title"
+              >
+                <Pencil class="w-3 h-3" />
+              </Button>
+            {/if}
+          </div>
+        {/if}
+
         <div class="text-sm text-muted-foreground">
           Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
         </div>
