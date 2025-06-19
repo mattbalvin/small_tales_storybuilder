@@ -143,7 +143,12 @@
               <Input
                 type="number"
                 value={localX}
-                on:input={(e) => handlePositionChange('x', e.target.value)}
+                on:input={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target) {
+                    handlePositionChange('x', target.value);
+                  }
+                }}
               />
             </div>
             <div>
@@ -151,7 +156,12 @@
               <Input
                 type="number"
                 value={localY}
-                on:input={(e) => handlePositionChange('y', e.target.value)}
+                on:input={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target) {
+                    handlePositionChange('y', target.value);
+                  }
+                }}
               />
             </div>
             <div>
@@ -159,7 +169,12 @@
               <Input
                 type="number"
                 value={localWidth}
-                on:input={(e) => handlePositionChange('width', e.target.value)}
+                on:input={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target) {
+                    handlePositionChange('width', target.value);
+                  }
+                }}
               />
             </div>
             <div>
@@ -167,7 +182,12 @@
               <Input
                 type="number"
                 value={localHeight}
-                on:input={(e) => handlePositionChange('height', e.target.value)}
+                on:input={(e) => {
+                  const target = e.target as HTMLInputElement;
+                  if (target) {
+                    handlePositionChange('height', target.value);
+                  }
+                }}
               />
             </div>
           </div>
@@ -182,7 +202,12 @@
                 <label class="text-xs text-muted-foreground">Content</label>
                 <Input
                   value={localText}
-                  on:input={(e) => handleTextPropertyChange('text', e.target.value)}
+                  on:input={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target) {
+                      handleTextPropertyChange('text', target.value);
+                    }
+                  }}
                 />
               </div>
               <div class="grid grid-cols-2 gap-2">
@@ -191,7 +216,12 @@
                   <Input
                     type="number"
                     value={localFontSize}
-                    on:input={(e) => handleTextPropertyChange('fontSize', parseInt(e.target.value) || 16)}
+                    on:input={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target) {
+                        handleTextPropertyChange('fontSize', parseInt(target.value) || 16);
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -199,7 +229,12 @@
                   <Input
                     type="color"
                     value={localColor}
-                    on:input={(e) => handleTextPropertyChange('color', e.target.value)}
+                    on:input={(e) => {
+                      const target = e.target as HTMLInputElement;
+                      if (target) {
+                        handleTextPropertyChange('color', target.value);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -214,14 +249,24 @@
                 <Input
                   value={localSrc}
                   placeholder="https://..."
-                  on:input={(e) => handleImagePropertyChange('src', e.target.value)}
+                  on:input={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target) {
+                      handleImagePropertyChange('src', target.value);
+                    }
+                  }}
                 />
               </div>
               <div>
                 <label class="text-xs text-muted-foreground">Alt Text</label>
                 <Input
                   value={localAlt}
-                  on:input={(e) => handleImagePropertyChange('alt', e.target.value)}
+                  on:input={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target) {
+                      handleImagePropertyChange('alt', target.value);
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -235,14 +280,24 @@
                 <Input
                   value={localSrc}
                   placeholder="https://..."
-                  on:input={(e) => handleAudioPropertyChange('src', e.target.value)}
+                  on:input={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target) {
+                      handleAudioPropertyChange('src', target.value);
+                    }
+                  }}
                 />
               </div>
               <div class="flex items-center gap-2">
                 <input
                   type="checkbox"
                   checked={localAutoplay}
-                  on:change={(e) => handleAudioPropertyChange('autoplay', e.target.checked)}
+                  on:change={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    if (target) {
+                      handleAudioPropertyChange('autoplay', target.checked);
+                    }
+                  }}
                 />
                 <label class="text-sm">Autoplay</label>
               </div>
