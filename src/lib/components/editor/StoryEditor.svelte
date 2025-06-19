@@ -7,7 +7,7 @@
   import PageEditor from './PageEditor.svelte'
   import OrientationToggle from './OrientationToggle.svelte'
   import CollaboratorManager from './CollaboratorManager.svelte'
-  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, ArrowLeft, Home } from 'lucide-svelte'
+  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home } from 'lucide-svelte'
 
   export let storyId: string
 
@@ -258,21 +258,18 @@
 <div class="h-screen flex flex-col bg-background">
   <!-- Header -->
   <header class="border-b bg-card px-4 py-3 flex items-center justify-between">
-    <!-- Left side - Navigation and Story Info -->
+    <!-- Left side - Home Icon and Story Info -->
     <div class="flex items-center gap-4">
-      <!-- Back to Dashboard Button -->
+      <!-- Home Icon -->
       <Button 
         variant="ghost" 
         size="sm" 
         on:click={navigateToDashboard}
         class="text-muted-foreground hover:text-foreground"
+        title="Return to dashboard"
       >
-        <ArrowLeft class="w-4 h-4 mr-2" />
-        Dashboard
+        <Home class="w-4 h-4" />
       </Button>
-
-      <!-- Breadcrumb separator -->
-      <span class="text-muted-foreground">/</span>
 
       <!-- Story title and info -->
       <div class="flex items-center gap-3">
@@ -350,35 +347,12 @@
       <Button variant="outline" size="sm">
         <Settings class="w-4 h-4" />
       </Button>
-
-      <!-- Additional Dashboard button for extra visibility -->
-      <Button 
-        variant="outline" 
-        size="sm"
-        on:click={navigateToDashboard}
-        title="Return to dashboard"
-      >
-        <Home class="w-4 h-4" />
-      </Button>
     </div>
   </header>
 
   <div class="flex-1 flex">
     <!-- Sidebar -->
     <aside class="w-64 border-r bg-card p-4 flex flex-col">
-      <!-- Dashboard Link at top of sidebar -->
-      <div class="mb-4 pb-4 border-b">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          class="w-full justify-start text-muted-foreground hover:text-foreground"
-          on:click={navigateToDashboard}
-        >
-          <ArrowLeft class="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-      </div>
-
       <div class="space-y-4 flex-1">
         <!-- Pages Header with Add Button -->
         <div class="flex items-center justify-between">
@@ -520,21 +494,9 @@
                 }
               </p>
               {#if canEdit()}
-                <div class="space-y-3">
-                  <Button on:click={addNewPage} class="w-full" size="lg">
-                    <Plus class="w-4 h-4 mr-2" />
-                    Add First Page
-                  </Button>
-                  <div class="text-xs text-muted-foreground space-y-1">
-                    <p>You can also use the buttons in:</p>
-                    <p>• Header toolbar</p>
-                    <p>• Sidebar</p>
-                  </div>
-                </div>
-              {:else}
-                <Button variant="outline" on:click={navigateToDashboard} class="w-full">
-                  <ArrowLeft class="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                <Button on:click={addNewPage} class="w-full" size="lg">
+                  <Plus class="w-4 h-4 mr-2" />
+                  Add First Page
                 </Button>
               {/if}
             </Card>
@@ -546,15 +508,9 @@
               <p class="text-muted-foreground mb-4">
                 The selected page doesn't exist. Current index: {currentPageIndex}, Pages: {pages.length}
               </p>
-              <div class="space-y-2">
-                <Button on:click={() => goToPage(0)} class="w-full">
-                  Go to First Page
-                </Button>
-                <Button variant="outline" on:click={navigateToDashboard} class="w-full">
-                  <ArrowLeft class="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </div>
+              <Button on:click={() => goToPage(0)} class="w-full">
+                Go to First Page
+              </Button>
             </Card>
           </div>
         {/if}
