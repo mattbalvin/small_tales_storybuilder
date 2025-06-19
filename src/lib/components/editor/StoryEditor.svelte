@@ -19,14 +19,26 @@
   $: story = $storiesStore.currentStory
   $: pages = $storiesStore.currentPages
   $: currentPage = pages[currentPageIndex]
-  $: userPermission = $authStore.user ? storiesService.getUserPermissionLevel($authStore.user.id) : null
+  $: collaborators = $storiesStore.currentCollaborators
+  $: userPermission = getUserPermissionLevel()
+
+  // Get user permission level from collaborators
+  function getUserPermissionLevel(): 'owner' | 'editor' | 'viewer' | null {
+    if (!$authStore.user || !collaborators.length) return null
+    
+    const userCollaboration = collaborators.find(c => c.user_id === $authStore.user!.id)
+    return userCollaboration?.permission_level as 'owner' | 'editor' | 'viewer' | null
+  }
 
   onMount(async () => {
+    console.log('StoryEditor mounted with storyId:', storyId)
+    
     if (storyId) {
       await storiesService.loadStoryPages(storyId)
       
-      // If no pages exist, create a default blank page
+      // If no pages exist, create a default blank page (only if user can edit)
       if ($storiesStore.currentPages.length === 0 && canEdit()) {
+        console.log('No pages found, creating default page')
         await createDefaultPage()
       }
     }
@@ -38,8 +50,13 @@
   }
 
   async function createDefaultPage() {
-    if (!story || !$authStore.user || !canEdit()) return
+    if (!story || !$authStore.user || !canEdit()) {
+      console.log('Cannot create default page:', { hasStory: !!story, hasUser: !!$authStore.user, canEdit: canEdit() })
+      return
+    }
 
+    console.log('Creating default page for story:', story.id)
+    
     const defaultPage = {
       story_id: story.id,
       page_number: 1,
@@ -50,12 +67,22 @@
       }
     }
 
-    await storiesService.createPage(defaultPage)
-    currentPageIndex = 0
+    try {
+      await storiesService.createPage(defaultPage)
+      currentPageIndex = 0
+      console.log('Default page created successfully')
+    } catch (error) {
+      console.error('Failed to create default page:', error)
+    }
   }
 
   async function addNewPage() {
-    if (!story || !$authStore.user || !canEdit()) return
+    if (!story || !$authStore.user || !canEdit()) {
+      console.log('Cannot add page:', { hasStory: !!story, hasUser: !!$authStore.user, canEdit: canEdit() })
+      return
+    }
+
+    console.log('Adding new page to story:', story.id)
 
     const newPage = {
       story_id: story.id,
@@ -67,8 +94,13 @@
       }
     }
 
-    await storiesService.createPage(newPage)
-    currentPageIndex = pages.length - 1
+    try {
+      await storiesService.createPage(newPage)
+      currentPageIndex = pages.length - 1
+      console.log('New page added successfully')
+    } catch (error) {
+      console.error('Failed to add new page:', error)
+    }
   }
 
   async function duplicatePage(pageIndex: number) {
@@ -81,8 +113,12 @@
       content: JSON.parse(JSON.stringify(originalPage.content)) // Deep copy
     }
 
-    await storiesService.createPage(newPage)
-    currentPageIndex = pages.length - 1
+    try {
+      await storiesService.createPage(newPage)
+      currentPageIndex = pages.length - 1
+    } catch (error) {
+      console.error('Failed to duplicate page:', error)
+    }
   }
 
   async function deletePage(pageIndex: number) {
@@ -93,15 +129,20 @@
     }
 
     const pageToDelete = pages[pageIndex]
-    await storiesService.deletePage(pageToDelete.id)
+    
+    try {
+      await storiesService.deletePage(pageToDelete.id)
 
-    // Adjust current page index if necessary
-    if (currentPageIndex >= pageIndex && currentPageIndex > 0) {
-      currentPageIndex = currentPageIndex - 1
+      // Adjust current page index if necessary
+      if (currentPageIndex >= pageIndex && currentPageIndex > 0) {
+        currentPageIndex = currentPageIndex - 1
+      }
+
+      // Renumber remaining pages
+      await renumberPages()
+    } catch (error) {
+      console.error('Failed to delete page:', error)
     }
-
-    // Renumber remaining pages
-    await renumberPages()
   }
 
   async function renumberPages() {
@@ -114,7 +155,11 @@
 
     for (const update of updates) {
       if (pages.find(p => p.id === update.id)?.page_number !== update.page_number) {
-        await storiesService.updatePage(update.id, { page_number: update.page_number })
+        try {
+          await storiesService.updatePage(update.id, { page_number: update.page_number })
+        } catch (error) {
+          console.error('Failed to renumber page:', error)
+        }
       }
     }
   }
@@ -122,9 +167,14 @@
   async function saveStory() {
     if (!story || !canEdit()) return
 
-    await storiesService.updateStory(story.id, {
-      updated_at: new Date().toISOString()
-    })
+    try {
+      await storiesService.updateStory(story.id, {
+        updated_at: new Date().toISOString()
+      })
+      console.log('Story saved successfully')
+    } catch (error) {
+      console.error('Failed to save story:', error)
+    }
   }
 
   function goToPage(index: number) {
@@ -132,11 +182,15 @@
   }
 
   function canEdit(): boolean {
-    return userPermission === 'owner' || userPermission === 'editor'
+    const permission = getUserPermissionLevel()
+    const result = permission === 'owner' || permission === 'editor'
+    console.log('canEdit check:', { permission, result, userId: $authStore.user?.id, collaborators: collaborators.length })
+    return result
   }
 
   function canManage(): boolean {
-    return userPermission === 'owner'
+    const permission = getUserPermissionLevel()
+    return permission === 'owner'
   }
 
   function getPermissionIcon(permission: string | null) {
@@ -156,6 +210,20 @@
       default: return 'text-gray-600'
     }
   }
+
+  // Debug logging
+  $: console.log('StoryEditor state:', {
+    storyId,
+    hasStory: !!story,
+    storyTitle: story?.title,
+    pagesCount: pages.length,
+    currentPageIndex,
+    userPermission,
+    canEdit: canEdit(),
+    canManage: canManage(),
+    collaboratorsCount: collaborators.length,
+    userId: $authStore.user?.id
+  })
 </script>
 
 <div class="h-screen flex flex-col bg-background">

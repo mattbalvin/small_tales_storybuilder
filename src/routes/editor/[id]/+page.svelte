@@ -7,9 +7,11 @@
   import Card from '$lib/components/ui/card.svelte'
   import { LogIn, FileEdit as Edit, AlertCircle } from 'lucide-svelte'
 
-  export let id: string
+  // This component receives params from svelte-spa-router
+  export let params = {}
 
-  $: storyId = id
+  // Extract the id from params
+  $: storyId = params.id
   $: story = $storiesStore.currentStory
   $: currentStoryLoading = $storiesStore.currentStoryLoading
 
@@ -29,6 +31,7 @@
 
   // Reactive statement to handle authentication redirect
   $: if (!$authStore.loading && !$authStore.user) {
+    console.log('User not authenticated, redirecting to auth')
     window.location.hash = '#/auth'
   }
 
@@ -39,6 +42,7 @@
         storyId.trim() !== '' && 
         (!story || story.id !== storyId) && 
         !currentStoryLoading) {
+    console.log('Loading story:', storyId, 'for user:', $authStore.user.id)
     loadStory(storyId)
   }
 
@@ -48,6 +52,7 @@
       console.log('Attempting to load story with ID:', id)
       console.log('Current user:', $authStore.user?.id)
       await storiesService.loadSingleStory(id, $authStore.user!.id)
+      console.log('Story loaded successfully')
     } catch (err: any) {
       console.error('Error loading story:', err)
       loadError = err.message || 'Failed to load story'
@@ -60,6 +65,18 @@
     console.error('Invalid story ID:', storyId)
     loadError = 'Invalid story ID provided'
   }
+
+  // Debug logging
+  $: console.log('Editor component state:', {
+    storyId,
+    hasStory: !!story,
+    storyTitle: story?.title,
+    authLoading: $authStore.loading,
+    hasUser: !!$authStore.user,
+    userId: $authStore.user?.id,
+    currentStoryLoading,
+    loadError
+  })
 </script>
 
 <svelte:head>
@@ -71,7 +88,10 @@
     <div class="text-center">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
       <p class="text-muted-foreground">
-        {$authStore.loading ? 'Loading...' : 'Loading story...'}
+        {$authStore.loading ? 'Loading user...' : 'Loading story...'}
+      </p>
+      <p class="text-xs text-muted-foreground mt-2">
+        Story ID: {storyId || 'Not provided'}
       </p>
     </div>
   </div>
@@ -110,6 +130,10 @@
       <p class="text-muted-foreground mb-6">
         {loadError}
       </p>
+      <div class="text-xs text-muted-foreground mb-4">
+        Story ID: {storyId || 'Not provided'}<br>
+        User ID: {$authStore.user?.id || 'Not available'}
+      </div>
       <div class="space-y-3">
         <Button class="w-full" on:click={() => loadStory(storyId)}>
           Try Again
@@ -134,6 +158,10 @@
       <p class="text-muted-foreground mb-6">
         The story you're looking for doesn't exist or you don't have permission to access it.
       </p>
+      <div class="text-xs text-muted-foreground mb-4">
+        Story ID: {storyId || 'Not provided'}<br>
+        User ID: {$authStore.user?.id || 'Not available'}
+      </div>
       <div class="space-y-3">
         <Button class="w-full" on:click={navigateToDashboard}>
           Back to Dashboard
