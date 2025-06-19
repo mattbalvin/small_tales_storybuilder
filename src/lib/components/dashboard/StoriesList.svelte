@@ -4,13 +4,17 @@
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
 
   $: stories = $storiesStore.stories
   $: loading = $storiesStore.loading
+
+  let deletingStoryId: string | null = null
+  let showDeleteConfirm = false
+  let storyToDelete: any = null
 
   onMount(async () => {
     if ($authStore.user) {
@@ -47,6 +51,37 @@
 
   function previewStory(storyId: string) {
     dispatch('preview-story', { storyId })
+  }
+
+  function confirmDeleteStory(story: any) {
+    storyToDelete = story
+    showDeleteConfirm = true
+  }
+
+  function cancelDelete() {
+    showDeleteConfirm = false
+    storyToDelete = null
+  }
+
+  async function deleteStory() {
+    if (!storyToDelete || !$authStore.user) return
+
+    deletingStoryId = storyToDelete.id
+    showDeleteConfirm = false
+
+    try {
+      // Delete the story - this will cascade delete all pages due to foreign key constraints
+      await storiesService.deleteStory(storyToDelete.id)
+      
+      // Reload stories to update the UI
+      await storiesService.loadStories($authStore.user.id)
+    } catch (error) {
+      console.error('Failed to delete story:', error)
+      alert('Failed to delete story. Please try again.')
+    } finally {
+      deletingStoryId = null
+      storyToDelete = null
+    }
   }
 
   function formatDate(dateString: string) {
@@ -154,8 +189,18 @@
                 <Eye class="w-3 h-3 mr-1" />
                 Preview
               </Button>
-              <Button variant="outline" size="sm">
-                <Trash2 class="w-3 h-3" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                class="text-destructive hover:text-destructive hover:bg-destructive/10"
+                on:click={() => confirmDeleteStory(story)}
+                disabled={deletingStoryId === story.id}
+              >
+                {#if deletingStoryId === story.id}
+                  <div class="w-3 h-3 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                {:else}
+                  <Trash2 class="w-3 h-3" />
+                {/if}
               </Button>
             </div>
           </div>
@@ -164,3 +209,51 @@
     </div>
   {/if}
 </div>
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteConfirm && storyToDelete}
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Card class="w-full max-w-md p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-destructive/10 rounded-full flex items-center justify-center">
+          <AlertTriangle class="w-5 h-5 text-destructive" />
+        </div>
+        <div>
+          <h3 class="text-lg font-semibold">Delete Story</h3>
+          <p class="text-sm text-muted-foreground">This action cannot be undone</p>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <p class="text-sm mb-3">
+          Are you sure you want to delete <strong>"{storyToDelete.title}"</strong>?
+        </p>
+        <div class="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+          <div class="flex items-start gap-2">
+            <AlertTriangle class="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+            <div class="text-sm text-destructive">
+              <p class="font-medium mb-1">This will permanently delete:</p>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li>The story and all its content</li>
+                <li>All story pages and elements</li>
+                <li>All collaborator access</li>
+                <li>Any analytics data</li>
+              </ul>
+              <p class="mt-2 font-medium">This action cannot be recovered.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <Button variant="outline" class="flex-1" on:click={cancelDelete}>
+          Cancel
+        </Button>
+        <Button variant="destructive" class="flex-1" on:click={deleteStory}>
+          <Trash2 class="w-4 h-4 mr-2" />
+          Delete Story
+        </Button>
+      </div>
+    </Card>
+  </div>
+{/if}

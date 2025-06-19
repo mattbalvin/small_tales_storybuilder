@@ -234,6 +234,21 @@ export const storiesService = {
     return data
   },
 
+  async deleteStory(id: string) {
+    const { error } = await supabase
+      .from('stories')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    storiesStore.update(state => ({
+      ...state,
+      stories: state.stories.filter(story => story.id !== id),
+      currentStory: state.currentStory?.id === id ? null : state.currentStory
+    }))
+  },
+
   async loadStoryPages(storyId: string) {
     const { data: pages, error } = await supabase
       .from('story_pages')
