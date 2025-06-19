@@ -30,7 +30,11 @@
   // Watch for page changes and update local elements
   $: if (page.content?.elements) {
     elements = [...page.content.elements]
+    console.log('Page content changed, updating elements:', elements)
   }
+
+  // Reactive statement to get selected element
+  $: selectedElement = selectedElementId ? elements.find(el => el.id === selectedElementId) : null
 
   $: aspectRatio = orientation === 'landscape' ? '16/9' : '9/16'
   $: safetyZoneClass = showSafetyZones 
@@ -42,6 +46,8 @@
       ...page.content,
       elements: [...elements]
     }
+    
+    console.log('Updating page content with elements:', elements)
     
     // Update the page object immediately for local reactivity
     page = {
@@ -80,19 +86,36 @@
   function selectElement(id: string) {
     if (readonly) return
     selectedElementId = id
+    console.log('Selected element:', id, 'Element data:', elements.find(el => el.id === id))
   }
 
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
-    console.log('Updating element:', id, 'with updates:', updates)
+    console.log('updateElement called:', { id, updates })
+    console.log('Current elements before update:', elements)
     
-    elements = elements.map(el => 
-      el.id === id ? { ...el, ...updates } : el
-    )
+    // Update the elements array
+    const newElements = elements.map(el => {
+      if (el.id === id) {
+        const updatedElement = { ...el, ...updates }
+        console.log('Updating element from:', el, 'to:', updatedElement)
+        return updatedElement
+      }
+      return el
+    })
     
-    console.log('Updated elements array:', elements)
+    elements = newElements
+    console.log('Elements after update:', elements)
+    
+    // Force reactivity by triggering the page content update
     updatePageContent()
+    
+    // Force a re-render by updating the selected element reference
+    if (selectedElementId === id) {
+      // This will trigger the reactive statement for selectedElement
+      selectedElementId = selectedElementId
+    }
   }
 
   function deleteElement(id: string) {
@@ -261,6 +284,14 @@
       selectedElementId = null
     }
   }
+
+  // Handle updates from ElementToolbar
+  function handleElementUpdate(event: CustomEvent) {
+    if (selectedElementId) {
+      console.log('Handling element update from toolbar:', event.detail)
+      updateElement(selectedElementId, event.detail)
+    }
+  }
 </script>
 
 <div class="h-full flex">
@@ -360,9 +391,9 @@
   {#if !readonly}
     <ElementToolbar 
       {selectedElementId}
-      selectedElement={elements.find(el => el.id === selectedElementId)}
+      selectedElement={selectedElement}
       on:add={(e) => addElement(e.detail.type)}
-      on:update={(e) => selectedElementId && updateElement(selectedElementId, e.detail)}
+      on:update={handleElementUpdate}
       on:delete={() => selectedElementId && deleteElement(selectedElementId)}
     />
   {/if}
