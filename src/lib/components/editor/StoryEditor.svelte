@@ -24,10 +24,15 @@
 
   // Get user permission level from collaborators
   function getUserPermissionLevel(): 'owner' | 'editor' | 'viewer' | null {
-    if (!$authStore.user || !collaborators.length) return null
+    if (!$authStore.user || !collaborators || collaborators.length === 0) {
+      console.log('No user or collaborators:', { hasUser: !!$authStore.user, collaboratorsLength: collaborators?.length || 0 })
+      return null
+    }
     
     const userCollaboration = collaborators.find(c => c.user_id === $authStore.user!.id)
-    return userCollaboration?.permission_level as 'owner' | 'editor' | 'viewer' | null
+    const permission = userCollaboration?.permission_level as 'owner' | 'editor' | 'viewer' | null
+    console.log('User permission found:', permission, 'for user:', $authStore.user.id)
+    return permission
   }
 
   onMount(async () => {
@@ -184,7 +189,13 @@
   function canEdit(): boolean {
     const permission = getUserPermissionLevel()
     const result = permission === 'owner' || permission === 'editor'
-    console.log('canEdit check:', { permission, result, userId: $authStore.user?.id, collaborators: collaborators.length })
+    console.log('canEdit check:', { 
+      permission, 
+      result, 
+      userId: $authStore.user?.id, 
+      collaboratorsLength: collaborators?.length || 0,
+      collaborators: collaborators?.map(c => ({ userId: c.user_id, permission: c.permission_level })) || []
+    })
     return result
   }
 
@@ -221,8 +232,13 @@
     userPermission,
     canEdit: canEdit(),
     canManage: canManage(),
-    collaboratorsCount: collaborators.length,
-    userId: $authStore.user?.id
+    collaboratorsCount: collaborators?.length || 0,
+    userId: $authStore.user?.id,
+    collaboratorDetails: collaborators?.map(c => ({ 
+      userId: c.user_id, 
+      permission: c.permission_level,
+      email: c.users?.email 
+    })) || []
   })
 </script>
 

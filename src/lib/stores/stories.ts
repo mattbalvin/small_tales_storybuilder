@@ -93,12 +93,12 @@ export const storiesService = {
         throw new Error('Story not found or access denied')
       }
 
-      // Load all collaborators for this story
+      // Load all collaborators for this story - FIX THE AMBIGUOUS RELATIONSHIP
       const { data: collaborators, error: collabError } = await supabase
         .from('story_collaborators')
         .select(`
           *,
-          users(
+          user:users!story_collaborators_user_id_fkey(
             id,
             email,
             full_name,
@@ -109,18 +109,26 @@ export const storiesService = {
         .not('accepted_at', 'is', null)
 
       if (collabError) {
-        console.warn('Failed to load collaborators:', collabError)
+        console.error('Failed to load collaborators:', collabError)
+        // Don't throw here, just log the error and continue without collaborators
       }
+
+      // Transform the data to match expected structure
+      const transformedCollaborators = (collaborators || []).map(collab => ({
+        ...collab,
+        users: collab.user // Rename user to users for backward compatibility
+      }))
 
       storiesStore.update(state => ({
         ...state,
         currentStory: storyData,
-        currentCollaborators: collaborators || [],
+        currentCollaborators: transformedCollaborators,
         currentStoryLoading: false
       }))
 
       console.log('Story loaded successfully:', storyData)
       console.log('User permission level:', storyData.story_collaborators[0]?.permission_level)
+      console.log('Collaborators loaded:', transformedCollaborators.length)
       return storyData
     } catch (error) {
       console.error('Error in loadSingleStory:', error)
@@ -316,7 +324,7 @@ export const storiesService = {
       })
       .select(`
         *,
-        users(
+        user:users!story_collaborators_user_id_fkey(
           id,
           email,
           full_name,
@@ -327,13 +335,19 @@ export const storiesService = {
 
     if (error) throw error
 
+    // Transform the data to match expected structure
+    const transformedData = {
+      ...data,
+      users: data.user
+    }
+
     // Update store
     storiesStore.update(state => ({
       ...state,
-      currentCollaborators: [...state.currentCollaborators, data]
+      currentCollaborators: [...state.currentCollaborators, transformedData]
     }))
 
-    return data
+    return transformedData
   },
 
   async removeCollaborator(storyId: string, userId: string) {
@@ -362,7 +376,7 @@ export const storiesService = {
       .eq('user_id', userId)
       .select(`
         *,
-        users(
+        user:users!story_collaborators_user_id_fkey(
           id,
           email,
           full_name,
@@ -373,24 +387,31 @@ export const storiesService = {
 
     if (error) throw error
 
+    // Transform the data to match expected structure
+    const transformedData = {
+      ...data,
+      users: data.user
+    }
+
     // Update store
     storiesStore.update(state => ({
       ...state,
       currentCollaborators: state.currentCollaborators.map(collab =>
-        collab.user_id === userId ? data : collab
+        collab.user_id === userId ? transformedData : collab
       )
     }))
 
-    return data
+    return transformedData
   },
 
   getUserPermissionLevel(userId: string): 'owner' | 'editor' | 'viewer' | null {
-    const store = storiesStore
     let currentCollaborators: StoryCollaborator[] = []
     
-    store.subscribe(state => {
+    // Get current value from store
+    const unsubscribe = storiesStore.subscribe(state => {
       currentCollaborators = state.currentCollaborators
-    })()
+    })
+    unsubscribe() // Immediately unsubscribe since we just want the current value
 
     const collaborator = currentCollaborators.find(collab => collab.user_id === userId)
     return collaborator?.permission_level as 'owner' | 'editor' | 'viewer' | null
