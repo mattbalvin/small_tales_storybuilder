@@ -3,7 +3,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Type, Image, Volume2, Trash2, Move3D, Palette } from 'lucide-svelte'
+  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette } from 'lucide-svelte'
 
   export let selectedElementId: string | null
   export let selectedElement: any = null
