@@ -278,6 +278,20 @@ export const storiesService = {
     return data
   },
 
+  async deletePage(id: string) {
+    const { error } = await supabase
+      .from('story_pages')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    storiesStore.update(state => ({
+      ...state,
+      currentPages: state.currentPages.filter(page => page.id !== id)
+    }))
+  },
+
   async inviteCollaborator(storyId: string, email: string, permissionLevel: 'editor' | 'viewer' = 'editor') {
     // First, find the user by email
     const { data: user, error: userError } = await supabase
