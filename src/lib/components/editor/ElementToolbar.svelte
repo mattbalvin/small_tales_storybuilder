@@ -8,6 +8,9 @@
   export let selectedElementId: string | null
   export let selectedElement: any = null
 
+  $: localElement = selectedElement
+  $: localElementId = selectedElementId
+  
   const dispatch = createEventDispatcher()
 
   function addElement(type: 'text' | 'image' | 'audio') {
@@ -34,40 +37,40 @@
 
   function handleTextPropertyChange(property: string, value: any) {
     console.log("handleTextPropertyChange: " + property + ' => ' + value)
-    if (!selectedElement || selectedElement.type !== 'text') return
+    if (!localElement || localElement.type !== 'text') return
     
     updateElement({
       properties: {
-        ...selectedElement.properties,
+        ...localElement.properties,
         [property]: value
       }
     })
   }
 
   function handleImagePropertyChange(property: string, value: any) {
-    if (!selectedElement || selectedElement.type !== 'image') return
+    if (!localElement || localElement.type !== 'image') return
     
     updateElement({
       properties: {
-        ...selectedElement.properties,
+        ...localElement.properties,
         [property]: value
       }
     })
   }
 
   function handleAudioPropertyChange(property: string, value: any) {
-    if (!selectedElement || selectedElement.type !== 'audio') return
+    if (!localElement || localElement.type !== 'audio') return
     
     updateElement({
       properties: {
-        ...selectedElement.properties,
+        ...localElement.properties,
         [property]: value
       }
     })
   }
 
   function handleAnimationChange(event: Event) {
-    if (event.target instanceof HTMLSelectElement && selectedElement) {
+    if (event.target instanceof HTMLSelectElement && localElement) {
       updateElement({ 
         animation: event.target.value === 'none' 
           ? null 
@@ -98,7 +101,7 @@
   </div>
 
   <!-- Element Properties -->
-  {#if selectedElement}
+  {#if localElement}
     <Card class="p-4">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-medium">Element Properties</h3>
@@ -116,7 +119,7 @@
               <label class="text-xs text-muted-foreground">X</label>
               <Input
                 type="number"
-                value={selectedElement.x || 0}
+                value={localElement.x || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('x', e.target.value);
@@ -128,7 +131,7 @@
               <label class="text-xs text-muted-foreground">Y</label>
               <Input
                 type="number"
-                value={selectedElement.y || 0}
+                value={localElement.y || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('y', e.target.value);
@@ -140,7 +143,7 @@
               <label class="text-xs text-muted-foreground">Width</label>
               <Input
                 type="number"
-                value={selectedElement.width || 0}
+                value={localElement.width || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('width', e.target.value);
@@ -152,7 +155,7 @@
               <label class="text-xs text-muted-foreground">Height</label>
               <Input
                 type="number"
-                value={selectedElement.height || 0}
+                value={localElement.height || 0}
                 on:input={(e) => {
                   if (e.target instanceof HTMLInputElement) {
                     handlePositionChange('height', e.target.value);
@@ -164,14 +167,14 @@
         </div>
 
         <!-- Type-specific properties -->
-        {#if selectedElement.type === 'text'}
+        {#if localElement.type === 'text'}
           <div>
             <h4 class="text-sm font-medium mb-2">Text Properties</h4>
             <div class="space-y-2">
               <div>
                 <label class="text-xs text-muted-foreground">Content</label>
                 <Input
-                  value={selectedElement.properties?.text || ''}
+                  value={localElement.properties?.text || ''}
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleTextPropertyChange('text', e.target.value);
@@ -184,7 +187,7 @@
                   <label class="text-xs text-muted-foreground">Font Size</label>
                   <Input
                     type="number"
-                    value={selectedElement.properties?.fontSize || 16}
+                    value={localElement.properties?.fontSize || 16}
                     on:input={(e) => {
                       if (e.target instanceof HTMLInputElement) {
                         handleTextPropertyChange('fontSize', parseInt(e.target.value) || 16);
@@ -196,7 +199,7 @@
                   <label class="text-xs text-muted-foreground">Color</label>
                   <Input
                     type="color"
-                    value={selectedElement.properties?.color || '#000000'}
+                    value={localElement.properties?.color || '#000000'}
                     on:input={(e) => {
                       if (e.target instanceof HTMLInputElement) {
                         handleTextPropertyChange('color', e.target.value);
@@ -207,14 +210,14 @@
               </div>
             </div>
           </div>
-        {:else if selectedElement.type === 'image'}
+        {:else if localElement.type === 'image'}
           <div>
             <h4 class="text-sm font-medium mb-2">Image Properties</h4>
             <div class="space-y-2">
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  value={selectedElement.properties?.src || ''}
+                  value={localElement.properties?.src || ''}
                   placeholder="https://..."
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
@@ -226,7 +229,7 @@
               <div>
                 <label class="text-xs text-muted-foreground">Alt Text</label>
                 <Input
-                  value={selectedElement.properties?.alt || ''}
+                  value={localElement.properties?.alt || ''}
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleImagePropertyChange('alt', e.target.value);
@@ -236,14 +239,14 @@
               </div>
             </div>
           </div>
-        {:else if selectedElement.type === 'audio'}
+        {:else if localElement.type === 'audio'}
           <div>
             <h4 class="text-sm font-medium mb-2">Audio Properties</h4>
             <div class="space-y-2">
               <div>
                 <label class="text-xs text-muted-foreground">Source URL</label>
                 <Input
-                  value={selectedElement.properties?.src || ''}
+                  value={localElement.properties?.src || ''}
                   placeholder="https://..."
                   on:input={(e) => {
                     if (e.target instanceof HTMLInputElement) {
@@ -255,7 +258,7 @@
               <div class="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={selectedElement.properties?.autoplay || false}
+                  checked={localElement.properties?.autoplay || false}
                   on:change={(e) => {
                     if (e.target instanceof HTMLInputElement) {
                       handleAudioPropertyChange('autoplay', e.target.checked);
@@ -273,7 +276,7 @@
           <h4 class="text-sm font-medium mb-2">Animation</h4>
           <select 
             class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={selectedElement.animation?.type || 'none'}
+            value={localElement.animation?.type || 'none'}
             on:change={handleAnimationChange}
           >
             <option value="none">No animation</option>
