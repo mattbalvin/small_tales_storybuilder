@@ -18,8 +18,10 @@
   const dispatch = createEventDispatcher()
 
   let selectedElementId: string | null = null
-  let elements = page.content?.elements || []
   let isDragging = false
+
+  // Make elements reactive to page changes
+  $: elements = page.content?.elements || []
 
   $: aspectRatio = orientation === 'landscape' ? '16/9' : '9/16'
   $: safetyZoneClass = showSafetyZones 
@@ -28,16 +30,12 @@
 
   function handleDrop(event: CustomEvent) {
     if (readonly) return
-    elements = event.detail.items
-    updatePageContent()
-  }
-
-  function updatePageContent() {
-    if (readonly) return
+    
+    // Dispatch the new elements array to parent
     dispatch('update', {
       content: {
         ...page.content,
-        elements
+        elements: event.detail.items
       }
     })
   }
@@ -59,9 +57,15 @@
         : { src: '', autoplay: false }
     }
 
-    elements = [...elements, newElement]
+    const newElements = [...elements, newElement]
     selectedElementId = newElement.id
-    updatePageContent()
+    
+    dispatch('update', {
+      content: {
+        ...page.content,
+        elements: newElements
+      }
+    })
   }
 
   function selectElement(id: string) {
@@ -72,20 +76,32 @@
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
-    elements = elements.map(el => 
+    const newElements = elements.map(el => 
       el.id === id ? { ...el, ...updates } : el
     )
-    updatePageContent()
+    
+    dispatch('update', {
+      content: {
+        ...page.content,
+        elements: newElements
+      }
+    })
   }
 
   function deleteElement(id: string) {
     if (readonly) return
     
-    elements = elements.filter(el => el.id !== id)
+    const newElements = elements.filter(el => el.id !== id)
     if (selectedElementId === id) {
       selectedElementId = null
     }
-    updatePageContent()
+    
+    dispatch('update', {
+      content: {
+        ...page.content,
+        elements: newElements
+      }
+    })
   }
 </script>
 
