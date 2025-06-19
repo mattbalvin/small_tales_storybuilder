@@ -7,7 +7,7 @@
   import PageEditor from './PageEditor.svelte'
   import OrientationToggle from './OrientationToggle.svelte'
   import CollaboratorManager from './CollaboratorManager.svelte'
-  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy } from 'lucide-svelte'
+  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, ArrowLeft, Home } from 'lucide-svelte'
 
   export let storyId: string
 
@@ -33,6 +33,10 @@
     const permission = userCollaboration?.permission_level as 'owner' | 'editor' | 'viewer' | null
     console.log('User permission found:', permission, 'for user:', $authStore.user.id)
     return permission
+  }
+
+  function navigateToDashboard() {
+    window.location.hash = '#/dashboard'
   }
 
   onMount(async () => {
@@ -254,22 +258,41 @@
 <div class="h-screen flex flex-col bg-background">
   <!-- Header -->
   <header class="border-b bg-card px-4 py-3 flex items-center justify-between">
+    <!-- Left side - Navigation and Story Info -->
     <div class="flex items-center gap-4">
-      <h1 class="text-lg font-semibold">{story?.title || 'Untitled Story'}</h1>
-      <div class="text-sm text-muted-foreground">
-        Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
-      </div>
-      
-      <!-- User permission indicator -->
-      {#if userPermission}
-        {@const PermissionIcon = getPermissionIcon(userPermission)}
-        <div class="flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs {getPermissionColor(userPermission)}">
-          <svelte:component this={PermissionIcon} class="w-3 h-3" />
-          <span class="capitalize">{userPermission}</span>
+      <!-- Back to Dashboard Button -->
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        on:click={navigateToDashboard}
+        class="text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft class="w-4 h-4 mr-2" />
+        Dashboard
+      </Button>
+
+      <!-- Breadcrumb separator -->
+      <span class="text-muted-foreground">/</span>
+
+      <!-- Story title and info -->
+      <div class="flex items-center gap-3">
+        <h1 class="text-lg font-semibold">{story?.title || 'Untitled Story'}</h1>
+        <div class="text-sm text-muted-foreground">
+          Page {pages.length > 0 ? currentPageIndex + 1 : 0} of {pages.length}
         </div>
-      {/if}
+        
+        <!-- User permission indicator -->
+        {#if userPermission}
+          {@const PermissionIcon = getPermissionIcon(userPermission)}
+          <div class="flex items-center gap-1 px-2 py-1 rounded-full bg-muted text-xs {getPermissionColor(userPermission)}">
+            <svelte:component this={PermissionIcon} class="w-3 h-3" />
+            <span class="capitalize">{userPermission}</span>
+          </div>
+        {/if}
+      </div>
     </div>
 
+    <!-- Right side - Actions -->
     <div class="flex items-center gap-2">
       <!-- Page management buttons in header - ALWAYS VISIBLE when user can edit -->
       {#if canEdit()}
@@ -327,12 +350,35 @@
       <Button variant="outline" size="sm">
         <Settings class="w-4 h-4" />
       </Button>
+
+      <!-- Additional Dashboard button for extra visibility -->
+      <Button 
+        variant="outline" 
+        size="sm"
+        on:click={navigateToDashboard}
+        title="Return to dashboard"
+      >
+        <Home class="w-4 h-4" />
+      </Button>
     </div>
   </header>
 
   <div class="flex-1 flex">
     <!-- Sidebar -->
     <aside class="w-64 border-r bg-card p-4 flex flex-col">
+      <!-- Dashboard Link at top of sidebar -->
+      <div class="mb-4 pb-4 border-b">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          class="w-full justify-start text-muted-foreground hover:text-foreground"
+          on:click={navigateToDashboard}
+        >
+          <ArrowLeft class="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       <div class="space-y-4 flex-1">
         <!-- Pages Header with Add Button -->
         <div class="flex items-center justify-between">
@@ -485,6 +531,11 @@
                     <p>• Sidebar</p>
                   </div>
                 </div>
+              {:else}
+                <Button variant="outline" on:click={navigateToDashboard} class="w-full">
+                  <ArrowLeft class="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
               {/if}
             </Card>
           </div>
@@ -495,9 +546,15 @@
               <p class="text-muted-foreground mb-4">
                 The selected page doesn't exist. Current index: {currentPageIndex}, Pages: {pages.length}
               </p>
-              <Button on:click={() => goToPage(0)}>
-                Go to First Page
-              </Button>
+              <div class="space-y-2">
+                <Button on:click={() => goToPage(0)} class="w-full">
+                  Go to First Page
+                </Button>
+                <Button variant="outline" on:click={navigateToDashboard} class="w-full">
+                  <ArrowLeft class="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </div>
             </Card>
           </div>
         {/if}
