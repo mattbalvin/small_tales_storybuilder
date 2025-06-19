@@ -178,11 +178,18 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- Page management buttons in header -->
+      <!-- Page management buttons in header - ALWAYS VISIBLE when user can edit -->
       {#if canEdit()}
-        <div class="flex items-center gap-1 border rounded-md">
-          <Button variant="ghost" size="sm" on:click={addNewPage} title="Add new page">
-            <Plus class="w-4 h-4" />
+        <div class="flex items-center gap-1 border rounded-md bg-background">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            on:click={addNewPage} 
+            title="Add new page"
+            class="rounded-r-none border-r"
+          >
+            <Plus class="w-4 h-4 mr-1" />
+            Add Page
           </Button>
           {#if pages.length > 1 && currentPage}
             <Button 
@@ -190,9 +197,10 @@
               size="sm" 
               on:click={() => deletePage(currentPageIndex)}
               title="Delete current page"
-              class="text-destructive hover:text-destructive"
+              class="text-destructive hover:text-destructive rounded-l-none"
             >
-              <Trash2 class="w-4 h-4" />
+              <Trash2 class="w-4 h-4 mr-1" />
+              Delete
             </Button>
           {/if}
         </div>
@@ -231,12 +239,18 @@
 
   <div class="flex-1 flex">
     <!-- Sidebar -->
-    <aside class="w-64 border-r bg-card p-4">
-      <div class="space-y-4">
+    <aside class="w-64 border-r bg-card p-4 flex flex-col">
+      <div class="space-y-4 flex-1">
+        <!-- Pages Header with Add Button -->
         <div class="flex items-center justify-between">
           <h2 class="font-medium">Pages</h2>
           {#if canEdit()}
-            <Button size="sm" on:click={addNewPage} title="Add new page">
+            <Button 
+              size="sm" 
+              on:click={addNewPage} 
+              title="Add new page"
+              class="h-8 w-8 p-0"
+            >
               <Plus class="w-4 h-4" />
             </Button>
           {/if}
@@ -256,7 +270,8 @@
             {/if}
           </Card>
         {:else}
-          <div class="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+          <!-- Pages List -->
+          <div class="space-y-2 flex-1 overflow-y-auto">
             {#each pages as page, index}
               <Card 
                 class="p-3 cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
@@ -295,35 +310,35 @@
               </Card>
             {/each}
           </div>
-
-          <!-- Page management actions -->
-          {#if canEdit()}
-            <div class="pt-2 border-t space-y-2">
-              <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
-                <Plus class="w-4 h-4 mr-2" />
-                Add Page
-              </Button>
-              {#if currentPage}
-                <Button variant="outline" size="sm" class="w-full" on:click={() => duplicatePage(currentPageIndex)}>
-                  <Copy class="w-4 h-4 mr-2" />
-                  Duplicate Current
-                </Button>
-                {#if pages.length > 1}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    class="w-full text-destructive hover:text-destructive" 
-                    on:click={() => deletePage(currentPageIndex)}
-                  >
-                    <Trash2 class="w-4 h-4 mr-2" />
-                    Delete Current
-                  </Button>
-                {/if}
-              {/if}
-            </div>
-          {/if}
         {/if}
       </div>
+
+      <!-- Page management actions at bottom -->
+      {#if canEdit() && pages.length > 0}
+        <div class="pt-4 border-t space-y-2">
+          <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
+            <Plus class="w-4 h-4 mr-2" />
+            Add Page
+          </Button>
+          {#if currentPage}
+            <Button variant="outline" size="sm" class="w-full" on:click={() => duplicatePage(currentPageIndex)}>
+              <Copy class="w-4 h-4 mr-2" />
+              Duplicate Current
+            </Button>
+            {#if pages.length > 1}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                class="w-full text-destructive hover:text-destructive" 
+                on:click={() => deletePage(currentPageIndex)}
+              >
+                <Trash2 class="w-4 h-4 mr-2" />
+                Delete Current
+              </Button>
+            {/if}
+          {/if}
+        </div>
+      {/if}
     </aside>
 
     <!-- Main Editor -->
@@ -355,14 +370,16 @@
                 }
               </p>
               {#if canEdit()}
-                <div class="space-y-2">
-                  <Button on:click={addNewPage} class="w-full">
+                <div class="space-y-3">
+                  <Button on:click={addNewPage} class="w-full" size="lg">
                     <Plus class="w-4 h-4 mr-2" />
                     Add First Page
                   </Button>
-                  <p class="text-xs text-muted-foreground">
-                    You can also use the + button in the sidebar or header
-                  </p>
+                  <div class="text-xs text-muted-foreground space-y-1">
+                    <p>You can also use the buttons in:</p>
+                    <p>• Header toolbar</p>
+                    <p>• Sidebar</p>
+                  </div>
                 </div>
               {/if}
             </Card>
