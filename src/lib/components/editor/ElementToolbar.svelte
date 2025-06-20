@@ -40,11 +40,11 @@
   }
 
   function moveElementUp(elementId: string) {
-    dispatch('move-up', { elementId })
+    dispatch('move-back', { elementId })
   }
 
   function moveElementDown(elementId: string) {
-    dispatch('move-down', { elementId })
+    dispatch('move-forward', { elementId })
   }
 
   function duplicateElement(elementId: string) {
