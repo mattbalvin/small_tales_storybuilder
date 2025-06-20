@@ -40,7 +40,7 @@
 <button
   class={cn(buttonVariants({ variant, size }), className)}
   {disabled}
-  on:click
+  on:click|stopPropagation
   {...$$restProps}
 >
   <slot />
