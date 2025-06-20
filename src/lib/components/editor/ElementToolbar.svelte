@@ -134,10 +134,13 @@
 
   // Sort elements by z-index (higher z-index = on top)
   $: sortedElements = [...elements].sort((a, b) => {
-    const aZ = a.zIndex || 0
-    const bZ = b.zIndex || 0
+    const aZ = a.zIndex ?? 0
+    const bZ = b.zIndex ?? 0
     return bZ - aZ // Higher z-index first (top to bottom in list)
   })
+
+  // Create a reactive map of element z-indices for efficient lookups
+  $: elementZIndexMap = new Map(elements.map(el => [el.id, el.zIndex ?? 0]))
 
   // Drag and drop handlers
   function handleDragStart(event: DragEvent, element: any) {
@@ -282,6 +285,7 @@
         <div class="space-y-1 max-h-64 overflow-y-auto">
           {#each sortedElements as element, index (element.id)}
             {@const ElementIcon = getElementIcon(element.type)}
+            {@const currentZIndex = elementZIndexMap.get(element.id) ?? 0}
             <div 
               class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group {localElementId === element.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'} {dragOverElement?.id === element.id ? 'bg-blue-100 border-blue-300' : ''}"
               draggable="true"
@@ -304,7 +308,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium truncate">{getElementDisplayName(element)}</p>
-                  <p class="text-xs text-muted-foreground">{element.type} • z:{element.zIndex || 0}</p>
+                  <p class="text-xs text-muted-foreground">{element.type} • z:{currentZIndex}</p>
                 </div>
               </div>
 
@@ -426,6 +430,47 @@
                 />
               </div>
             </div>
+          </div>
+
+          <!-- Z-Index Control -->
+          <div>
+            <h4 class="text-sm font-medium mb-2">Layer Order</h4>
+            <div class="flex items-center gap-2">
+              <Input
+                type="number"
+                value={localElement.zIndex ?? 0}
+                on:input={(e) => {
+                  if (e.target instanceof HTMLInputElement) {
+                    const newZIndex = parseInt(e.target.value) || 0;
+                    updateElement({ zIndex: Math.max(0, newZIndex) });
+                  }
+                }}
+                class="flex-1"
+              />
+              <div class="flex flex-col gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  class="h-6 px-2"
+                  on:click={() => moveElementUp(localElement.id)}
+                  title="Move forward"
+                >
+                  <ChevronUp class="w-3 h-3" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  class="h-6 px-2"
+                  on:click={() => moveElementDown(localElement.id)}
+                  title="Move backward"
+                >
+                  <ChevronDown class="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+              Higher values appear in front of lower values
+            </p>
           </div>
 
           <!-- Type-specific properties -->
