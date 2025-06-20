@@ -184,11 +184,11 @@
     const element = elements.find(el => el.id === id)
     if (!element) return
     
-    // Find the next higher z-index
-    const higherElements = elements.filter(el => (el.zIndex || 0) > (element.zIndex || 0))
-    if (higherElements.length === 0) return // Already at top
+    // Find the next lower z-index
+    const lowerElements = elements.filter(el => (el.zIndex || 0) < (element.zIndex || 0))
+    if (lowerElements.length === 0) return // Already at bottom
     
-    const nextZIndex = Math.min(...higherElements.map(el => el.zIndex || 0))
+    const nextZIndex = Math.max(...lowerElements.map(el => el.zIndex || 0))
     const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
@@ -214,11 +214,11 @@
     const element = elements.find(el => el.id === id)
     if (!element) return
     
-    // Find the next lower z-index
-    const lowerElements = elements.filter(el => (el.zIndex || 0) < (element.zIndex || 0))
-    if (lowerElements.length === 0) return // Already at bottom
+    // Find the next higher z-index
+    const higherElements = elements.filter(el => (el.zIndex || 0) > (element.zIndex || 0))
+    if (higherElements.length === 0) return // Already at top
     
-    const nextZIndex = Math.max(...lowerElements.map(el => el.zIndex || 0))
+    const nextZIndex = Math.min(...higherElements.map(el => el.zIndex || 0))
     const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
@@ -237,7 +237,7 @@
       updatePageContent()
     }
   }
-
+  
   function duplicateElement(id: string) {
     if (readonly) return
     
