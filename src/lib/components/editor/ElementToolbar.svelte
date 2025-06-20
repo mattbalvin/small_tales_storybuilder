@@ -154,6 +154,11 @@
       dispatch('delete-element', { elementId })
     }
   }
+
+  function handleElementClick(event: Event, elementId: string) {
+    event.stopPropagation()
+    selectElement(elementId)
+  }
 </script>
 
 <aside class="w-80 border-l bg-card flex flex-col h-full">
@@ -198,7 +203,7 @@
             {@const ElementIcon = getElementIcon(element.type)}
             <div 
               class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group {localElementId === element.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'}"
-              on:click={() => selectElement(element.id)}
+              on:click={(event) => handleElementClick(event, element.id)}
             >
               <!-- Element Icon and Info -->
               <div class="flex items-center gap-2 flex-1 min-w-0">
@@ -214,10 +219,8 @@
               <!-- Element Controls -->
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <!-- Visibility Toggle -->
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  class="h-6 w-6 p-0"
+                <button
+                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0"
                   on:click={(event) => handleToggleVisibility(event, element.id)}
                   title={element.hidden ? 'Show element' : 'Hide element'}
                 >
@@ -226,42 +229,36 @@
                   {:else}
                     <Eye class="w-3 h-3" />
                   {/if}
-                </Button>
+                </button>
 
                 <!-- Z-Order Controls -->
                 <div class="flex flex-col">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    class="h-3 w-6 p-0"
+                  <button
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveUp(event, element.id)}
                     disabled={index === 0}
                     title="Move to front"
                   >
                     <ChevronUp class="w-2 h-2" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    class="h-3 w-6 p-0"
+                  </button>
+                  <button
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveDown(event, element.id)}
                     disabled={index === sortedElements.length - 1}
                     title="Move to back"
                   >
                     <ChevronDown class="w-2 h-2" />
-                  </Button>
+                  </button>
                 </div>
 
                 <!-- Delete Button -->
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                <button
+                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0 text-destructive hover:text-destructive"
                   on:click={(event) => handleDeleteElement(event, element.id)}
                   title="Delete element"
                 >
                   <Trash2 class="w-3 h-3" />
-                </Button>
+                </button>
               </div>
             </div>
           {/each}
