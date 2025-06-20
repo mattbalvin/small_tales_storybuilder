@@ -52,23 +52,8 @@
   // Get current layout based on orientation
   $: currentLayout = page.content?.[orientation] || { elements: [], background: null, animation: null }
   
-  // Use local elements state that gets updated immediately for current orientation
-  let elements = currentLayout.elements || []
-
-  // Watch for page or orientation changes and update local elements
-  $: if (page.content?.[orientation]?.elements) {
-    elements = [...page.content[orientation].elements]
-    console.log(`Page content changed for ${orientation}, updating elements:`, elements)
-  }
-
-  // When orientation changes, update elements from the new layout
-  $: {
-    const newLayout = page.content?.[orientation] || { elements: [], background: null, animation: null }
-    elements = [...(newLayout.elements || [])]
-    // Clear selection when switching orientations
-    selectedElementId = null
-    console.log(`Switched to ${orientation} orientation, loaded ${elements.length} elements`)
-  }
+  // Simplified reactive elements declaration
+  $: elements = currentLayout.elements || []
 
   // Reactive statement to get selected element
   $: selectedElement = selectedElementId ? elements.find(el => el.id === selectedElementId) : null
@@ -148,6 +133,7 @@
         : { src: '', autoplay: false }
     }
 
+    // Update elements directly and trigger page content update
     elements = [...elements, newElement]
     selectedElementId = newElement.id
     updatePageContent()

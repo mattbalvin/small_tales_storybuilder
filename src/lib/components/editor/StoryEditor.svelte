@@ -113,9 +113,16 @@
       story_id: story.id,
       page_number: 1,
       content: {
-        elements: [],
-        background: null,
-        animation: null
+        landscape: {
+          elements: [],
+          background: null,
+          animation: null
+        },
+        portrait: {
+          elements: [],
+          background: null,
+          animation: null
+        }
       }
     }
 
@@ -140,9 +147,16 @@
       story_id: story.id,
       page_number: pages.length + 1,
       content: {
-        elements: [],
-        background: null,
-        animation: null
+        landscape: {
+          elements: [],
+          background: null,
+          animation: null
+        },
+        portrait: {
+          elements: [],
+          background: null,
+          animation: null
+        }
       }
     }
 
@@ -468,7 +482,7 @@
               >
                 <div class="text-sm font-medium">Page {index + 1}</div>
                 <div class="text-xs text-muted-foreground">
-                  {page.content?.elements?.length || 0} elements
+                  {(page.content?.[orientation]?.elements?.length || 0) + (page.content?.elements?.length || 0)} elements
                 </div>
                 
                 <!-- Page actions (show on hover) -->
