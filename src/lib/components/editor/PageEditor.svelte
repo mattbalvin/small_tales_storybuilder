@@ -24,7 +24,6 @@
   let resizeStartData = { x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 }
   let canvasElement: HTMLElement
   let viewportElement: HTMLElement
-  let canvasContainer: HTMLElement
 
   // Zoom and pan state
   let zoomLevel = 1
@@ -59,22 +58,9 @@
     ? (orientation === 'landscape' ? 'safety-zone-16-9' : 'safety-zone-9-16')
     : ''
 
-  // Calculate canvas dimensions based on viewport and orientation
+  // Canvas dimensions (logical size)
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
-
-  // Calculate base display dimensions (70% width for landscape, 80% height for portrait)
-  $: baseDisplayWidth = orientation === 'landscape' 
-    ? Math.min(canvasWidth, window.innerWidth * 0.7)
-    : Math.min(canvasWidth, (window.innerHeight * 0.8) * (9/16))
-  
-  $: baseDisplayHeight = orientation === 'portrait'
-    ? Math.min(canvasHeight, window.innerHeight * 0.8)
-    : Math.min(canvasHeight, (window.innerWidth * 0.7) * (9/16))
-
-  // Apply zoom to canvas dimensions only
-  $: scaledCanvasWidth = Math.max(canvasWidth * zoomLevel, canvasWidth * 0.1)
-  $: scaledCanvasHeight = Math.max(canvasHeight * zoomLevel, canvasHeight * 0.1)
 
   // Cursor styles based on key states
   $: cursorStyle = isCtrlPressed ? 'zoom-in' : isAltPressed ? 'move' : 'default'
@@ -171,7 +157,7 @@
     return canvasElement.getBoundingClientRect()
   }
 
-  // Fixed zoom function to center on cursor position and only affect canvas
+  // Fixed zoom function that only affects canvas content within viewport
   function handleZoom(delta: number, clientX?: number, clientY?: number) {
     if (readonly) return
 
@@ -190,25 +176,18 @@
       const mouseX = clientX - viewportRect.left
       const mouseY = clientY - viewportRect.top
       
-      // Calculate mouse position relative to canvas (accounting for current pan)
-      const canvasMouseX = mouseX - (canvasRect.left - viewportRect.left)
-      const canvasMouseY = mouseY - (canvasRect.top - viewportRect.top)
-      
-      // Calculate the point in canvas coordinates before zoom
-      const canvasPointX = canvasMouseX / oldZoom
-      const canvasPointY = canvasMouseY / oldZoom
+      // Calculate mouse position relative to canvas (accounting for current pan and zoom)
+      const canvasMouseX = (mouseX - panX) / oldZoom
+      const canvasMouseY = (mouseY - panY) / oldZoom
       
       // Update zoom level
       zoomLevel = newZoom
       
       // Calculate new pan to keep the same canvas point under the mouse
-      const newCanvasMouseX = canvasPointX * newZoom
-      const newCanvasMouseY = canvasPointY * newZoom
+      panX = mouseX - canvasMouseX * newZoom
+      panY = mouseY - canvasMouseY * newZoom
       
-      panX = panX + (canvasMouseX - newCanvasMouseX)
-      panY = panY + (canvasMouseY - newCanvasMouseY)
-      
-      // Constrain pan to reasonable bounds
+      // Constrain pan to keep canvas visible within viewport
       constrainPan()
     } else {
       // Zoom without specific point (center zoom)
@@ -236,14 +215,16 @@
     if (!viewportElement) return
 
     const viewportRect = viewportElement.getBoundingClientRect()
+    const scaledCanvasWidth = canvasWidth * zoomLevel
+    const scaledCanvasHeight = canvasHeight * zoomLevel
     
-    // Calculate the maximum pan values to keep canvas visible
-    const maxPanX = Math.max(0, scaledCanvasWidth - viewportRect.width + 100) // 100px buffer
-    const maxPanY = Math.max(0, scaledCanvasHeight - viewportRect.height + 100) // 100px buffer
+    // Calculate the maximum pan values to keep canvas visible within viewport
+    const maxPanX = Math.max(0, scaledCanvasWidth - viewportRect.width + 50) // 50px buffer
+    const maxPanY = Math.max(0, scaledCanvasHeight - viewportRect.height + 50) // 50px buffer
 
     // Allow some negative panning to keep content accessible
-    const minPanX = Math.min(0, -100) // Allow 100px negative pan
-    const minPanY = Math.min(0, -100) // Allow 100px negative pan
+    const minPanX = Math.min(0, -50) // Allow 50px negative pan
+    const minPanY = Math.min(0, -50) // Allow 50px negative pan
 
     panX = Math.max(minPanX, Math.min(maxPanX, panX))
     panY = Math.max(minPanY, Math.min(maxPanY, panY))
@@ -573,8 +554,8 @@
 </script>
 
 <div class="h-full flex">
-  <!-- Canvas Viewport - Fixed width to prevent zoom from affecting layout -->
-  <div class="flex-1 flex flex-col min-w-0">
+  <!-- Canvas Viewport - Fixed size container that never changes -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
     <!-- Zoom Controls -->
     <div class="flex items-center justify-between p-2 border-b bg-muted/30 flex-shrink-0">
       <div class="flex items-center gap-2">
@@ -616,125 +597,112 @@
       </div>
     </div>
 
-    <!-- Viewport Container - This contains the scrollable area -->
+    <!-- Viewport Container - This is the fixed-size scrollable area -->
     <div 
       bind:this={viewportElement}
-      class="flex-1 overflow-auto bg-muted/20 relative"
+      class="flex-1 overflow-hidden bg-muted/20 relative"
       style="cursor: {cursorStyle}"
       on:wheel={handleWheel}
       on:mousedown={handleViewportMouseDown}
       on:touchstart={handleTouchStart}
       on:touchmove={handleTouchMove}
     >
-      <!-- Canvas Container - This is positioned and sized independently -->
+      <!-- Canvas - This is positioned and scaled within the viewport -->
       <div 
-        bind:this={canvasContainer}
-        class="relative"
+        bind:this={canvasElement}
+        class={cn(
+          "absolute bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area overflow-hidden",
+          safetyZoneClass,
+          readonly && 'border-muted'
+        )}
         style="
-          width: {scaledCanvasWidth}px; 
-          height: {scaledCanvasHeight}px; 
-          transform: translate({panX}px, {panY}px);
-          min-width: {scaledCanvasWidth}px;
-          min-height: {scaledCanvasHeight}px;
+          width: {canvasWidth}px; 
+          height: {canvasHeight}px; 
+          transform: translate({panX}px, {panY}px) scale({zoomLevel});
+          transform-origin: 0 0;
         "
+        on:click={handleCanvasClick}
       >
-        <!-- Canvas - This scales with zoom but doesn't affect layout -->
-        <div 
-          bind:this={canvasElement}
-          class={cn(
-            "relative bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area overflow-hidden",
-            safetyZoneClass,
-            readonly && 'border-muted'
-          )}
-          style="
-            width: {canvasWidth}px; 
-            height: {canvasHeight}px; 
-            transform: scale({zoomLevel}); 
-            transform-origin: 0 0;
-          "
-          on:click={handleCanvasClick}
-        >
-          {#each elements as element (element.id)}
-            <div
-              class="absolute select-none group"
-              class:border-2={selectedElementId === element.id && !readonly}
-              class:border-primary={selectedElementId === element.id && !readonly}
-              class:border-transparent={selectedElementId !== element.id || readonly}
-              class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed}
-              class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
-              class:cursor-default={readonly || isPanning || isAltPressed}
-              style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
-              on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
-              on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
-            >
-              {#if element.type === 'text'}
-                <TextElement 
-                  {element} 
-                  {readonly}
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-                />
-              {:else if element.type === 'image'}
-                <ImageElement 
-                  {element} 
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-                />
-              {:else if element.type === 'audio'}
-                <AudioElement 
-                  {element} 
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-                />
-              {/if}
+        {#each elements as element (element.id)}
+          <div
+            class="absolute select-none group"
+            class:border-2={selectedElementId === element.id && !readonly}
+            class:border-primary={selectedElementId === element.id && !readonly}
+            class:border-transparent={selectedElementId !== element.id || readonly}
+            class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed}
+            class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
+            class:cursor-default={readonly || isPanning || isAltPressed}
+            style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
+            on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
+            on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
+          >
+            {#if element.type === 'text'}
+              <TextElement 
+                {element} 
+                {readonly}
+                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+              />
+            {:else if element.type === 'image'}
+              <ImageElement 
+                {element} 
+                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+              />
+            {:else if element.type === 'audio'}
+              <AudioElement 
+                {element} 
+                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+              />
+            {/if}
 
-              <!-- Resize handles (only show when selected and not readonly) -->
-              {#if selectedElementId === element.id && !readonly && !isAltPressed}
-                <div 
-                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
-                  style="left: -6px; top: -6px; z-index: 20;"
-                  data-handle="nw"
-                ></div>
-                <div 
-                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
-                  style="right: -6px; top: -6px; z-index: 20;"
-                  data-handle="ne"
-                ></div>
-                <div 
-                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
-                  style="left: -6px; bottom: -6px; z-index: 20;"
-                  data-handle="sw"
-                ></div>
-                <div 
-                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
-                  style="right: -6px; bottom: -6px; z-index: 20;"
-                  data-handle="se"
-                ></div>
-              {/if}
-            </div>
-          {/each}
+            <!-- Resize handles (only show when selected and not readonly) -->
+            {#if selectedElementId === element.id && !readonly && !isAltPressed}
+              <div 
+                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
+                style="left: -6px; top: -6px; z-index: 20;"
+                data-handle="nw"
+              ></div>
+              <div 
+                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
+                style="right: -6px; top: -6px; z-index: 20;"
+                data-handle="ne"
+              ></div>
+              <div 
+                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
+                style="left: -6px; bottom: -6px; z-index: 20;"
+                data-handle="sw"
+              ></div>
+              <div 
+                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
+                style="right: -6px; bottom: -6px; z-index: 20;"
+                data-handle="se"
+              ></div>
+            {/if}
+          </div>
+        {/each}
 
-          <!-- Drop zone when empty -->
-          {#if elements.length === 0}
-            <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
-              <div class="text-center">
-                <p class="text-lg font-medium mb-2">Empty page</p>
-                <p class="text-sm">
-                  {readonly ? 'This page has no content' : 'Add elements using the toolbar'}
-                </p>
-              </div>
+        <!-- Drop zone when empty -->
+        {#if elements.length === 0}
+          <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
+            <div class="text-center">
+              <p class="text-lg font-medium mb-2">Empty page</p>
+              <p class="text-sm">
+                {readonly ? 'This page has no content' : 'Add elements using the toolbar'}
+              </p>
             </div>
-          {/if}
+          </div>
+        {/if}
 
-          <!-- Readonly overlay -->
-          {#if readonly}
-            <div class="absolute top-2 right-2 px-2 py-1 bg-muted/80 rounded text-xs text-muted-foreground">
-              Read-only
-            </div>
-          {/if}
-        </div>
+        <!-- Readonly overlay -->
+        {#if readonly}
+          <div class="absolute top-2 right-2 px-2 py-1 bg-muted/80 rounded text-xs text-muted-foreground">
+            Read-only
+          </div>
+        {/if}
       </div>
     </div>
   </div>
 
-  <!-- Element Toolbar (only show if not readonly) - Fixed position, unaffected by zoom -->
+  <!-- Element Toolbar - Fixed position, unaffected by zoom -->
   {#if !readonly}
     <div class="flex-shrink-0">
       <ElementToolbar 
