@@ -218,14 +218,22 @@
     const scaledCanvasWidth = canvasWidth * zoomLevel
     const scaledCanvasHeight = canvasHeight * zoomLevel
     
-    // Calculate the maximum pan values to keep canvas visible within viewport
-    const maxPanX = Math.max(0, scaledCanvasWidth - viewportRect.width + 50) // 50px buffer
-    const maxPanY = Math.max(0, scaledCanvasHeight - viewportRect.height + 50) // 50px buffer
+    // Calculate 10% buffer for additional space
+    const bufferX = viewportRect.width * 0.1
+    const bufferY = viewportRect.height * 0.1
+    
+    // Calculate pan limits to allow bottom-right corner to be visible with buffer
+    // When panning left (negative panX), we want to see the right edge of canvas
+    // When panning up (negative panY), we want to see the bottom edge of canvas
+    const minPanX = -(scaledCanvasWidth - viewportRect.width + bufferX)
+    const minPanY = -(scaledCanvasHeight - viewportRect.height + bufferY)
+    
+    // When panning right (positive panX), we want to see the left edge of canvas
+    // When panning down (positive panY), we want to see the top edge of canvas
+    const maxPanX = bufferX
+    const maxPanY = bufferY
 
-    // Allow some negative panning to keep content accessible
-    const minPanX = Math.min(0, -50) // Allow 50px negative pan
-    const minPanY = Math.min(0, -50) // Allow 50px negative pan
-
+    // Apply constraints
     panX = Math.max(minPanX, Math.min(maxPanX, panX))
     panY = Math.max(minPanY, Math.min(maxPanY, panY))
   }
