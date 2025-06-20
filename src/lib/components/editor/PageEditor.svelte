@@ -170,7 +170,7 @@
     updateElement(id, { hidden: !elements.find(el => el.id === id)?.hidden })
   }
 
-  function moveElementUp(id: string) {
+  function moveElementBack(id: string) {
     if (readonly) return
     
     const element = elements.find(el => el.id === id)
@@ -200,7 +200,7 @@
     }
   }
 
-  function moveElementDown(id: string) {
+  function moveElementForward(id: string) {
     if (readonly) return
     
     const element = elements.find(el => el.id === id)
@@ -686,12 +686,12 @@
     toggleElementVisibility(event.detail.elementId)
   }
 
-  function handleMoveUp(event: CustomEvent) {
-    moveElementUp(event.detail.elementId)
+  function handleMoveBack(event: CustomEvent) {
+    moveElementBack(event.detail.elementId)
   }
 
-  function handleMoveDown(event: CustomEvent) {
-    moveElementDown(event.detail.elementId)
+  function handleMoveForward(event: CustomEvent) {
+    moveElementForward(event.detail.elementId)
   }
 
   function handleDuplicate(event: CustomEvent) {
@@ -894,8 +894,8 @@
         on:delete={() => selectedElementId && deleteElement(selectedElementId)}
         on:select={handleElementSelect}
         on:toggle-visibility={handleToggleVisibility}
-        on:move-up={handleMoveUp}
-        on:move-down={handleMoveDown}
+        on:move-back={handleMoveBack}
+        on:move-forward={handleMoveForward}
         on:duplicate={handleDuplicate}
         on:delete-element={handleDeleteElement}
         on:reorder={handleReorder}
