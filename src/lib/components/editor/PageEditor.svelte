@@ -25,6 +25,14 @@
   let canvasElement: HTMLElement
   let viewportElement: HTMLElement
 
+  // Smooth drag/resize state
+  let activeElementDOM: HTMLElement | null = null
+  let animationFrameId: number | null = null
+  let currentVisualX = 0
+  let currentVisualY = 0
+  let currentVisualWidth = 0
+  let currentVisualHeight = 0
+
   // Zoom and pan state
   let zoomLevel = 1
   let panX = 0
@@ -384,6 +392,17 @@
     panY = (viewportRect.height - canvasHeight * zoomLevel) / 2
   }
 
+  // Smooth visual update function
+  function updateElementVisuals() {
+    if (!activeElementDOM || (!isDragging && !isResizing)) return
+
+    // Apply visual changes directly to DOM
+    activeElementDOM.style.left = `${currentVisualX}px`
+    activeElementDOM.style.top = `${currentVisualY}px`
+    activeElementDOM.style.width = `${currentVisualWidth}px`
+    activeElementDOM.style.height = `${currentVisualHeight}px`
+  }
+
   // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
     if (readonly || isPanning || isAltPressed) return
@@ -395,6 +414,15 @@
     if (!element) return
 
     selectedElementId = elementId
+    
+    // Store reference to the DOM element
+    activeElementDOM = event.currentTarget as HTMLElement
+    
+    // Initialize visual state with current element values
+    currentVisualX = element.x
+    currentVisualY = element.y
+    currentVisualWidth = element.width
+    currentVisualHeight = element.height
     
     // Check if clicking on a resize handle
     const target = event.target as HTMLElement
@@ -436,7 +464,7 @@
   }
 
   function handleMouseMove(event: MouseEvent) {
-    if (!selectedElementId) return
+    if (!selectedElementId || !activeElementDOM) return
 
     const element = elements.find(el => el.id === selectedElementId)
     if (!element) return
@@ -457,10 +485,16 @@
         canvasHeight - element.height
       ))
       
-      updateElement(selectedElementId, {
-        x: Math.round(newX),
-        y: Math.round(newY)
-      })
+      // Update visual state
+      currentVisualX = Math.round(newX)
+      currentVisualY = Math.round(newY)
+      
+      // Cancel any pending animation frame and request a new one
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      animationFrameId = requestAnimationFrame(updateElementVisuals)
+      
     } else if (isResizing) {
       // Calculate mouse movement delta
       const deltaX = (event.clientX - resizeStartData.mouseX) / zoomLevel
@@ -513,16 +547,55 @@
       newWidth = Math.min(newWidth, canvasWidth - newX)
       newHeight = Math.min(newHeight, canvasHeight - newY)
 
-      updateElement(selectedElementId, {
-        x: Math.round(newX),
-        y: Math.round(newY),
-        width: Math.round(newWidth),
-        height: Math.round(newHeight)
-      })
+      // Update visual state
+      currentVisualX = Math.round(newX)
+      currentVisualY = Math.round(newY)
+      currentVisualWidth = Math.round(newWidth)
+      currentVisualHeight = Math.round(newHeight)
+      
+      // Cancel any pending animation frame and request a new one
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+      animationFrameId = requestAnimationFrame(updateElementVisuals)
     }
   }
 
   function handleMouseUp() {
+    // Cancel any pending animation frame
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId)
+      animationFrameId = null
+    }
+    
+    // Update Svelte state with final values
+    if (selectedElementId && (isDragging || isResizing)) {
+      const updates: any = {}
+      
+      if (isDragging) {
+        updates.x = currentVisualX
+        updates.y = currentVisualY
+      }
+      
+      if (isResizing) {
+        updates.x = currentVisualX
+        updates.y = currentVisualY
+        updates.width = currentVisualWidth
+        updates.height = currentVisualHeight
+      }
+      
+      updateElement(selectedElementId, updates)
+    }
+    
+    // Clear inline styles to let Svelte take back control
+    if (activeElementDOM) {
+      activeElementDOM.style.left = ''
+      activeElementDOM.style.top = ''
+      activeElementDOM.style.width = ''
+      activeElementDOM.style.height = ''
+      activeElementDOM = null
+    }
+    
     isDragging = false
     isResizing = false
     resizeHandle = ''
@@ -716,6 +789,11 @@
   })
 
   onDestroy(() => {
+    // Clean up any pending animation frames
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId)
+    }
+    
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('keyup', handleKeyUp)
     document.removeEventListener('mousemove', handleMouseMove)
@@ -805,7 +883,13 @@
             class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
             class:cursor-default={readonly || isPanning || isAltPressed}
             class:opacity-30={element.hidden}
-            style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {element.zIndex || 0};"
+            style="
+              left: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualX : element.x}px; 
+              top: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualY : element.y}px; 
+              width: {isResizing && selectedElementId === element.id ? currentVisualWidth : element.width}px; 
+              height: {isResizing && selectedElementId === element.id ? currentVisualHeight : element.height}px; 
+              z-index: {element.zIndex || 0};
+            "
             on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
             on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
           >
