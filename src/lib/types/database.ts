@@ -76,21 +76,66 @@ export interface Database {
           id: string
           story_id: string | null
           page_number: number
-          content: any
+          content: {
+            elements: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              x: number
+              y: number
+              width: number
+              height: number
+              zIndex: number
+              hidden: boolean
+              properties: any
+              animation?: any
+            }>
+            background?: any
+            animation?: any
+          }
           created_at: string
         }
         Insert: {
           id?: string
           story_id?: string | null
           page_number: number
-          content: any
+          content: {
+            elements?: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              x: number
+              y: number
+              width: number
+              height: number
+              zIndex?: number
+              hidden?: boolean
+              properties: any
+              animation?: any
+            }>
+            background?: any
+            animation?: any
+          }
           created_at?: string
         }
         Update: {
           id?: string
           story_id?: string | null
           page_number?: number
-          content?: any
+          content?: {
+            elements?: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              x: number
+              y: number
+              width: number
+              height: number
+              zIndex?: number
+              hidden?: boolean
+              properties: any
+              animation?: any
+            }>
+            background?: any
+            animation?: any
+          }
           created_at?: string
         }
       }
