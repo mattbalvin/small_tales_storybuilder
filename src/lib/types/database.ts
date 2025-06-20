@@ -77,20 +77,38 @@ export interface Database {
           story_id: string | null
           page_number: number
           content: {
-            elements: Array<{
-              id: string
-              type: 'text' | 'image' | 'audio'
-              x: number
-              y: number
-              width: number
-              height: number
-              zIndex: number
-              hidden: boolean
-              properties: any
+            landscape: {
+              elements: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex: number
+                hidden: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
               animation?: any
-            }>
-            background?: any
-            animation?: any
+            }
+            portrait: {
+              elements: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex: number
+                hidden: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
+              animation?: any
+            }
           }
           created_at: string
         }
@@ -99,20 +117,38 @@ export interface Database {
           story_id?: string | null
           page_number: number
           content: {
-            elements?: Array<{
-              id: string
-              type: 'text' | 'image' | 'audio'
-              x: number
-              y: number
-              width: number
-              height: number
-              zIndex?: number
-              hidden?: boolean
-              properties: any
+            landscape?: {
+              elements?: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex?: number
+                hidden?: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
               animation?: any
-            }>
-            background?: any
-            animation?: any
+            }
+            portrait?: {
+              elements?: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex?: number
+                hidden?: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
+              animation?: any
+            }
           }
           created_at?: string
         }
@@ -121,20 +157,38 @@ export interface Database {
           story_id?: string | null
           page_number?: number
           content?: {
-            elements?: Array<{
-              id: string
-              type: 'text' | 'image' | 'audio'
-              x: number
-              y: number
-              width: number
-              height: number
-              zIndex?: number
-              hidden?: boolean
-              properties: any
+            landscape?: {
+              elements?: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex?: number
+                hidden?: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
               animation?: any
-            }>
-            background?: any
-            animation?: any
+            }
+            portrait?: {
+              elements?: Array<{
+                id: string
+                type: 'text' | 'image' | 'audio'
+                x: number
+                y: number
+                width: number
+                height: number
+                zIndex?: number
+                hidden?: boolean
+                properties: any
+                animation?: any
+              }>
+              background?: any
+              animation?: any
+            }
           }
           created_at?: string
         }

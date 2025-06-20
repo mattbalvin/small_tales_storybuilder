@@ -49,13 +49,25 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
-  // Use local elements state that gets updated immediately
-  let elements = page.content?.elements || []
+  // Get current layout based on orientation
+  $: currentLayout = page.content?.[orientation] || { elements: [], background: null, animation: null }
+  
+  // Use local elements state that gets updated immediately for current orientation
+  let elements = currentLayout.elements || []
 
-  // Watch for page changes and update local elements
-  $: if (page.content?.elements) {
-    elements = [...page.content.elements]
-    console.log('Page content changed, updating elements:', elements)
+  // Watch for page or orientation changes and update local elements
+  $: if (page.content?.[orientation]?.elements) {
+    elements = [...page.content[orientation].elements]
+    console.log(`Page content changed for ${orientation}, updating elements:`, elements)
+  }
+
+  // When orientation changes, update elements from the new layout
+  $: {
+    const newLayout = page.content?.[orientation] || { elements: [], background: null, animation: null }
+    elements = [...(newLayout.elements || [])]
+    // Clear selection when switching orientations
+    selectedElementId = null
+    console.log(`Switched to ${orientation} orientation, loaded ${elements.length} elements`)
   }
 
   // Reactive statement to get selected element
@@ -81,12 +93,16 @@
   })
 
   function updatePageContent() {
+    // Create new content structure with both orientations
     const newContent = {
       ...page.content,
-      elements: [...elements]
+      [orientation]: {
+        ...currentLayout,
+        elements: [...elements]
+      }
     }
     
-    console.log('Updating page content with elements:', elements)
+    console.log(`Updating page content for ${orientation} with ${elements.length} elements:`, elements)
     
     // Update the page object immediately for local reactivity
     page = {
@@ -106,17 +122,27 @@
     // Find the highest z-index and add 1
     const maxZIndex = elements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
     
+    // Calculate default position based on orientation
+    const defaultX = orientation === 'landscape' ? 50 : 30
+    const defaultY = orientation === 'landscape' ? 50 : 80
+    const defaultWidth = orientation === 'landscape' 
+      ? (type === 'text' ? 300 : 200) 
+      : (type === 'text' ? 250 : 150)
+    const defaultHeight = orientation === 'landscape' 
+      ? (type === 'text' ? 100 : 150) 
+      : (type === 'text' ? 120 : 180)
+    
     const newElement = {
       id: Math.random().toString(36).substr(2, 9),
       type,
-      x: 50,
-      y: 50,
-      width: type === 'text' ? 300 : 200,
-      height: type === 'text' ? 100 : 150,
+      x: defaultX,
+      y: defaultY,
+      width: defaultWidth,
+      height: defaultHeight,
       zIndex: maxZIndex + 1,
       hidden: false,
       properties: type === 'text' 
-        ? { text: 'New text element', fontSize: 16, color: '#000000' }
+        ? { text: 'New text element', fontSize: orientation === 'landscape' ? 16 : 14, color: '#000000' }
         : type === 'image'
         ? { src: '', alt: '' }
         : { src: '', autoplay: false }
@@ -284,6 +310,51 @@
     
     elements = newElements
     updatePageContent()
+  }
+
+  function copyElementToOtherOrientation(id: string) {
+    if (readonly) return
+    
+    const element = elements.find(el => el.id === id)
+    if (!element) return
+    
+    const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
+    const otherLayout = page.content?.[otherOrientation] || { elements: [], background: null, animation: null }
+    
+    // Scale element position and size for the other orientation
+    const scaleX = otherOrientation === 'landscape' ? (1600 / 900) : (900 / 1600)
+    const scaleY = otherOrientation === 'landscape' ? (900 / 1600) : (1600 / 900)
+    
+    const scaledElement = {
+      ...element,
+      id: Math.random().toString(36).substr(2, 9), // New ID for the copy
+      x: Math.round(element.x * scaleX),
+      y: Math.round(element.y * scaleY),
+      width: Math.round(element.width * scaleX),
+      height: Math.round(element.height * scaleY),
+      zIndex: (otherLayout.elements || []).reduce((max, el) => Math.max(max, el.zIndex || 0), 0) + 1
+    }
+    
+    // Update the other orientation's layout
+    const newContent = {
+      ...page.content,
+      [otherOrientation]: {
+        ...otherLayout,
+        elements: [...(otherLayout.elements || []), scaledElement]
+      }
+    }
+    
+    // Update the page object and save
+    page = {
+      ...page,
+      content: newContent
+    }
+    
+    dispatch('update', {
+      content: newContent
+    })
+    
+    console.log(`Copied element to ${otherOrientation} orientation with scaled dimensions`)
   }
 
   function getCanvasRect() {
@@ -779,6 +850,10 @@
     reorderElements(event.detail.fromIndex, event.detail.toIndex)
   }
 
+  function handleCopyToOtherOrientation(event: CustomEvent) {
+    copyElementToOtherOrientation(event.detail.elementId)
+  }
+
   // Lifecycle
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -858,7 +933,7 @@
       </div>
       
       <div class="text-xs text-muted-foreground">
-        {readonly ? 'Read-only' : 'Ctrl+Wheel: Zoom • Alt+Drag: Pan'}
+        {readonly ? 'Read-only' : 'Ctrl+Wheel: Zoom • Alt+Drag: Pan'} • {orientation} ({canvasWidth}×{canvasHeight})
       </div>
     </div>
 
@@ -963,9 +1038,9 @@
         {#if elements.length === 0}
           <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
             <div class="text-center">
-              <p class="text-lg font-medium mb-2">Empty page</p>
+              <p class="text-lg font-medium mb-2">Empty {orientation} layout</p>
               <p class="text-sm">
-                {readonly ? 'This page has no content' : 'Add elements using the toolbar'}
+                {readonly ? 'This layout has no content' : 'Add elements using the toolbar'}
               </p>
             </div>
           </div>
@@ -988,6 +1063,7 @@
         {selectedElementId}
         selectedElement={selectedElement}
         {elements}
+        {orientation}
         on:add={(e) => addElement(e.detail.type)}
         on:update={handleElementUpdate}
         on:delete={() => selectedElementId && deleteElement(selectedElementId)}
@@ -998,6 +1074,7 @@
         on:duplicate={handleDuplicate}
         on:delete-element={handleDeleteElement}
         on:reorder={handleReorder}
+        on:copy-to-other-orientation={handleCopyToOtherOrientation}
       />
     </div>
   {/if}
