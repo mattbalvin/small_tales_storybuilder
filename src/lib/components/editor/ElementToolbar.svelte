@@ -605,7 +605,7 @@
                     />
                   </div>
                   <div>
-                    <label class="text-xs text-muted-foreground">Color</label>
+                    <label class="text-xs text-muted-foreground">Text Color</label>
                     <Input
                       type="color"
                       value={localElement.properties?.color || '#000000'}
@@ -615,6 +615,94 @@
                         }
                       }}
                     />
+                  </div>
+                </div>
+                
+                <!-- Background Color Section -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-2 block">Background</label>
+                  <div class="space-y-2">
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-xs text-muted-foreground">Background Color</label>
+                        <Input
+                          type="color"
+                          value={localElement.properties?.backgroundColor || '#ffffff'}
+                          on:input={(e) => {
+                            if (e.target instanceof HTMLInputElement) {
+                              handleTextPropertyChange('backgroundColor', e.target.value);
+                            }
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label class="text-xs text-muted-foreground">Opacity (%)</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={localElement.properties?.backgroundAlpha ?? 0}
+                          on:input={(e) => {
+                            if (e.target instanceof HTMLInputElement) {
+                              const alpha = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                              handleTextPropertyChange('backgroundAlpha', alpha);
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <!-- Background Preview -->
+                    {#if localElement.properties?.backgroundColor && localElement.properties?.backgroundAlpha > 0}
+                      <div class="mt-2">
+                        <label class="text-xs text-muted-foreground">Preview</label>
+                        <div 
+                          class="w-full h-8 rounded border border-input flex items-center justify-center text-xs"
+                          style="background-color: rgba({parseInt(localElement.properties.backgroundColor.slice(1, 3), 16)}, {parseInt(localElement.properties.backgroundColor.slice(3, 5), 16)}, {parseInt(localElement.properties.backgroundColor.slice(5, 7), 16)}, {(localElement.properties.backgroundAlpha || 0) / 100}); color: {localElement.properties?.color || '#000000'};"
+                        >
+                          Sample Text
+                        </div>
+                      </div>
+                    {/if}
+                    
+                    <!-- Quick Alpha Presets -->
+                    <div class="flex gap-1">
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleTextPropertyChange('backgroundAlpha', 0)}
+                      >
+                        None
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleTextPropertyChange('backgroundAlpha', 25)}
+                      >
+                        25%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleTextPropertyChange('backgroundAlpha', 50)}
+                      >
+                        50%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleTextPropertyChange('backgroundAlpha', 75)}
+                      >
+                        75%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleTextPropertyChange('backgroundAlpha', 100)}
+                      >
+                        100%
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
