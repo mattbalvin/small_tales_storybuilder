@@ -39,11 +39,11 @@
     dispatch('toggle-visibility', { elementId })
   }
 
-  function moveElementUp(elementId: string) {
+  function moveElementBack(elementId: string) {
     dispatch('move-back', { elementId })
   }
 
-  function moveElementDown(elementId: string) {
+  function moveElementForward(elementId: string) {
     dispatch('move-forward', { elementId })
   }
 
@@ -213,16 +213,16 @@
     toggleElementVisibility(elementId)
   }
 
-  function handleMoveUp(event: MouseEvent, elementId: string) {
+  function handleMoveBack(event: MouseEvent, elementId: string) {
     event.preventDefault()
     event.stopPropagation()
-    moveElementUp(elementId)
+    moveElementBack(elementId)
   }
 
-  function handleMoveDown(event: MouseEvent, elementId: string) {
+  function handleMoveForward(event: MouseEvent, elementId: string) {
     event.preventDefault()
     event.stopPropagation()
-    moveElementDown(elementId)
+    moveElementForward(elementId)
   }
 
   function handleDeleteElement(event: MouseEvent, elementId: string) {
@@ -333,18 +333,18 @@
                   <button
                     type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
-                    on:click={(event) => handleMoveUp(event, element.id)}
-                    disabled={index === sortedElements.length - 1}
-                    title="Move to front"
+                    on:click={(event) => handleMoveBack(event, element.id)}
+                    disabled={index === 0}
+                    title="Move back"
                   >
                     <ChevronUp class="w-2 h-2" />
                   </button>
                   <button
                     type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
-                    on:click={(event) => handleMoveDown(event, element.id)}
-                    disabled={index === 0}
-                    title="Move to back"
+                    on:click={(event) => handleMoveForward(event, element.id)}
+                    disabled={index === sortedElements.length - 1}
+                    title="Move forward"
                   >
                     <ChevronDown class="w-2 h-2" />
                   </button>
@@ -452,8 +452,8 @@
                   variant="outline" 
                   size="sm" 
                   class="h-6 px-2"
-                  on:click={() => moveElementUp(localElement.id)}
-                  title="Move forward"
+                  on:click={() => moveElementBack(localElement.id)}
+                  title="Move back"
                 >
                   <ChevronUp class="w-3 h-3" />
                 </Button>
@@ -461,8 +461,8 @@
                   variant="outline" 
                   size="sm" 
                   class="h-6 px-2"
-                  on:click={() => moveElementDown(localElement.id)}
-                  title="Move backward"
+                  on:click={() => moveElementForward(localElement.id)}
+                  title="Move forward"
                 >
                   <ChevronDown class="w-3 h-3" />
                 </Button>
