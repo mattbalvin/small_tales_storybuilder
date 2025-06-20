@@ -171,37 +171,57 @@
     return canvasElement.getBoundingClientRect()
   }
 
-  // Zoom functions
+  // Fixed zoom function to center on cursor position
   function handleZoom(delta: number, clientX?: number, clientY?: number) {
     if (readonly) return
 
     const zoomFactor = 1.1
+    const oldZoom = zoomLevel
     const newZoom = delta > 0 
       ? Math.min(zoomLevel * zoomFactor, 5) 
       : Math.max(zoomLevel / zoomFactor, 0.1)
 
     if (clientX !== undefined && clientY !== undefined && viewportElement) {
-      // Zoom towards mouse position
-      const rect = viewportElement.getBoundingClientRect()
-      const mouseX = clientX - rect.left
-      const mouseY = clientY - rect.top
-
-      // Calculate the point in canvas coordinates
-      const canvasX = (mouseX - panX) / zoomLevel
-      const canvasY = (mouseY - panY) / zoomLevel
-
-      // Update zoom
+      // Get viewport rectangle
+      const viewportRect = viewportElement.getBoundingClientRect()
+      
+      // Calculate mouse position relative to viewport
+      const mouseX = clientX - viewportRect.left
+      const mouseY = clientY - viewportRect.top
+      
+      // Calculate the point in canvas coordinates before zoom
+      const canvasPointX = (mouseX - panX) / oldZoom
+      const canvasPointY = (mouseY - panY) / oldZoom
+      
+      // Update zoom level
       zoomLevel = newZoom
-
-      // Adjust pan to keep the same point under the mouse
-      panX = mouseX - canvasX * zoomLevel
-      panY = mouseY - canvasY * zoomLevel
+      
+      // Calculate new pan to keep the same canvas point under the mouse
+      panX = mouseX - canvasPointX * newZoom
+      panY = mouseY - canvasPointY * newZoom
+      
+      // Constrain pan to reasonable bounds
+      constrainPan()
     } else {
-      zoomLevel = newZoom
+      // Zoom without specific point (center zoom)
+      const viewportRect = viewportElement?.getBoundingClientRect()
+      if (viewportRect) {
+        const centerX = viewportRect.width / 2
+        const centerY = viewportRect.height / 2
+        
+        const canvasPointX = (centerX - panX) / oldZoom
+        const canvasPointY = (centerY - panY) / oldZoom
+        
+        zoomLevel = newZoom
+        
+        panX = centerX - canvasPointX * newZoom
+        panY = centerY - canvasPointY * newZoom
+        
+        constrainPan()
+      } else {
+        zoomLevel = newZoom
+      }
     }
-
-    // Constrain pan to reasonable bounds
-    constrainPan()
   }
 
   function constrainPan() {
@@ -211,8 +231,12 @@
     const maxPanX = Math.max(0, scaledWidth - viewportRect.width)
     const maxPanY = Math.max(0, scaledHeight - viewportRect.height)
 
-    panX = Math.max(-maxPanX, Math.min(maxPanX, panX))
-    panY = Math.max(-maxPanY, Math.min(maxPanY, panY))
+    // Allow some negative panning to keep content accessible
+    const minPanX = Math.min(0, -maxPanX)
+    const minPanY = Math.min(0, -maxPanY)
+
+    panX = Math.max(minPanX, Math.min(maxPanX, panX))
+    panY = Math.max(minPanY, Math.min(maxPanY, panY))
   }
 
   function resetZoom() {
@@ -229,6 +253,8 @@
     const scaleY = viewportRect.height / canvasHeight
     
     zoomLevel = Math.min(scaleX, scaleY) * 0.9 // 90% to leave some margin
+    
+    // Center the canvas in the viewport
     panX = (viewportRect.width - canvasWidth * zoomLevel) / 2
     panY = (viewportRect.height - canvasHeight * zoomLevel) / 2
   }
@@ -493,7 +519,7 @@
         y: (touch1.clientY + touch2.clientY) / 2
       }
 
-      // Zoom
+      // Zoom towards touch center
       if (lastTouchDistance > 0) {
         const zoomDelta = currentDistance - lastTouchDistance
         handleZoom(zoomDelta * 0.01, currentCenter.x, currentCenter.y)
