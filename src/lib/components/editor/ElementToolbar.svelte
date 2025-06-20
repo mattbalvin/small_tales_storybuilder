@@ -129,6 +129,31 @@
     const bZ = b.zIndex || 0
     return bZ - aZ // Higher z-index first (top to bottom in list)
   })
+
+  // Event handlers that prevent propagation
+  function handleToggleVisibility(event: Event, elementId: string) {
+    event.stopPropagation()
+    toggleElementVisibility(elementId)
+  }
+
+  function handleMoveUp(event: Event, elementId: string) {
+    event.stopPropagation()
+    moveElementUp(elementId)
+  }
+
+  function handleMoveDown(event: Event, elementId: string) {
+    event.stopPropagation()
+    moveElementDown(elementId)
+  }
+
+  function handleDeleteElement(event: Event, elementId: string) {
+    event.stopPropagation()
+    if (localElementId === elementId) {
+      deleteElement()
+    } else {
+      dispatch('delete-element', { elementId })
+    }
+  }
 </script>
 
 <aside class="w-80 border-l bg-card flex flex-col h-full">
@@ -193,7 +218,7 @@
                   variant="ghost" 
                   size="sm" 
                   class="h-6 w-6 p-0"
-                  on:click|stopPropagation={() => toggleElementVisibility(element.id)}
+                  on:click={(event) => handleToggleVisibility(event, element.id)}
                   title={element.hidden ? 'Show element' : 'Hide element'}
                 >
                   {#if element.hidden}
@@ -209,7 +234,7 @@
                     variant="ghost" 
                     size="sm" 
                     class="h-3 w-6 p-0"
-                    on:click|stopPropagation={() => moveElementUp(element.id)}
+                    on:click={(event) => handleMoveUp(event, element.id)}
                     disabled={index === 0}
                     title="Move to front"
                   >
@@ -219,7 +244,7 @@
                     variant="ghost" 
                     size="sm" 
                     class="h-3 w-6 p-0"
-                    on:click|stopPropagation={() => moveElementDown(element.id)}
+                    on:click={(event) => handleMoveDown(event, element.id)}
                     disabled={index === sortedElements.length - 1}
                     title="Move to back"
                   >
@@ -232,13 +257,7 @@
                   variant="ghost" 
                   size="sm" 
                   class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                  on:click|stopPropagation={() => {
-                    if (localElementId === element.id) {
-                      deleteElement()
-                    } else {
-                      dispatch('delete-element', { elementId: element.id })
-                    }
-                  }}
+                  on:click={(event) => handleDeleteElement(event, element.id)}
                   title="Delete element"
                 >
                   <Trash2 class="w-3 h-3" />
