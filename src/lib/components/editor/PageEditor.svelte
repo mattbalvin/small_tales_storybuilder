@@ -63,18 +63,18 @@
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
 
-  // Calculate display dimensions (70% width for landscape, 80% height for portrait)
-  $: displayWidth = orientation === 'landscape' 
+  // Calculate base display dimensions (70% width for landscape, 80% height for portrait)
+  $: baseDisplayWidth = orientation === 'landscape' 
     ? Math.min(canvasWidth, window.innerWidth * 0.7)
     : Math.min(canvasWidth, (window.innerHeight * 0.8) * (9/16))
   
-  $: displayHeight = orientation === 'portrait'
+  $: baseDisplayHeight = orientation === 'portrait'
     ? Math.min(canvasHeight, window.innerHeight * 0.8)
     : Math.min(canvasHeight, (window.innerWidth * 0.7) * (9/16))
 
-  // Apply zoom and ensure minimum size
-  $: scaledWidth = Math.max(displayWidth * zoomLevel, 400)
-  $: scaledHeight = Math.max(displayHeight * zoomLevel, 225)
+  // Apply zoom to canvas dimensions only
+  $: scaledCanvasWidth = Math.max(canvasWidth * zoomLevel, canvasWidth * 0.1)
+  $: scaledCanvasHeight = Math.max(canvasHeight * zoomLevel, canvasHeight * 0.1)
 
   // Cursor styles based on key states
   $: cursorStyle = isCtrlPressed ? 'zoom-in' : isAltPressed ? 'move' : 'default'
@@ -171,7 +171,7 @@
     return canvasElement.getBoundingClientRect()
   }
 
-  // Fixed zoom function to center on cursor position
+  // Fixed zoom function to center on cursor position and only affect canvas
   function handleZoom(delta: number, clientX?: number, clientY?: number) {
     if (readonly) return
 
@@ -181,24 +181,32 @@
       ? Math.min(zoomLevel * zoomFactor, 5) 
       : Math.max(zoomLevel / zoomFactor, 0.1)
 
-    if (clientX !== undefined && clientY !== undefined && viewportElement) {
-      // Get viewport rectangle
+    if (clientX !== undefined && clientY !== undefined && viewportElement && canvasElement) {
+      // Get viewport and canvas rectangles
       const viewportRect = viewportElement.getBoundingClientRect()
+      const canvasRect = canvasElement.getBoundingClientRect()
       
       // Calculate mouse position relative to viewport
       const mouseX = clientX - viewportRect.left
       const mouseY = clientY - viewportRect.top
       
+      // Calculate mouse position relative to canvas (accounting for current pan)
+      const canvasMouseX = mouseX - (canvasRect.left - viewportRect.left)
+      const canvasMouseY = mouseY - (canvasRect.top - viewportRect.top)
+      
       // Calculate the point in canvas coordinates before zoom
-      const canvasPointX = (mouseX - panX) / oldZoom
-      const canvasPointY = (mouseY - panY) / oldZoom
+      const canvasPointX = canvasMouseX / oldZoom
+      const canvasPointY = canvasMouseY / oldZoom
       
       // Update zoom level
       zoomLevel = newZoom
       
       // Calculate new pan to keep the same canvas point under the mouse
-      panX = mouseX - canvasPointX * newZoom
-      panY = mouseY - canvasPointY * newZoom
+      const newCanvasMouseX = canvasPointX * newZoom
+      const newCanvasMouseY = canvasPointY * newZoom
+      
+      panX = panX + (canvasMouseX - newCanvasMouseX)
+      panY = panY + (canvasMouseY - newCanvasMouseY)
       
       // Constrain pan to reasonable bounds
       constrainPan()
@@ -228,12 +236,14 @@
     if (!viewportElement) return
 
     const viewportRect = viewportElement.getBoundingClientRect()
-    const maxPanX = Math.max(0, scaledWidth - viewportRect.width)
-    const maxPanY = Math.max(0, scaledHeight - viewportRect.height)
+    
+    // Calculate the maximum pan values to keep canvas visible
+    const maxPanX = Math.max(0, scaledCanvasWidth - viewportRect.width + 100) // 100px buffer
+    const maxPanY = Math.max(0, scaledCanvasHeight - viewportRect.height + 100) // 100px buffer
 
     // Allow some negative panning to keep content accessible
-    const minPanX = Math.min(0, -maxPanX)
-    const minPanY = Math.min(0, -maxPanY)
+    const minPanX = Math.min(0, -100) // Allow 100px negative pan
+    const minPanY = Math.min(0, -100) // Allow 100px negative pan
 
     panX = Math.max(minPanX, Math.min(maxPanX, panX))
     panY = Math.max(minPanY, Math.min(maxPanY, panY))
@@ -563,10 +573,10 @@
 </script>
 
 <div class="h-full flex">
-  <!-- Canvas Viewport -->
-  <div class="flex-1 flex flex-col">
+  <!-- Canvas Viewport - Fixed width to prevent zoom from affecting layout -->
+  <div class="flex-1 flex flex-col min-w-0">
     <!-- Zoom Controls -->
-    <div class="flex items-center justify-between p-2 border-b bg-muted/30">
+    <div class="flex items-center justify-between p-2 border-b bg-muted/30 flex-shrink-0">
       <div class="flex items-center gap-2">
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
@@ -606,23 +616,29 @@
       </div>
     </div>
 
-    <!-- Viewport Container -->
+    <!-- Viewport Container - This contains the scrollable area -->
     <div 
       bind:this={viewportElement}
-      class="flex-1 overflow-auto bg-muted/20"
+      class="flex-1 overflow-auto bg-muted/20 relative"
       style="cursor: {cursorStyle}"
       on:wheel={handleWheel}
       on:mousedown={handleViewportMouseDown}
       on:touchstart={handleTouchStart}
       on:touchmove={handleTouchMove}
     >
-      <!-- Canvas Container -->
+      <!-- Canvas Container - This is positioned and sized independently -->
       <div 
         bind:this={canvasContainer}
         class="relative"
-        style="width: {scaledWidth}px; height: {scaledHeight}px; transform: translate({panX}px, {panY}px);"
+        style="
+          width: {scaledCanvasWidth}px; 
+          height: {scaledCanvasHeight}px; 
+          transform: translate({panX}px, {panY}px);
+          min-width: {scaledCanvasWidth}px;
+          min-height: {scaledCanvasHeight}px;
+        "
       >
-        <!-- Canvas -->
+        <!-- Canvas - This scales with zoom but doesn't affect layout -->
         <div 
           bind:this={canvasElement}
           class={cn(
@@ -630,7 +646,12 @@
             safetyZoneClass,
             readonly && 'border-muted'
           )}
-          style="width: {canvasWidth}px; height: {canvasHeight}px; transform: scale({zoomLevel}); transform-origin: 0 0;"
+          style="
+            width: {canvasWidth}px; 
+            height: {canvasHeight}px; 
+            transform: scale({zoomLevel}); 
+            transform-origin: 0 0;
+          "
           on:click={handleCanvasClick}
         >
           {#each elements as element (element.id)}
@@ -713,15 +734,17 @@
     </div>
   </div>
 
-  <!-- Element Toolbar (only show if not readonly) -->
+  <!-- Element Toolbar (only show if not readonly) - Fixed position, unaffected by zoom -->
   {#if !readonly}
-    <ElementToolbar 
-      {selectedElementId}
-      selectedElement={selectedElement}
-      on:add={(e) => addElement(e.detail.type)}
-      on:update={handleElementUpdate}
-      on:delete={() => selectedElementId && deleteElement(selectedElementId)}
-    />
+    <div class="flex-shrink-0">
+      <ElementToolbar 
+        {selectedElementId}
+        selectedElement={selectedElement}
+        on:add={(e) => addElement(e.detail.type)}
+        on:update={handleElementUpdate}
+        on:delete={() => selectedElementId && deleteElement(selectedElementId)}
+      />
+    </div>
   {/if}
 </div>
 
