@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onMount, onDestroy } from 'svelte'
   import { cn } from '$lib/utils'
   import ElementToolbar from './ElementToolbar.svelte'
   import TextElement from './elements/TextElement.svelte'
@@ -23,6 +23,22 @@
   let resizeHandle = ''
   let resizeStartData = { x: 0, y: 0, width: 0, height: 0, mouseX: 0, mouseY: 0 }
   let canvasElement: HTMLElement
+  let viewportElement: HTMLElement
+  let canvasContainer: HTMLElement
+
+  // Zoom and pan state
+  let zoomLevel = 1
+  let panX = 0
+  let panY = 0
+  let isPanning = false
+  let panStartX = 0
+  let panStartY = 0
+  let panStartPanX = 0
+  let panStartPanY = 0
+
+  // Cursor state
+  let showZoomCursor = false
+  let showPanCursor = false
 
   // Use local elements state that gets updated immediately
   let elements = page.content?.elements || []
@@ -40,6 +56,26 @@
   $: safetyZoneClass = showSafetyZones 
     ? (orientation === 'landscape' ? 'safety-zone-16-9' : 'safety-zone-9-16')
     : ''
+
+  // Calculate canvas dimensions based on viewport and orientation
+  $: canvasWidth = orientation === 'landscape' ? 1600 : 900
+  $: canvasHeight = orientation === 'landscape' ? 900 : 1600
+
+  // Calculate display dimensions (70% width for landscape, 80% height for portrait)
+  $: displayWidth = orientation === 'landscape' 
+    ? Math.min(canvasWidth, window.innerWidth * 0.7)
+    : Math.min(canvasWidth, (window.innerHeight * 0.8) * (9/16))
+  
+  $: displayHeight = orientation === 'portrait'
+    ? Math.min(canvasHeight, window.innerHeight * 0.8)
+    : Math.min(canvasHeight, (window.innerWidth * 0.7) * (9/16))
+
+  // Apply zoom and ensure minimum size
+  $: scaledWidth = Math.max(displayWidth * zoomLevel, 400)
+  $: scaledHeight = Math.max(displayHeight * zoomLevel, 225)
+
+  // Cursor styles
+  $: cursorStyle = showZoomCursor ? 'zoom-in' : showPanCursor ? 'move' : 'default'
 
   function updatePageContent() {
     const newContent = {
@@ -129,13 +165,75 @@
   }
 
   function getCanvasRect() {
-    if (!canvasElement) return { left: 0, top: 0, width: 800, height: 450 }
+    if (!canvasElement) return { left: 0, top: 0, width: canvasWidth, height: canvasHeight }
     return canvasElement.getBoundingClientRect()
+  }
+
+  // Zoom functions
+  function handleZoom(delta: number, clientX?: number, clientY?: number) {
+    if (readonly) return
+
+    const zoomFactor = 1.1
+    const newZoom = delta > 0 
+      ? Math.min(zoomLevel * zoomFactor, 5) 
+      : Math.max(zoomLevel / zoomFactor, 0.1)
+
+    if (clientX !== undefined && clientY !== undefined && viewportElement) {
+      // Zoom towards mouse position
+      const rect = viewportElement.getBoundingClientRect()
+      const mouseX = clientX - rect.left
+      const mouseY = clientY - rect.top
+
+      // Calculate the point in canvas coordinates
+      const canvasX = (mouseX - panX) / zoomLevel
+      const canvasY = (mouseY - panY) / zoomLevel
+
+      // Update zoom
+      zoomLevel = newZoom
+
+      // Adjust pan to keep the same point under the mouse
+      panX = mouseX - canvasX * zoomLevel
+      panY = mouseY - canvasY * zoomLevel
+    } else {
+      zoomLevel = newZoom
+    }
+
+    // Constrain pan to reasonable bounds
+    constrainPan()
+  }
+
+  function constrainPan() {
+    if (!viewportElement) return
+
+    const viewportRect = viewportElement.getBoundingClientRect()
+    const maxPanX = Math.max(0, scaledWidth - viewportRect.width)
+    const maxPanY = Math.max(0, scaledHeight - viewportRect.height)
+
+    panX = Math.max(-maxPanX, Math.min(0, panX))
+    panY = Math.max(-maxPanY, Math.min(0, panY))
+  }
+
+  function resetZoom() {
+    zoomLevel = 1
+    panX = 0
+    panY = 0
+  }
+
+  function fitToScreen() {
+    if (!viewportElement) return
+
+    const viewportRect = viewportElement.getBoundingClientRect()
+    const scaleX = viewportRect.width / canvasWidth
+    const scaleY = viewportRect.height / canvasHeight
+    
+    zoomLevel = Math.min(scaleX, scaleY) * 0.9 // 90% to leave some margin
+    panX = (viewportRect.width - canvasWidth * zoomLevel) / 2
+    panY = (viewportRect.height - canvasHeight * zoomLevel) / 2
   }
 
   // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
-    if (readonly) return
+    if (readonly || isPanning) return
     
     event.preventDefault()
     event.stopPropagation()
@@ -148,8 +246,6 @@
     // Check if clicking on a resize handle
     const target = event.target as HTMLElement
     const resizeHandleEl = target.closest('.resize-handle')
-    
-    const canvasRect = getCanvasRect()
     
     if (resizeHandleEl) {
       isResizing = true
@@ -188,14 +284,14 @@
     const canvasRect = getCanvasRect()
 
     if (isDragging) {
-      // Calculate new position relative to canvas
+      // Calculate new position relative to canvas, accounting for zoom and pan
       const newX = Math.max(0, Math.min(
-        event.clientX - canvasRect.left - dragOffset.x,
-        canvasRect.width - element.width
+        (event.clientX - canvasRect.left - panX) / zoomLevel - dragOffset.x / zoomLevel,
+        canvasWidth - element.width
       ))
       const newY = Math.max(0, Math.min(
-        event.clientY - canvasRect.top - dragOffset.y,
-        canvasRect.height - element.height
+        (event.clientY - canvasRect.top - panY) / zoomLevel - dragOffset.y / zoomLevel,
+        canvasHeight - element.height
       ))
       
       updateElement(selectedElementId, {
@@ -204,8 +300,8 @@
       })
     } else if (isResizing) {
       // Calculate mouse movement delta
-      const deltaX = event.clientX - resizeStartData.mouseX
-      const deltaY = event.clientY - resizeStartData.mouseY
+      const deltaX = (event.clientX - resizeStartData.mouseX) / zoomLevel
+      const deltaY = (event.clientY - resizeStartData.mouseY) / zoomLevel
       
       let newWidth = resizeStartData.width
       let newHeight = resizeStartData.height
@@ -222,7 +318,6 @@
           newWidth = Math.max(50, resizeStartData.width - deltaX)
           newHeight = Math.max(30, resizeStartData.height + deltaY)
           newX = Math.max(0, resizeStartData.x + deltaX)
-          // Adjust X if width hit minimum
           if (newWidth === 50) {
             newX = resizeStartData.x + resizeStartData.width - 50
           }
@@ -231,7 +326,6 @@
           newWidth = Math.max(50, resizeStartData.width + deltaX)
           newHeight = Math.max(30, resizeStartData.height - deltaY)
           newY = Math.max(0, resizeStartData.y + deltaY)
-          // Adjust Y if height hit minimum
           if (newHeight === 30) {
             newY = resizeStartData.y + resizeStartData.height - 30
           }
@@ -241,7 +335,6 @@
           newHeight = Math.max(30, resizeStartData.height - deltaY)
           newX = Math.max(0, resizeStartData.x + deltaX)
           newY = Math.max(0, resizeStartData.y + deltaY)
-          // Adjust positions if dimensions hit minimum
           if (newWidth === 50) {
             newX = resizeStartData.x + resizeStartData.width - 50
           }
@@ -252,10 +345,10 @@
       }
 
       // Ensure element stays within canvas bounds
-      newX = Math.max(0, Math.min(newX, canvasRect.width - newWidth))
-      newY = Math.max(0, Math.min(newY, canvasRect.height - newHeight))
-      newWidth = Math.min(newWidth, canvasRect.width - newX)
-      newHeight = Math.min(newHeight, canvasRect.height - newY)
+      newX = Math.max(0, Math.min(newX, canvasWidth - newWidth))
+      newY = Math.max(0, Math.min(newY, canvasHeight - newHeight))
+      newWidth = Math.min(newWidth, canvasWidth - newX)
+      newHeight = Math.min(newHeight, canvasHeight - newY)
 
       updateElement(selectedElementId, {
         x: Math.round(newX),
@@ -276,12 +369,128 @@
   }
 
   function handleCanvasClick(event: MouseEvent) {
-    if (readonly) return
+    if (readonly || isPanning) return
     
     // Only deselect if clicking on the canvas itself, not on an element
     const target = event.target as HTMLElement
     if (target === canvasElement || target.classList.contains('canvas-area')) {
       selectedElementId = null
+    }
+  }
+
+  // Pan handling
+  function handlePanStart(event: MouseEvent) {
+    if (!event.altKey || readonly) return
+    
+    event.preventDefault()
+    isPanning = true
+    panStartX = event.clientX
+    panStartY = event.clientY
+    panStartPanX = panX
+    panStartPanY = panY
+
+    document.addEventListener('mousemove', handlePanMove)
+    document.addEventListener('mouseup', handlePanEnd)
+  }
+
+  function handlePanMove(event: MouseEvent) {
+    if (!isPanning) return
+
+    panX = panStartPanX + (event.clientX - panStartX)
+    panY = panStartPanY + (event.clientY - panStartY)
+    
+    constrainPan()
+  }
+
+  function handlePanEnd() {
+    isPanning = false
+    document.removeEventListener('mousemove', handlePanMove)
+    document.removeEventListener('mouseup', handlePanEnd)
+  }
+
+  // Keyboard and mouse event handlers
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.ctrlKey) {
+      showZoomCursor = true
+      showPanCursor = false
+    } else if (event.altKey) {
+      showZoomCursor = false
+      showPanCursor = true
+    }
+  }
+
+  function handleKeyUp(event: KeyboardEvent) {
+    if (!event.ctrlKey) {
+      showZoomCursor = false
+    }
+    if (!event.altKey) {
+      showPanCursor = false
+    }
+  }
+
+  function handleWheel(event: WheelEvent) {
+    if (!event.ctrlKey) return
+    
+    event.preventDefault()
+    handleZoom(-event.deltaY, event.clientX, event.clientY)
+  }
+
+  // Touch event handlers for mobile
+  let lastTouchDistance = 0
+  let lastTouchCenter = { x: 0, y: 0 }
+
+  function handleTouchStart(event: TouchEvent) {
+    if (readonly) return
+
+    if (event.touches.length === 2) {
+      // Pinch to zoom
+      const touch1 = event.touches[0]
+      const touch2 = event.touches[1]
+      
+      lastTouchDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      )
+      
+      lastTouchCenter = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      }
+    }
+  }
+
+  function handleTouchMove(event: TouchEvent) {
+    if (readonly) return
+
+    if (event.touches.length === 2) {
+      event.preventDefault()
+      
+      const touch1 = event.touches[0]
+      const touch2 = event.touches[1]
+      
+      const currentDistance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      )
+      
+      const currentCenter = {
+        x: (touch1.clientX + touch2.clientX) / 2,
+        y: (touch1.clientY + touch2.clientY) / 2
+      }
+
+      // Zoom
+      if (lastTouchDistance > 0) {
+        const zoomDelta = currentDistance - lastTouchDistance
+        handleZoom(zoomDelta * 0.01, currentCenter.x, currentCenter.y)
+      }
+
+      // Pan
+      panX += currentCenter.x - lastTouchCenter.x
+      panY += currentCenter.y - lastTouchCenter.y
+      constrainPan()
+
+      lastTouchDistance = currentDistance
+      lastTouchCenter = currentCenter
     }
   }
 
@@ -292,98 +501,174 @@
       updateElement(selectedElementId, event.detail)
     }
   }
+
+  // Lifecycle
+  onMount(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+    
+    // Set initial zoom to fit screen
+    setTimeout(fitToScreen, 100)
+  })
+
+  onDestroy(() => {
+    document.removeEventListener('keydown', handleKeyDown)
+    document.removeEventListener('keyup', handleKeyUp)
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+    document.removeEventListener('mousemove', handlePanMove)
+    document.removeEventListener('mouseup', handlePanEnd)
+  })
 </script>
 
 <div class="h-full flex">
-  <!-- Canvas -->
-  <div class="flex-1 flex items-center justify-center p-8">
-    <div 
-      bind:this={canvasElement}
-      class={cn(
-        "relative bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area overflow-hidden",
-        safetyZoneClass,
-        orientation === 'landscape' && 'aspect-[16/9]',
-        orientation === 'portrait' && 'aspect-[9/16]',
-        readonly && 'border-muted'
-      )}
-      style="width: {orientation === 'landscape' ? '800px' : '450px'}; max-width: 100%; max-height: 100%;"
-      on:click={handleCanvasClick}
-    >
-      {#each elements as element (element.id)}
-        <div
-          class="absolute select-none group"
-          class:border-2={selectedElementId === element.id && !readonly}
-          class:border-primary={selectedElementId === element.id && !readonly}
-          class:border-transparent={selectedElementId !== element.id || readonly}
-          class:cursor-move={!readonly && selectedElementId === element.id && !isResizing}
-          class:cursor-pointer={!readonly && selectedElementId !== element.id}
-          class:cursor-default={readonly}
-          style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
-          on:mousedown={(e) => !readonly && handleMouseDown(e, element.id)}
-          on:click|stopPropagation={() => !readonly && selectElement(element.id)}
+  <!-- Canvas Viewport -->
+  <div class="flex-1 flex flex-col">
+    <!-- Zoom Controls -->
+    <div class="flex items-center justify-between p-2 border-b bg-muted/30">
+      <div class="flex items-center gap-2">
+        <button
+          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          on:click={() => handleZoom(-1)}
+          disabled={readonly}
         >
-          {#if element.type === 'text'}
-            <TextElement 
-              {element} 
-              {readonly}
-              on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-            />
-          {:else if element.type === 'image'}
-            <ImageElement 
-              {element} 
-              on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-            />
-          {:else if element.type === 'audio'}
-            <AudioElement 
-              {element} 
-              on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-            />
+          -
+        </button>
+        <span class="text-xs font-mono min-w-[60px] text-center">
+          {Math.round(zoomLevel * 100)}%
+        </span>
+        <button
+          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          on:click={() => handleZoom(1)}
+          disabled={readonly}
+        >
+          +
+        </button>
+        <button
+          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          on:click={resetZoom}
+          disabled={readonly}
+        >
+          Reset
+        </button>
+        <button
+          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          on:click={fitToScreen}
+          disabled={readonly}
+        >
+          Fit
+        </button>
+      </div>
+      
+      <div class="text-xs text-muted-foreground">
+        {readonly ? 'Read-only' : 'Ctrl+Wheel: Zoom • Alt+Drag: Pan'}
+      </div>
+    </div>
+
+    <!-- Viewport Container -->
+    <div 
+      bind:this={viewportElement}
+      class="flex-1 overflow-auto bg-muted/20"
+      style="cursor: {cursorStyle}"
+      on:wheel={handleWheel}
+      on:mousedown={handlePanStart}
+      on:touchstart={handleTouchStart}
+      on:touchmove={handleTouchMove}
+    >
+      <!-- Canvas Container -->
+      <div 
+        bind:this={canvasContainer}
+        class="relative"
+        style="width: {scaledWidth}px; height: {scaledHeight}px; transform: translate({panX}px, {panY}px);"
+      >
+        <!-- Canvas -->
+        <div 
+          bind:this={canvasElement}
+          class={cn(
+            "relative bg-white border-2 border-gray-300 rounded-lg shadow-lg canvas-area overflow-hidden",
+            safetyZoneClass,
+            readonly && 'border-muted'
+          )}
+          style="width: {canvasWidth}px; height: {canvasHeight}px; transform: scale({zoomLevel}); transform-origin: 0 0;"
+          on:click={handleCanvasClick}
+        >
+          {#each elements as element (element.id)}
+            <div
+              class="absolute select-none group"
+              class:border-2={selectedElementId === element.id && !readonly}
+              class:border-primary={selectedElementId === element.id && !readonly}
+              class:border-transparent={selectedElementId !== element.id || readonly}
+              class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning}
+              class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning}
+              class:cursor-default={readonly || isPanning}
+              style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
+              on:mousedown={(e) => !readonly && !isPanning && handleMouseDown(e, element.id)}
+              on:click|stopPropagation={() => !readonly && !isPanning && selectElement(element.id)}
+            >
+              {#if element.type === 'text'}
+                <TextElement 
+                  {element} 
+                  {readonly}
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {:else if element.type === 'image'}
+                <ImageElement 
+                  {element} 
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {:else if element.type === 'audio'}
+                <AudioElement 
+                  {element} 
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {/if}
+
+              <!-- Resize handles (only show when selected and not readonly) -->
+              {#if selectedElementId === element.id && !readonly}
+                <div 
+                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
+                  style="left: -6px; top: -6px; z-index: 20;"
+                  data-handle="nw"
+                ></div>
+                <div 
+                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
+                  style="right: -6px; top: -6px; z-index: 20;"
+                  data-handle="ne"
+                ></div>
+                <div 
+                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
+                  style="left: -6px; bottom: -6px; z-index: 20;"
+                  data-handle="sw"
+                ></div>
+                <div 
+                  class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
+                  style="right: -6px; bottom: -6px; z-index: 20;"
+                  data-handle="se"
+                ></div>
+              {/if}
+            </div>
+          {/each}
+
+          <!-- Drop zone when empty -->
+          {#if elements.length === 0}
+            <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
+              <div class="text-center">
+                <p class="text-lg font-medium mb-2">Empty page</p>
+                <p class="text-sm">
+                  {readonly ? 'This page has no content' : 'Add elements using the toolbar'}
+                </p>
+              </div>
+            </div>
           {/if}
 
-          <!-- Resize handles (only show when selected and not readonly) -->
-          {#if selectedElementId === element.id && !readonly}
-            <div 
-              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
-              style="left: -6px; top: -6px; z-index: 20;"
-              data-handle="nw"
-            ></div>
-            <div 
-              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
-              style="right: -6px; top: -6px; z-index: 20;"
-              data-handle="ne"
-            ></div>
-            <div 
-              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
-              style="left: -6px; bottom: -6px; z-index: 20;"
-              data-handle="sw"
-            ></div>
-            <div 
-              class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
-              style="right: -6px; bottom: -6px; z-index: 20;"
-              data-handle="se"
-            ></div>
+          <!-- Readonly overlay -->
+          {#if readonly}
+            <div class="absolute top-2 right-2 px-2 py-1 bg-muted/80 rounded text-xs text-muted-foreground">
+              Read-only
+            </div>
           {/if}
         </div>
-      {/each}
-
-      <!-- Drop zone when empty -->
-      {#if elements.length === 0}
-        <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
-          <div class="text-center">
-            <p class="text-lg font-medium mb-2">Empty page</p>
-            <p class="text-sm">
-              {readonly ? 'This page has no content' : 'Add elements using the toolbar'}
-            </p>
-          </div>
-        </div>
-      {/if}
-
-      <!-- Readonly overlay -->
-      {#if readonly}
-        <div class="absolute top-2 right-2 px-2 py-1 bg-muted/80 rounded text-xs text-muted-foreground">
-          Read-only
-        </div>
-      {/if}
+      </div>
     </div>
   </div>
 
@@ -398,3 +683,33 @@
     />
   {/if}
 </div>
+
+<style>
+  /* Custom cursor styles */
+  :global(.zoom-cursor) {
+    cursor: zoom-in !important;
+  }
+  
+  :global(.pan-cursor) {
+    cursor: move !important;
+  }
+
+  /* Hide scrollbars but keep functionality */
+  .overflow-auto::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .overflow-auto::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+  
+  .overflow-auto::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+  
+  .overflow-auto::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+</style>
