@@ -77,38 +77,34 @@ export interface Database {
           story_id: string | null
           page_number: number
           content: {
-            landscape: {
-              elements: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex: number
-                hidden: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
+            elements: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              // Shared content properties
+              properties: any
+              // Layout-specific properties
+              layouts: {
+                landscape: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex: number
+                  hidden: boolean
+                }
+                portrait: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex: number
+                  hidden: boolean
+                }
+              }
               animation?: any
-            }
-            portrait: {
-              elements: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex: number
-                hidden: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
-              animation?: any
-            }
+            }>
+            background?: any
+            animation?: any
           }
           created_at: string
         }
@@ -117,38 +113,32 @@ export interface Database {
           story_id?: string | null
           page_number: number
           content: {
-            landscape?: {
-              elements?: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex?: number
-                hidden?: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
+            elements?: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              properties: any
+              layouts: {
+                landscape: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex?: number
+                  hidden?: boolean
+                }
+                portrait: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex?: number
+                  hidden?: boolean
+                }
+              }
               animation?: any
-            }
-            portrait?: {
-              elements?: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex?: number
-                hidden?: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
-              animation?: any
-            }
+            }>
+            background?: any
+            animation?: any
           }
           created_at?: string
         }
@@ -157,38 +147,32 @@ export interface Database {
           story_id?: string | null
           page_number?: number
           content?: {
-            landscape?: {
-              elements?: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex?: number
-                hidden?: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
+            elements?: Array<{
+              id: string
+              type: 'text' | 'image' | 'audio'
+              properties: any
+              layouts: {
+                landscape: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex?: number
+                  hidden?: boolean
+                }
+                portrait: {
+                  x: number
+                  y: number
+                  width: number
+                  height: number
+                  zIndex?: number
+                  hidden?: boolean
+                }
+              }
               animation?: any
-            }
-            portrait?: {
-              elements?: Array<{
-                id: string
-                type: 'text' | 'image' | 'audio'
-                x: number
-                y: number
-                width: number
-                height: number
-                zIndex?: number
-                hidden?: boolean
-                properties: any
-                animation?: any
-              }>
-              background?: any
-              animation?: any
-            }
+            }>
+            background?: any
+            animation?: any
           }
           created_at?: string
         }

@@ -49,14 +49,23 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
-  // Get current layout based on orientation
-  $: currentLayout = page.content?.[orientation] || { elements: [], background: null, animation: null }
-  
-  // Simplified reactive elements declaration
-  $: elements = currentLayout.elements || []
+  // Get elements from the new structure
+  $: elements = page.content?.elements || []
+
+  // Create display elements with layout-specific properties for current orientation
+  $: displayElements = elements.map(element => ({
+    ...element,
+    // Merge layout properties for current orientation into the element
+    x: element.layouts?.[orientation]?.x ?? 50,
+    y: element.layouts?.[orientation]?.y ?? 50,
+    width: element.layouts?.[orientation]?.width ?? 200,
+    height: element.layouts?.[orientation]?.height ?? 100,
+    zIndex: element.layouts?.[orientation]?.zIndex ?? 0,
+    hidden: element.layouts?.[orientation]?.hidden ?? false
+  }))
 
   // Reactive statement to get selected element
-  $: selectedElement = selectedElementId ? elements.find(el => el.id === selectedElementId) : null
+  $: selectedElement = selectedElementId ? displayElements.find(el => el.id === selectedElementId) : null
 
   $: aspectRatio = orientation === 'landscape' ? '16/9' : '9/16'
   $: safetyZoneClass = showSafetyZones 
@@ -71,23 +80,40 @@
   $: cursorStyle = isCtrlPressed ? 'zoom-in' : isAltPressed ? 'move' : 'default'
 
   // Sort elements by z-index for rendering (lower z-index renders first, higher z-index on top)
-  $: sortedElements = [...elements].sort((a, b) => {
+  $: sortedElements = [...displayElements].sort((a, b) => {
     const aZ = a.zIndex || 0
     const bZ = b.zIndex || 0
     return aZ - bZ
   })
 
   function updatePageContent() {
-    // Create new content structure with both orientations
+    // Update the elements array with the current layout changes
+    const updatedElements = elements.map(element => {
+      const displayElement = displayElements.find(de => de.id === element.id)
+      if (!displayElement) return element
+
+      return {
+        ...element,
+        layouts: {
+          ...element.layouts,
+          [orientation]: {
+            x: displayElement.x,
+            y: displayElement.y,
+            width: displayElement.width,
+            height: displayElement.height,
+            zIndex: displayElement.zIndex,
+            hidden: displayElement.hidden
+          }
+        }
+      }
+    })
+
     const newContent = {
       ...page.content,
-      [orientation]: {
-        ...currentLayout,
-        elements: [...elements]
-      }
+      elements: updatedElements
     }
     
-    console.log(`Updating page content for ${orientation} with ${elements.length} elements:`, elements)
+    console.log(`Updating page content for ${orientation} with ${updatedElements.length} elements`)
     
     // Update the page object immediately for local reactivity
     page = {
@@ -105,7 +131,7 @@
     if (readonly) return
     
     // Find the highest z-index and add 1
-    const maxZIndex = elements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
+    const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
     
     // Calculate default position based on orientation
     const defaultX = orientation === 'landscape' ? 50 : 30
@@ -120,20 +146,32 @@
     const newElement = {
       id: Math.random().toString(36).substr(2, 9),
       type,
-      x: defaultX,
-      y: defaultY,
-      width: defaultWidth,
-      height: defaultHeight,
-      zIndex: maxZIndex + 1,
-      hidden: false,
       properties: type === 'text' 
         ? { text: 'New text element', fontSize: orientation === 'landscape' ? 16 : 14, color: '#000000' }
         : type === 'image'
-        ? { src: '', alt: '' }
-        : { src: '', autoplay: false }
+        ? { src: '', alt: '', opacity: 100 }
+        : { src: '', autoplay: false },
+      layouts: {
+        landscape: {
+          x: orientation === 'landscape' ? defaultX : 50,
+          y: orientation === 'landscape' ? defaultY : 50,
+          width: orientation === 'landscape' ? defaultWidth : 300,
+          height: orientation === 'landscape' ? defaultHeight : 100,
+          zIndex: maxZIndex + 1,
+          hidden: false
+        },
+        portrait: {
+          x: orientation === 'portrait' ? defaultX : 30,
+          y: orientation === 'portrait' ? defaultY : 80,
+          width: orientation === 'portrait' ? defaultWidth : 250,
+          height: orientation === 'portrait' ? defaultHeight : 120,
+          zIndex: maxZIndex + 1,
+          hidden: false
+        }
+      }
     }
 
-    // Update elements directly and trigger page content update
+    // Add to elements array
     elements = [...elements, newElement]
     selectedElementId = newElement.id
     updatePageContent()
@@ -142,34 +180,50 @@
   function selectElement(id: string) {
     if (readonly || isPanning) return
     selectedElementId = id
-    console.log('Selected element:', id, 'Element data:', elements.find(el => el.id === id))
+    console.log('Selected element:', id)
   }
 
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
     console.log('updateElement called:', { id, updates })
-    console.log('Current elements before update:', elements)
     
-    // Update the elements array
-    const newElements = elements.map(el => {
-      if (el.id === id) {
-        const updatedElement = { ...el, ...updates }
-        console.log('Updating element from:', el, 'to:', updatedElement)
-        return updatedElement
-      }
-      return el
-    })
+    // Check if this is a layout property update
+    const layoutProps = ['x', 'y', 'width', 'height', 'zIndex', 'hidden']
+    const isLayoutUpdate = Object.keys(updates).some(key => layoutProps.includes(key))
     
-    elements = newElements
-    console.log('Elements after update:', elements)
+    if (isLayoutUpdate) {
+      // Update layout properties for current orientation
+      elements = elements.map(el => {
+        if (el.id === id) {
+          const currentLayout = el.layouts?.[orientation] || {}
+          return {
+            ...el,
+            layouts: {
+              ...el.layouts,
+              [orientation]: {
+                ...currentLayout,
+                ...updates
+              }
+            }
+          }
+        }
+        return el
+      })
+    } else {
+      // Update shared content properties
+      elements = elements.map(el => {
+        if (el.id === id) {
+          return { ...el, ...updates }
+        }
+        return el
+      })
+    }
     
-    // Force reactivity by triggering the page content update
     updatePageContent()
     
     // Force a re-render by updating the selected element reference
     if (selectedElementId === id) {
-      // This will trigger the reactive statement for selectedElement
       selectedElementId = selectedElementId
     }
   }
@@ -187,66 +241,49 @@
   function toggleElementVisibility(id: string) {
     if (readonly) return
     
-    updateElement(id, { hidden: !elements.find(el => el.id === id)?.hidden })
+    const element = displayElements.find(el => el.id === id)
+    if (element) {
+      updateElement(id, { hidden: !element.hidden })
+    }
   }
 
   function moveElementBack(id: string) {
     if (readonly) return
     
-    const element = elements.find(el => el.id === id)
+    const element = displayElements.find(el => el.id === id)
     if (!element) return
     
     // Find the next lower z-index
-    const lowerElements = elements.filter(el => (el.zIndex || 0) < (element.zIndex || 0))
+    const lowerElements = displayElements.filter(el => (el.zIndex || 0) < (element.zIndex || 0))
     if (lowerElements.length === 0) return // Already at bottom
     
     const nextZIndex = Math.max(...lowerElements.map(el => el.zIndex || 0))
-    const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
+    const elementAtNextLevel = displayElements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
-      // Create new elements array with swapped z-indices
-      const newElements = elements.map(el => {
-        if (el.id === id) {
-          return { ...el, zIndex: nextZIndex }
-        } else if (el.id === elementAtNextLevel.id) {
-          return { ...el, zIndex: element.zIndex || 0 }
-        }
-        return el
-      })
-      
-      // Update elements array and save to database in one operation
-      elements = newElements
-      updatePageContent()
+      // Swap z-indices
+      updateElement(id, { zIndex: nextZIndex })
+      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
     }
   }
 
   function moveElementForward(id: string) {
     if (readonly) return
     
-    const element = elements.find(el => el.id === id)
+    const element = displayElements.find(el => el.id === id)
     if (!element) return
     
     // Find the next higher z-index
-    const higherElements = elements.filter(el => (el.zIndex || 0) > (element.zIndex || 0))
+    const higherElements = displayElements.filter(el => (el.zIndex || 0) > (element.zIndex || 0))
     if (higherElements.length === 0) return // Already at top
     
     const nextZIndex = Math.min(...higherElements.map(el => el.zIndex || 0))
-    const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
+    const elementAtNextLevel = displayElements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
-      // Create new elements array with swapped z-indices
-      const newElements = elements.map(el => {
-        if (el.id === id) {
-          return { ...el, zIndex: nextZIndex }
-        } else if (el.id === elementAtNextLevel.id) {
-          return { ...el, zIndex: element.zIndex || 0 }
-        }
-        return el
-      })
-      
-      // Update elements array and save to database in one operation
-      elements = newElements
-      updatePageContent()
+      // Swap z-indices
+      updateElement(id, { zIndex: nextZIndex })
+      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
     }
   }
   
@@ -256,14 +293,20 @@
     const element = elements.find(el => el.id === id)
     if (!element) return
     
-    const maxZIndex = elements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
+    const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
     
     const duplicatedElement = {
       ...element,
       id: Math.random().toString(36).substr(2, 9),
-      x: element.x + 20,
-      y: element.y + 20,
-      zIndex: maxZIndex + 1
+      layouts: {
+        ...element.layouts,
+        [orientation]: {
+          ...element.layouts[orientation],
+          x: (element.layouts[orientation]?.x || 0) + 20,
+          y: (element.layouts[orientation]?.y || 0) + 20,
+          zIndex: maxZIndex + 1
+        }
+      }
     }
     
     elements = [...elements, duplicatedElement]
@@ -275,7 +318,7 @@
     if (readonly) return
     
     // Get the sorted elements array (by z-index, lowest first)
-    const sortedByZIndex = [...elements].sort((a, b) => {
+    const sortedByZIndex = [...displayElements].sort((a, b) => {
       const aZ = a.zIndex || 0
       const bZ = b.zIndex || 0
       return aZ - bZ
@@ -286,16 +329,9 @@
     sortedByZIndex.splice(toIndex, 0, movedElement)
     
     // Reassign z-indices based on new order (lowest z-index = index 0)
-    const newElements = elements.map(el => {
-      const newIndex = sortedByZIndex.findIndex(sorted => sorted.id === el.id)
-      return {
-        ...el,
-        zIndex: newIndex
-      }
+    sortedByZIndex.forEach((element, index) => {
+      updateElement(element.id, { zIndex: index })
     })
-    
-    elements = newElements
-    updatePageContent()
   }
 
   function copyElementToOtherOrientation(id: string) {
@@ -305,40 +341,37 @@
     if (!element) return
     
     const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
-    const otherLayout = page.content?.[otherOrientation] || { elements: [], background: null, animation: null }
+    const currentLayout = element.layouts[orientation]
+    const otherLayout = element.layouts[otherOrientation]
     
     // Scale element position and size for the other orientation
     const scaleX = otherOrientation === 'landscape' ? (1600 / 900) : (900 / 1600)
     const scaleY = otherOrientation === 'landscape' ? (900 / 1600) : (1600 / 900)
     
-    const scaledElement = {
-      ...element,
-      id: Math.random().toString(36).substr(2, 9), // New ID for the copy
-      x: Math.round(element.x * scaleX),
-      y: Math.round(element.y * scaleY),
-      width: Math.round(element.width * scaleX),
-      height: Math.round(element.height * scaleY),
-      zIndex: (otherLayout.elements || []).reduce((max, el) => Math.max(max, el.zIndex || 0), 0) + 1
+    const scaledLayout = {
+      x: Math.round((currentLayout?.x || 0) * scaleX),
+      y: Math.round((currentLayout?.y || 0) * scaleY),
+      width: Math.round((currentLayout?.width || 0) * scaleX),
+      height: Math.round((currentLayout?.height || 0) * scaleY),
+      zIndex: otherLayout?.zIndex || 0,
+      hidden: false
     }
     
-    // Update the other orientation's layout
-    const newContent = {
-      ...page.content,
-      [otherOrientation]: {
-        ...otherLayout,
-        elements: [...(otherLayout.elements || []), scaledElement]
+    // Update the element's layout for the other orientation
+    elements = elements.map(el => {
+      if (el.id === id) {
+        return {
+          ...el,
+          layouts: {
+            ...el.layouts,
+            [otherOrientation]: scaledLayout
+          }
+        }
       }
-    }
-    
-    // Update the page object and save
-    page = {
-      ...page,
-      content: newContent
-    }
-    
-    dispatch('update', {
-      content: newContent
+      return el
     })
+    
+    updatePageContent()
     
     console.log(`Copied element to ${otherOrientation} orientation with scaled dimensions`)
   }
@@ -467,7 +500,7 @@
     event.preventDefault()
     event.stopPropagation()
     
-    const element = elements.find(el => el.id === elementId)
+    const element = displayElements.find(el => el.id === elementId)
     if (!element) return
 
     selectedElementId = elementId
@@ -523,7 +556,7 @@
   function handleMouseMove(event: MouseEvent) {
     if (!selectedElementId || !activeElementDOM) return
 
-    const element = elements.find(el => el.id === selectedElementId)
+    const element = displayElements.find(el => el.id === selectedElementId)
     if (!element) return
 
     const canvasRect = getCanvasRect()
@@ -974,17 +1007,17 @@
                 <TextElement 
                   {element} 
                   {readonly}
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                  on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
                 />
               {:else if element.type === 'image'}
                 <ImageElement 
                   {element} 
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                  on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
                 />
               {:else if element.type === 'audio'}
                 <AudioElement 
                   {element} 
-                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                  on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
                 />
               {/if}
             {:else}
@@ -1021,7 +1054,7 @@
         {/each}
 
         <!-- Drop zone when empty -->
-        {#if elements.length === 0}
+        {#if displayElements.length === 0}
           <div class="absolute inset-0 flex items-center justify-center text-muted-foreground pointer-events-none">
             <div class="text-center">
               <p class="text-lg font-medium mb-2">Empty {orientation} layout</p>
@@ -1048,7 +1081,7 @@
       <ElementToolbar 
         {selectedElementId}
         selectedElement={selectedElement}
-        {elements}
+        elements={displayElements}
         {orientation}
         on:add={(e) => addElement(e.detail.type)}
         on:update={handleElementUpdate}
