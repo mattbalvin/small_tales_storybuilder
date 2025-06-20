@@ -7,6 +7,12 @@
 
   $: src = element.properties?.src
   $: alt = element.properties?.alt || 'Image element'
+  $: opacity = element.properties?.opacity !== undefined ? element.properties.opacity / 100 : 1
+
+  $: imageStyle = `
+    opacity: ${opacity};
+    transition: opacity 0.2s ease;
+  `
 </script>
 
 <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded border-2 border-dashed border-gray-300">
@@ -15,6 +21,7 @@
       {src} 
       {alt} 
       class="w-full h-full object-cover rounded"
+      style={imageStyle}
       on:error={() => {
         dispatch('update', {
           properties: {

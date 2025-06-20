@@ -734,6 +734,77 @@
                     }}
                   />
                 </div>
+                
+                <!-- Opacity Control -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-2 block">Opacity</label>
+                  <div class="space-y-2">
+                    <div>
+                      <label class="text-xs text-muted-foreground">Opacity (%)</label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={localElement.properties?.opacity ?? 100}
+                        on:input={(e) => {
+                          if (e.target instanceof HTMLInputElement) {
+                            const opacity = Math.max(0, Math.min(100, parseInt(e.target.value) || 100));
+                            handleImagePropertyChange('opacity', opacity);
+                          }
+                        }}
+                      />
+                    </div>
+                    
+                    <!-- Opacity Preview -->
+                    {#if localElement.properties?.src}
+                      <div class="mt-2">
+                        <label class="text-xs text-muted-foreground">Preview</label>
+                        <div 
+                          class="w-full h-16 rounded border border-input bg-gray-100 flex items-center justify-center overflow-hidden"
+                        >
+                          <img 
+                            src={localElement.properties.src} 
+                            alt="Preview"
+                            class="max-w-full max-h-full object-contain"
+                            style="opacity: {(localElement.properties?.opacity ?? 100) / 100};"
+                          />
+                        </div>
+                      </div>
+                    {/if}
+                    
+                    <!-- Quick Opacity Presets -->
+                    <div class="flex gap-1">
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('opacity', 25)}
+                      >
+                        25%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('opacity', 50)}
+                      >
+                        50%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('opacity', 75)}
+                      >
+                        75%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('opacity', 100)}
+                      >
+                        100%
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           {:else if localElement.type === 'audio'}
