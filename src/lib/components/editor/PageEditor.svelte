@@ -251,6 +251,33 @@
     updatePageContent()
   }
 
+  function reorderElements(fromIndex: number, toIndex: number) {
+    if (readonly) return
+    
+    // Get the sorted elements array (by z-index, highest first)
+    const sortedByZIndex = [...elements].sort((a, b) => {
+      const aZ = a.zIndex || 0
+      const bZ = b.zIndex || 0
+      return bZ - aZ
+    })
+    
+    // Move element from fromIndex to toIndex
+    const [movedElement] = sortedByZIndex.splice(fromIndex, 1)
+    sortedByZIndex.splice(toIndex, 0, movedElement)
+    
+    // Reassign z-indices based on new order (highest z-index = index 0)
+    const newElements = elements.map(el => {
+      const newIndex = sortedByZIndex.findIndex(sorted => sorted.id === el.id)
+      return {
+        ...el,
+        zIndex: sortedByZIndex.length - newIndex - 1
+      }
+    })
+    
+    elements = newElements
+    updatePageContent()
+  }
+
   function getCanvasRect() {
     if (!canvasElement) return { left: 0, top: 0, width: canvasWidth, height: canvasHeight }
     return canvasElement.getBoundingClientRect()
@@ -389,11 +416,18 @@
     } else {
       isDragging = true
       
-      // Calculate offset relative to canvas
-      const elementRect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+      // Calculate offset relative to the element's position on canvas
+      // Get the canvas rectangle and account for zoom and pan
+      const canvasRect = getCanvasRect()
+      
+      // Calculate the mouse position relative to the canvas coordinate system
+      const canvasMouseX = (event.clientX - canvasRect.left - panX) / zoomLevel
+      const canvasMouseY = (event.clientY - canvasRect.top - panY) / zoomLevel
+      
+      // Calculate offset from element's top-left corner
       dragOffset = {
-        x: event.clientX - elementRect.left,
-        y: event.clientY - elementRect.top
+        x: canvasMouseX - element.x,
+        y: canvasMouseY - element.y
       }
     }
 
@@ -411,12 +445,15 @@
 
     if (isDragging) {
       // Calculate new position relative to canvas, accounting for zoom and pan
+      const canvasMouseX = (event.clientX - canvasRect.left - panX) / zoomLevel
+      const canvasMouseY = (event.clientY - canvasRect.top - panY) / zoomLevel
+      
       const newX = Math.max(0, Math.min(
-        (event.clientX - canvasRect.left - panX) / zoomLevel - dragOffset.x / zoomLevel,
+        canvasMouseX - dragOffset.x,
         canvasWidth - element.width
       ))
       const newY = Math.max(0, Math.min(
-        (event.clientY - canvasRect.top - panY) / zoomLevel - dragOffset.y / zoomLevel,
+        canvasMouseY - dragOffset.y,
         canvasHeight - element.height
       ))
       
@@ -665,6 +702,10 @@
     deleteElement(event.detail.elementId)
   }
 
+  function handleReorder(event: CustomEvent) {
+    reorderElements(event.detail.fromIndex, event.detail.toIndex)
+  }
+
   // Lifecycle
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -857,6 +898,7 @@
         on:move-down={handleMoveDown}
         on:duplicate={handleDuplicate}
         on:delete-element={handleDeleteElement}
+        on:reorder={handleReorder}
       />
     </div>
   {/if}

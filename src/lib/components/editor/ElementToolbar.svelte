@@ -3,7 +3,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers } from 'lucide-svelte'
+  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical } from 'lucide-svelte'
 
   export let selectedElementId: string | null
   export let selectedElement: any = null
@@ -13,6 +13,11 @@
   $: localElementId = selectedElementId
   
   const dispatch = createEventDispatcher()
+
+  // Drag and drop state
+  let draggedElement: any = null
+  let dragOverElement: any = null
+  let isDraggingElement = false
 
   function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
@@ -44,6 +49,10 @@
 
   function duplicateElement(elementId: string) {
     dispatch('duplicate', { elementId })
+  }
+
+  function reorderElements(fromIndex: number, toIndex: number) {
+    dispatch('reorder', { fromIndex, toIndex })
   }
 
   // Input handlers that validate and update immediately
@@ -130,23 +139,91 @@
     return bZ - aZ // Higher z-index first (top to bottom in list)
   })
 
-  // Event handlers that prevent propagation
-  function handleToggleVisibility(event: Event, elementId: string) {
+  // Drag and drop handlers
+  function handleDragStart(event: DragEvent, element: any) {
+    if (!event.dataTransfer) return
+    
+    draggedElement = element
+    isDraggingElement = true
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', element.id)
+    
+    // Add visual feedback
+    if (event.target instanceof HTMLElement) {
+      event.target.style.opacity = '0.5'
+    }
+  }
+
+  function handleDragEnd(event: DragEvent) {
+    isDraggingElement = false
+    draggedElement = null
+    dragOverElement = null
+    
+    // Reset visual feedback
+    if (event.target instanceof HTMLElement) {
+      event.target.style.opacity = '1'
+    }
+  }
+
+  function handleDragOver(event: DragEvent, element: any) {
+    event.preventDefault()
+    if (!draggedElement || draggedElement.id === element.id) return
+    
+    dragOverElement = element
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+  }
+
+  function handleDragLeave(event: DragEvent) {
+    // Only clear dragOverElement if we're actually leaving the element
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = event.clientX
+    const y = event.clientY
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      dragOverElement = null
+    }
+  }
+
+  function handleDrop(event: DragEvent, targetElement: any) {
+    event.preventDefault()
+    
+    if (!draggedElement || draggedElement.id === targetElement.id) return
+    
+    const fromIndex = sortedElements.findIndex(el => el.id === draggedElement.id)
+    const toIndex = sortedElements.findIndex(el => el.id === targetElement.id)
+    
+    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+      reorderElements(fromIndex, toIndex)
+    }
+    
+    draggedElement = null
+    dragOverElement = null
+    isDraggingElement = false
+  }
+
+  // Event handlers that prevent propagation and handle button clicks properly
+  function handleToggleVisibility(event: MouseEvent, elementId: string) {
+    event.preventDefault()
     event.stopPropagation()
     toggleElementVisibility(elementId)
   }
 
-  function handleMoveUp(event: Event, elementId: string) {
+  function handleMoveUp(event: MouseEvent, elementId: string) {
+    event.preventDefault()
     event.stopPropagation()
     moveElementUp(elementId)
   }
 
-  function handleMoveDown(event: Event, elementId: string) {
+  function handleMoveDown(event: MouseEvent, elementId: string) {
+    event.preventDefault()
     event.stopPropagation()
     moveElementDown(elementId)
   }
 
-  function handleDeleteElement(event: Event, elementId: string) {
+  function handleDeleteElement(event: MouseEvent, elementId: string) {
+    event.preventDefault()
     event.stopPropagation()
     if (localElementId === elementId) {
       deleteElement()
@@ -155,7 +232,8 @@
     }
   }
 
-  function handleElementClick(event: Event, elementId: string) {
+  function handleElementClick(event: MouseEvent, elementId: string) {
+    event.preventDefault()
     event.stopPropagation()
     selectElement(elementId)
   }
@@ -189,6 +267,9 @@
           <Layers class="w-4 h-4" />
           Elements ({elements.length})
         </h3>
+        <div class="text-xs text-muted-foreground">
+          Drag to reorder
+        </div>
       </div>
       
       {#if elements.length === 0}
@@ -202,9 +283,20 @@
           {#each sortedElements as element, index (element.id)}
             {@const ElementIcon = getElementIcon(element.type)}
             <div 
-              class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group {localElementId === element.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'}"
+              class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group {localElementId === element.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'} {dragOverElement?.id === element.id ? 'bg-blue-100 border-blue-300' : ''}"
+              draggable="true"
+              on:dragstart={(event) => handleDragStart(event, element)}
+              on:dragend={handleDragEnd}
+              on:dragover={(event) => handleDragOver(event, element)}
+              on:dragleave={handleDragLeave}
+              on:drop={(event) => handleDrop(event, element)}
               on:click={(event) => handleElementClick(event, element.id)}
             >
+              <!-- Drag Handle -->
+              <div class="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+                <GripVertical class="w-4 h-4" />
+              </div>
+
               <!-- Element Icon and Info -->
               <div class="flex items-center gap-2 flex-1 min-w-0">
                 <div class="w-6 h-6 bg-muted rounded flex items-center justify-center flex-shrink-0">
@@ -212,7 +304,7 @@
                 </div>
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium truncate">{getElementDisplayName(element)}</p>
-                  <p class="text-xs text-muted-foreground">{element.type}</p>
+                  <p class="text-xs text-muted-foreground">{element.type} • z:{element.zIndex || 0}</p>
                 </div>
               </div>
 
@@ -220,6 +312,7 @@
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <!-- Visibility Toggle -->
                 <button
+                  type="button"
                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0"
                   on:click={(event) => handleToggleVisibility(event, element.id)}
                   title={element.hidden ? 'Show element' : 'Hide element'}
@@ -234,6 +327,7 @@
                 <!-- Z-Order Controls -->
                 <div class="flex flex-col">
                   <button
+                    type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveUp(event, element.id)}
                     disabled={index === 0}
@@ -242,6 +336,7 @@
                     <ChevronUp class="w-2 h-2" />
                   </button>
                   <button
+                    type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveDown(event, element.id)}
                     disabled={index === sortedElements.length - 1}
@@ -253,6 +348,7 @@
 
                 <!-- Delete Button -->
                 <button
+                  type="button"
                   class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0 text-destructive hover:text-destructive"
                   on:click={(event) => handleDeleteElement(event, element.id)}
                   title="Delete element"
