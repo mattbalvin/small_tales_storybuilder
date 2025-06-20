@@ -65,6 +65,13 @@
   // Cursor styles based on key states
   $: cursorStyle = isCtrlPressed ? 'zoom-in' : isAltPressed ? 'move' : 'default'
 
+  // Sort elements by z-index for rendering (lower z-index renders first, higher z-index on top)
+  $: sortedElements = [...elements].sort((a, b) => {
+    const aZ = a.zIndex || 0
+    const bZ = b.zIndex || 0
+    return aZ - bZ
+  })
+
   function updatePageContent() {
     const newContent = {
       ...page.content,
@@ -88,6 +95,9 @@
   function addElement(type: 'text' | 'image' | 'audio') {
     if (readonly) return
     
+    // Find the highest z-index and add 1
+    const maxZIndex = elements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
+    
     const newElement = {
       id: Math.random().toString(36).substr(2, 9),
       type,
@@ -95,6 +105,8 @@
       y: 50,
       width: type === 'text' ? 300 : 200,
       height: type === 'text' ? 100 : 150,
+      zIndex: maxZIndex + 1,
+      hidden: false,
       properties: type === 'text' 
         ? { text: 'New text element', fontSize: 16, color: '#000000' }
         : type === 'image'
@@ -149,6 +161,73 @@
     if (selectedElementId === id) {
       selectedElementId = null
     }
+    updatePageContent()
+  }
+
+  function toggleElementVisibility(id: string) {
+    if (readonly) return
+    
+    updateElement(id, { hidden: !elements.find(el => el.id === id)?.hidden })
+  }
+
+  function moveElementUp(id: string) {
+    if (readonly) return
+    
+    const element = elements.find(el => el.id === id)
+    if (!element) return
+    
+    // Find the next higher z-index
+    const higherElements = elements.filter(el => (el.zIndex || 0) > (element.zIndex || 0))
+    if (higherElements.length === 0) return // Already at top
+    
+    const nextZIndex = Math.min(...higherElements.map(el => el.zIndex || 0))
+    const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
+    
+    if (elementAtNextLevel) {
+      // Swap z-indices
+      updateElement(id, { zIndex: nextZIndex })
+      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
+    }
+  }
+
+  function moveElementDown(id: string) {
+    if (readonly) return
+    
+    const element = elements.find(el => el.id === id)
+    if (!element) return
+    
+    // Find the next lower z-index
+    const lowerElements = elements.filter(el => (el.zIndex || 0) < (element.zIndex || 0))
+    if (lowerElements.length === 0) return // Already at bottom
+    
+    const nextZIndex = Math.max(...lowerElements.map(el => el.zIndex || 0))
+    const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
+    
+    if (elementAtNextLevel) {
+      // Swap z-indices
+      updateElement(id, { zIndex: nextZIndex })
+      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
+    }
+  }
+
+  function duplicateElement(id: string) {
+    if (readonly) return
+    
+    const element = elements.find(el => el.id === id)
+    if (!element) return
+    
+    const maxZIndex = elements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
+    
+    const duplicatedElement = {
+      ...element,
+      id: Math.random().toString(36).substr(2, 9),
+      x: element.x + 20,
+      y: element.y + 20,
+      zIndex: maxZIndex + 1
+    }
+    
+    elements = [...elements, duplicatedElement]
+    selectedElementId = duplicatedElement.id
     updatePageContent()
   }
 
@@ -542,6 +621,30 @@
     }
   }
 
+  function handleElementSelect(event: CustomEvent) {
+    selectedElementId = event.detail.elementId
+  }
+
+  function handleToggleVisibility(event: CustomEvent) {
+    toggleElementVisibility(event.detail.elementId)
+  }
+
+  function handleMoveUp(event: CustomEvent) {
+    moveElementUp(event.detail.elementId)
+  }
+
+  function handleMoveDown(event: CustomEvent) {
+    moveElementDown(event.detail.elementId)
+  }
+
+  function handleDuplicate(event: CustomEvent) {
+    duplicateElement(event.detail.elementId)
+  }
+
+  function handleDeleteElement(event: CustomEvent) {
+    deleteElement(event.detail.elementId)
+  }
+
   // Lifecycle
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -631,7 +734,7 @@
         "
         on:click={handleCanvasClick}
       >
-        {#each elements as element (element.id)}
+        {#each sortedElements as element (element.id)}
           <div
             class="absolute select-none group"
             class:border-2={selectedElementId === element.id && !readonly}
@@ -640,26 +743,34 @@
             class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed}
             class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
             class:cursor-default={readonly || isPanning || isAltPressed}
-            style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
+            class:opacity-30={element.hidden}
+            style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {element.zIndex || 0};"
             on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
             on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
           >
-            {#if element.type === 'text'}
-              <TextElement 
-                {element} 
-                {readonly}
-                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-              />
-            {:else if element.type === 'image'}
-              <ImageElement 
-                {element} 
-                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-              />
-            {:else if element.type === 'audio'}
-              <AudioElement 
-                {element} 
-                on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
-              />
+            {#if !element.hidden}
+              {#if element.type === 'text'}
+                <TextElement 
+                  {element} 
+                  {readonly}
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {:else if element.type === 'image'}
+                <ImageElement 
+                  {element} 
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {:else if element.type === 'audio'}
+                <AudioElement 
+                  {element} 
+                  on:update={(e) => !readonly && updateElement(element.id, e.detail)} 
+                />
+              {/if}
+            {:else}
+              <!-- Hidden element placeholder -->
+              <div class="w-full h-full border-2 border-dashed border-muted-foreground/30 bg-muted/10 flex items-center justify-center">
+                <span class="text-xs text-muted-foreground">Hidden</span>
+              </div>
             {/if}
 
             <!-- Resize handles (only show when selected and not readonly) -->
@@ -716,9 +827,16 @@
       <ElementToolbar 
         {selectedElementId}
         selectedElement={selectedElement}
+        {elements}
         on:add={(e) => addElement(e.detail.type)}
         on:update={handleElementUpdate}
         on:delete={() => selectedElementId && deleteElement(selectedElementId)}
+        on:select={handleElementSelect}
+        on:toggle-visibility={handleToggleVisibility}
+        on:move-up={handleMoveUp}
+        on:move-down={handleMoveDown}
+        on:duplicate={handleDuplicate}
+        on:delete-element={handleDeleteElement}
       />
     </div>
   {/if}
