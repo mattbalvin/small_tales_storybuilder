@@ -18,6 +18,7 @@
   let draggedElement: any = null
   let dragOverElement: any = null
   let isDraggingElement = false
+  let dragOverPosition: 'above' | 'below' | null = null
 
   function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
@@ -161,6 +162,7 @@
     isDraggingElement = false
     draggedElement = null
     dragOverElement = null
+    dragOverPosition = null
     
     // Reset visual feedback
     if (event.target instanceof HTMLElement) {
@@ -173,6 +175,12 @@
     if (!draggedElement || draggedElement.id === element.id) return
     
     dragOverElement = element
+    
+    // Determine if we're dropping above or below the midpoint
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    dragOverPosition = event.clientY < midY ? 'above' : 'below'
+    
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move'
     }
@@ -186,6 +194,7 @@
     
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       dragOverElement = null
+      dragOverPosition = null
     }
   }
 
@@ -195,7 +204,17 @@
     if (!draggedElement || draggedElement.id === targetElement.id) return
     
     const fromIndex = sortedElements.findIndex(el => el.id === draggedElement.id)
-    const toIndex = sortedElements.findIndex(el => el.id === targetElement.id)
+    let toIndex = sortedElements.findIndex(el => el.id === targetElement.id)
+    
+    // Adjust toIndex based on drop position
+    if (dragOverPosition === 'below') {
+      toIndex += 1
+    }
+    
+    // If dropping below the last element, move to end
+    if (toIndex >= sortedElements.length) {
+      toIndex = sortedElements.length - 1
+    }
     
     if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
       reorderElements(fromIndex, toIndex)
@@ -203,6 +222,62 @@
     
     draggedElement = null
     dragOverElement = null
+    dragOverPosition = null
+    isDraggingElement = false
+  }
+
+  // Handle dropping above or below the list boundaries
+  function handleListDragOver(event: DragEvent) {
+    event.preventDefault()
+    if (!draggedElement) return
+    
+    const listElement = event.currentTarget as HTMLElement
+    const rect = listElement.getBoundingClientRect()
+    
+    // Check if we're above the list (move to top)
+    if (event.clientY < rect.top + 20) {
+      dragOverElement = 'list-top'
+      dragOverPosition = 'above'
+    }
+    // Check if we're below the list (move to bottom)
+    else if (event.clientY > rect.bottom - 20) {
+      dragOverElement = 'list-bottom'
+      dragOverPosition = 'below'
+    }
+    else {
+      // We're within the list bounds, let individual elements handle it
+      if (dragOverElement === 'list-top' || dragOverElement === 'list-bottom') {
+        dragOverElement = null
+        dragOverPosition = null
+      }
+    }
+  }
+
+  function handleListDrop(event: DragEvent) {
+    event.preventDefault()
+    
+    if (!draggedElement) return
+    
+    const fromIndex = sortedElements.findIndex(el => el.id === draggedElement.id)
+    let toIndex: number
+    
+    if (dragOverElement === 'list-top') {
+      // Move to the beginning (lowest z-index)
+      toIndex = 0
+    } else if (dragOverElement === 'list-bottom') {
+      // Move to the end (highest z-index)
+      toIndex = sortedElements.length - 1
+    } else {
+      return // Not a list boundary drop
+    }
+    
+    if (fromIndex !== -1 && fromIndex !== toIndex) {
+      reorderElements(fromIndex, toIndex)
+    }
+    
+    draggedElement = null
+    dragOverElement = null
+    dragOverPosition = null
     isDraggingElement = false
   }
 
@@ -282,12 +357,29 @@
           <p class="text-xs">Add elements to get started</p>
         </div>
       {:else}
-        <div class="space-y-1 max-h-64 overflow-y-auto">
+        <div 
+          class="space-y-1 max-h-64 overflow-y-auto relative"
+          on:dragover={handleListDragOver}
+          on:drop={handleListDrop}
+        >
+          <!-- Drop zone indicator for top of list -->
+          {#if dragOverElement === 'list-top'}
+            <div class="h-1 bg-primary rounded-full mx-2 mb-1"></div>
+          {/if}
+          
           {#each sortedElements as element, index (element.id)}
             {@const ElementIcon = getElementIcon(element.type)}
             {@const currentZIndex = elementZIndexMap.get(element.id) ?? 0}
+            {@const isSelected = localElementId === element.id}
+            {@const isDraggedOver = dragOverElement?.id === element.id}
+            
+            <!-- Drop indicator above element -->
+            {#if isDraggedOver && dragOverPosition === 'above'}
+              <div class="h-1 bg-primary rounded-full mx-2"></div>
+            {/if}
+            
             <div 
-              class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group {localElementId === element.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'} {dragOverElement?.id === element.id ? 'bg-blue-100 border-blue-300' : ''}"
+              class="flex items-center gap-2 p-2 rounded-md border transition-colors cursor-pointer group relative {isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'}"
               draggable="true"
               on:dragstart={(event) => handleDragStart(event, element)}
               on:dragend={handleDragEnd}
@@ -361,7 +453,17 @@
                 </button>
               </div>
             </div>
+            
+            <!-- Drop indicator below element -->
+            {#if isDraggedOver && dragOverPosition === 'below'}
+              <div class="h-1 bg-primary rounded-full mx-2"></div>
+            {/if}
           {/each}
+          
+          <!-- Drop zone indicator for bottom of list -->
+          {#if dragOverElement === 'list-bottom'}
+            <div class="h-1 bg-primary rounded-full mx-2 mt-1"></div>
+          {/if}
         </div>
       {/if}
     </div>

@@ -262,23 +262,23 @@
   function reorderElements(fromIndex: number, toIndex: number) {
     if (readonly) return
     
-    // Get the sorted elements array (by z-index, highest first)
+    // Get the sorted elements array (by z-index, lowest first)
     const sortedByZIndex = [...elements].sort((a, b) => {
       const aZ = a.zIndex || 0
       const bZ = b.zIndex || 0
-      return bZ - aZ
+      return aZ - bZ
     })
     
     // Move element from fromIndex to toIndex
     const [movedElement] = sortedByZIndex.splice(fromIndex, 1)
     sortedByZIndex.splice(toIndex, 0, movedElement)
     
-    // Reassign z-indices based on new order (highest z-index = index 0)
+    // Reassign z-indices based on new order (lowest z-index = index 0)
     const newElements = elements.map(el => {
       const newIndex = sortedByZIndex.findIndex(sorted => sorted.id === el.id)
       return {
         ...el,
-        zIndex: sortedByZIndex.length - newIndex - 1
+        zIndex: newIndex
       }
     })
     
@@ -801,6 +801,21 @@
     document.removeEventListener('mousemove', handlePanMove)
     document.removeEventListener('mouseup', handlePanEnd)
   })
+
+  // Update position and size properties in the toolbar during drag/resize operations
+  $: if (selectedElement && (isDragging || isResizing)) {
+    // Update the selected element's position/size values in real-time for the toolbar
+    const updatedElement = {
+      ...selectedElement,
+      x: currentVisualX,
+      y: currentVisualY,
+      width: currentVisualWidth,
+      height: currentVisualHeight
+    }
+    
+    // Update the selectedElement reference without triggering a full page update
+    selectedElement = updatedElement
+  }
 </script>
 
 <div class="h-full flex">
