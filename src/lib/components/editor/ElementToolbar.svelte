@@ -132,11 +132,11 @@
     }
   }
 
-  // Sort elements by z-index (higher z-index = on top)
+  // Sort elements by z-index (lowest to highest z-index = bottom to top in list)
   $: sortedElements = [...elements].sort((a, b) => {
     const aZ = a.zIndex ?? 0
     const bZ = b.zIndex ?? 0
-    return bZ - aZ // Higher z-index first (top to bottom in list)
+    return aZ - bZ // Lower z-index first (bottom to top in list)
   })
 
   // Create a reactive map of element z-indices for efficient lookups
@@ -271,7 +271,7 @@
           Elements ({elements.length})
         </h3>
         <div class="text-xs text-muted-foreground">
-          Drag to reorder
+          Lowest to highest
         </div>
       </div>
       
@@ -334,7 +334,7 @@
                     type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveUp(event, element.id)}
-                    disabled={index === 0}
+                    disabled={index === sortedElements.length - 1}
                     title="Move to front"
                   >
                     <ChevronUp class="w-2 h-2" />
@@ -343,7 +343,7 @@
                     type="button"
                     class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-3 w-6 p-0"
                     on:click={(event) => handleMoveDown(event, element.id)}
-                    disabled={index === sortedElements.length - 1}
+                    disabled={index === 0}
                     title="Move to back"
                   >
                     <ChevronDown class="w-2 h-2" />
