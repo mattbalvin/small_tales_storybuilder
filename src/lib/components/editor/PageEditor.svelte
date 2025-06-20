@@ -184,9 +184,19 @@
     const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
-      // Swap z-indices
-      updateElement(id, { zIndex: nextZIndex })
-      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
+      // Create new elements array with swapped z-indices
+      const newElements = elements.map(el => {
+        if (el.id === id) {
+          return { ...el, zIndex: nextZIndex }
+        } else if (el.id === elementAtNextLevel.id) {
+          return { ...el, zIndex: element.zIndex || 0 }
+        }
+        return el
+      })
+      
+      // Update elements array and save to database in one operation
+      elements = newElements
+      updatePageContent()
     }
   }
 
@@ -204,9 +214,19 @@
     const elementAtNextLevel = elements.find(el => (el.zIndex || 0) === nextZIndex)
     
     if (elementAtNextLevel) {
-      // Swap z-indices
-      updateElement(id, { zIndex: nextZIndex })
-      updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
+      // Create new elements array with swapped z-indices
+      const newElements = elements.map(el => {
+        if (el.id === id) {
+          return { ...el, zIndex: nextZIndex }
+        } else if (el.id === elementAtNextLevel.id) {
+          return { ...el, zIndex: element.zIndex || 0 }
+        }
+        return el
+      })
+      
+      // Update elements array and save to database in one operation
+      elements = newElements
+      updatePageContent()
     }
   }
 
