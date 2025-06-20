@@ -39,6 +39,8 @@
   // Cursor state
   let showZoomCursor = false
   let showPanCursor = false
+  let isAltPressed = false
+  let isCtrlPressed = false
 
   // Use local elements state that gets updated immediately
   let elements = page.content?.elements || []
@@ -74,8 +76,8 @@
   $: scaledWidth = Math.max(displayWidth * zoomLevel, 400)
   $: scaledHeight = Math.max(displayHeight * zoomLevel, 225)
 
-  // Cursor styles
-  $: cursorStyle = showZoomCursor ? 'zoom-in' : showPanCursor ? 'move' : 'default'
+  // Cursor styles based on key states
+  $: cursorStyle = isCtrlPressed ? 'zoom-in' : isAltPressed ? 'move' : 'default'
 
   function updatePageContent() {
     const newContent = {
@@ -120,7 +122,7 @@
   }
 
   function selectElement(id: string) {
-    if (readonly) return
+    if (readonly || isPanning) return
     selectedElementId = id
     console.log('Selected element:', id, 'Element data:', elements.find(el => el.id === id))
   }
@@ -209,8 +211,8 @@
     const maxPanX = Math.max(0, scaledWidth - viewportRect.width)
     const maxPanY = Math.max(0, scaledHeight - viewportRect.height)
 
-    panX = Math.max(-maxPanX, Math.min(0, panX))
-    panY = Math.max(-maxPanY, Math.min(0, panY))
+    panX = Math.max(-maxPanX, Math.min(maxPanX, panX))
+    panY = Math.max(-maxPanY, Math.min(maxPanY, panY))
   }
 
   function resetZoom() {
@@ -233,7 +235,7 @@
 
   // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
-    if (readonly || isPanning) return
+    if (readonly || isPanning || isAltPressed) return
     
     event.preventDefault()
     event.stopPropagation()
@@ -369,7 +371,7 @@
   }
 
   function handleCanvasClick(event: MouseEvent) {
-    if (readonly || isPanning) return
+    if (readonly || isPanning || isAltPressed) return
     
     // Only deselect if clicking on the canvas itself, not on an element
     const target = event.target as HTMLElement
@@ -378,11 +380,13 @@
     }
   }
 
-  // Pan handling
-  function handlePanStart(event: MouseEvent) {
-    if (!event.altKey || readonly) return
+  // Pan handling - Fixed implementation
+  function handleViewportMouseDown(event: MouseEvent) {
+    if (!isAltPressed || readonly) return
     
     event.preventDefault()
+    event.stopPropagation()
+    
     isPanning = true
     panStartX = event.clientX
     panStartY = event.clientY
@@ -396,34 +400,45 @@
   function handlePanMove(event: MouseEvent) {
     if (!isPanning) return
 
-    panX = panStartPanX + (event.clientX - panStartX)
-    panY = panStartPanY + (event.clientY - panStartY)
+    event.preventDefault()
+    
+    const deltaX = event.clientX - panStartX
+    const deltaY = event.clientY - panStartY
+    
+    panX = panStartPanX + deltaX
+    panY = panStartPanY + deltaY
     
     constrainPan()
   }
 
-  function handlePanEnd() {
+  function handlePanEnd(event: MouseEvent) {
+    event.preventDefault()
     isPanning = false
+    
     document.removeEventListener('mousemove', handlePanMove)
     document.removeEventListener('mouseup', handlePanEnd)
   }
 
-  // Keyboard and mouse event handlers
+  // Keyboard event handlers
   function handleKeyDown(event: KeyboardEvent) {
-    if (event.ctrlKey) {
+    if (event.ctrlKey && !isCtrlPressed) {
+      isCtrlPressed = true
       showZoomCursor = true
       showPanCursor = false
-    } else if (event.altKey) {
+    } else if (event.altKey && !isAltPressed) {
+      isAltPressed = true
       showZoomCursor = false
       showPanCursor = true
     }
   }
 
   function handleKeyUp(event: KeyboardEvent) {
-    if (!event.ctrlKey) {
+    if (!event.ctrlKey && isCtrlPressed) {
+      isCtrlPressed = false
       showZoomCursor = false
     }
-    if (!event.altKey) {
+    if (!event.altKey && isAltPressed) {
+      isAltPressed = false
       showPanCursor = false
     }
   }
@@ -571,7 +586,7 @@
       class="flex-1 overflow-auto bg-muted/20"
       style="cursor: {cursorStyle}"
       on:wheel={handleWheel}
-      on:mousedown={handlePanStart}
+      on:mousedown={handleViewportMouseDown}
       on:touchstart={handleTouchStart}
       on:touchmove={handleTouchMove}
     >
@@ -598,12 +613,12 @@
               class:border-2={selectedElementId === element.id && !readonly}
               class:border-primary={selectedElementId === element.id && !readonly}
               class:border-transparent={selectedElementId !== element.id || readonly}
-              class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning}
-              class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning}
-              class:cursor-default={readonly || isPanning}
+              class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed}
+              class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
+              class:cursor-default={readonly || isPanning || isAltPressed}
               style="left: {element.x}px; top: {element.y}px; width: {element.width}px; height: {element.height}px; z-index: {selectedElementId === element.id ? 10 : 1};"
-              on:mousedown={(e) => !readonly && !isPanning && handleMouseDown(e, element.id)}
-              on:click|stopPropagation={() => !readonly && !isPanning && selectElement(element.id)}
+              on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
+              on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
             >
               {#if element.type === 'text'}
                 <TextElement 
@@ -624,7 +639,7 @@
               {/if}
 
               <!-- Resize handles (only show when selected and not readonly) -->
-              {#if selectedElementId === element.id && !readonly}
+              {#if selectedElementId === element.id && !readonly && !isAltPressed}
                 <div 
                   class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
                   style="left: -6px; top: -6px; z-index: 20;"
