@@ -33,10 +33,27 @@
   let currentVisualWidth = 0
   let currentVisualHeight = 0
 
-  // Zoom and pan state
-  let zoomLevel = 1
-  let panX = 0
-  let panY = 0
+  // Separate zoom and pan state for each orientation
+  let viewState = {
+    landscape: {
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    },
+    portrait: {
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    }
+  }
+
+  // Current view state (reactive to orientation)
+  $: currentViewState = viewState[orientation]
+  $: zoomLevel = currentViewState.zoomLevel
+  $: panX = currentViewState.panX
+  $: panY = currentViewState.panY
+
+  // Pan state
   let isPanning = false
   let panStartX = 0
   let panStartY = 0
@@ -95,6 +112,36 @@
     const bZ = b.zIndex || 0
     return aZ - bZ
   })
+
+  // Watch for orientation changes and update view state
+  $: if (orientation) {
+    // When orientation changes, ensure we have proper view state
+    if (!viewState[orientation]) {
+      viewState[orientation] = {
+        zoomLevel: 1,
+        panX: 0,
+        panY: 0
+      }
+    }
+    
+    // Fit to screen for the new orientation if it's at default values
+    if (viewState[orientation].zoomLevel === 1 && 
+        viewState[orientation].panX === 0 && 
+        viewState[orientation].panY === 0) {
+      // Delay to ensure viewport is ready
+      setTimeout(() => fitToScreenForOrientation(orientation), 100)
+    }
+  }
+
+  function updateViewState(updates: Partial<typeof currentViewState>) {
+    viewState = {
+      ...viewState,
+      [orientation]: {
+        ...viewState[orientation],
+        ...updates
+      }
+    }
+  }
 
   function updatePageContent() {
     console.log(`=== updatePageContent called for ${orientation} ===`)
@@ -423,12 +470,15 @@
       const canvasMouseX = (mouseX - panX) / oldZoom
       const canvasMouseY = (mouseY - panY) / oldZoom
       
-      // Update zoom level
-      zoomLevel = newZoom
+      // Update zoom level and pan for current orientation
+      const newPanX = mouseX - canvasMouseX * newZoom
+      const newPanY = mouseY - canvasMouseY * newZoom
       
-      // Calculate new pan to keep the same canvas point under the mouse
-      panX = mouseX - canvasMouseX * newZoom
-      panY = mouseY - canvasMouseY * newZoom
+      updateViewState({
+        zoomLevel: newZoom,
+        panX: newPanX,
+        panY: newPanY
+      })
       
       // Constrain pan to keep canvas visible within viewport
       constrainPan()
@@ -442,14 +492,18 @@
         const canvasPointX = (centerX - panX) / oldZoom
         const canvasPointY = (centerY - panY) / oldZoom
         
-        zoomLevel = newZoom
+        const newPanX = centerX - canvasPointX * newZoom
+        const newPanY = centerY - canvasPointY * newZoom
         
-        panX = centerX - canvasPointX * newZoom
-        panY = centerY - canvasPointY * newZoom
+        updateViewState({
+          zoomLevel: newZoom,
+          panX: newPanX,
+          panY: newPanY
+        })
         
         constrainPan()
       } else {
-        zoomLevel = newZoom
+        updateViewState({ zoomLevel: newZoom })
       }
     }
   }
@@ -476,29 +530,55 @@
     const maxPanX = bufferX
     const maxPanY = bufferY
 
-    // Apply constraints
-    panX = Math.max(minPanX, Math.min(maxPanX, panX))
-    panY = Math.max(minPanY, Math.min(maxPanY, panY))
+    // Apply constraints and update view state
+    const constrainedPanX = Math.max(minPanX, Math.min(maxPanX, panX))
+    const constrainedPanY = Math.max(minPanY, Math.min(maxPanY, panY))
+    
+    if (constrainedPanX !== panX || constrainedPanY !== panY) {
+      updateViewState({
+        panX: constrainedPanX,
+        panY: constrainedPanY
+      })
+    }
   }
 
   function resetZoom() {
-    zoomLevel = 1
-    panX = 0
-    panY = 0
+    updateViewState({
+      zoomLevel: 1,
+      panX: 0,
+      panY: 0
+    })
   }
 
   function fitToScreen() {
+    fitToScreenForOrientation(orientation)
+  }
+
+  function fitToScreenForOrientation(targetOrientation: 'landscape' | 'portrait') {
     if (!viewportElement) return
 
     const viewportRect = viewportElement.getBoundingClientRect()
-    const scaleX = viewportRect.width / canvasWidth
-    const scaleY = viewportRect.height / canvasHeight
+    const targetCanvasWidth = targetOrientation === 'landscape' ? 1600 : 900
+    const targetCanvasHeight = targetOrientation === 'landscape' ? 900 : 1600
     
-    zoomLevel = Math.min(scaleX, scaleY) * 0.9 // 90% to leave some margin
+    const scaleX = viewportRect.width / targetCanvasWidth
+    const scaleY = viewportRect.height / targetCanvasHeight
+    
+    const newZoomLevel = Math.min(scaleX, scaleY) * 0.9 // 90% to leave some margin
     
     // Center the canvas in the viewport
-    panX = (viewportRect.width - canvasWidth * zoomLevel) / 2
-    panY = (viewportRect.height - canvasHeight * zoomLevel) / 2
+    const newPanX = (viewportRect.width - targetCanvasWidth * newZoomLevel) / 2
+    const newPanY = (viewportRect.height - targetCanvasHeight * newZoomLevel) / 2
+    
+    // Update view state for the target orientation
+    viewState = {
+      ...viewState,
+      [targetOrientation]: {
+        zoomLevel: newZoomLevel,
+        panX: newPanX,
+        panY: newPanY
+      }
+    }
   }
 
   // Smooth visual update function
@@ -749,8 +829,13 @@
     const deltaX = event.clientX - panStartX
     const deltaY = event.clientY - panStartY
     
-    panX = panStartPanX + deltaX
-    panY = panStartPanY + deltaY
+    const newPanX = panStartPanX + deltaX
+    const newPanY = panStartPanY + deltaY
+    
+    updateViewState({
+      panX: newPanX,
+      panY: newPanY
+    })
     
     constrainPan()
   }
@@ -844,8 +929,14 @@
       }
 
       // Pan
-      panX += currentCenter.x - lastTouchCenter.x
-      panY += currentCenter.y - lastTouchCenter.y
+      const newPanX = panX + (currentCenter.x - lastTouchCenter.x)
+      const newPanY = panY + (currentCenter.y - lastTouchCenter.y)
+      
+      updateViewState({
+        panX: newPanX,
+        panY: newPanY
+      })
+      
       constrainPan()
 
       lastTouchDistance = currentDistance
@@ -898,8 +989,8 @@
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keyup', handleKeyUp)
     
-    // Set initial zoom to fit screen
-    setTimeout(fitToScreen, 100)
+    // Set initial zoom to fit screen for current orientation
+    setTimeout(() => fitToScreenForOrientation(orientation), 100)
   })
 
   onDestroy(() => {
