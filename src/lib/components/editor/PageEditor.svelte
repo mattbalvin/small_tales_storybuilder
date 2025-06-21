@@ -49,20 +49,23 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
-  // Get elements from the new structure
+  // Get elements from the new structure - ensure we have the elements array
   $: elements = page.content?.elements || []
 
   // Create display elements with layout-specific properties for current orientation
-  $: displayElements = elements.map(element => ({
-    ...element,
-    // Merge layout properties for current orientation into the element
-    x: element.layouts?.[orientation]?.x ?? 50,
-    y: element.layouts?.[orientation]?.y ?? 50,
-    width: element.layouts?.[orientation]?.width ?? 200,
-    height: element.layouts?.[orientation]?.height ?? 100,
-    zIndex: element.layouts?.[orientation]?.zIndex ?? 0,
-    hidden: element.layouts?.[orientation]?.hidden ?? false
-  }))
+  $: displayElements = elements.map(element => {
+    const layoutData = element.layouts?.[orientation]
+    return {
+      ...element,
+      // Use layout-specific properties if they exist, otherwise use defaults
+      x: layoutData?.x ?? 50,
+      y: layoutData?.y ?? 50,
+      width: layoutData?.width ?? 200,
+      height: layoutData?.height ?? 100,
+      zIndex: layoutData?.zIndex ?? 0,
+      hidden: layoutData?.hidden ?? false
+    }
+  })
 
   // Reactive statement to get selected element
   $: selectedElement = selectedElementId ? displayElements.find(el => el.id === selectedElementId) : null
@@ -92,19 +95,25 @@
       const displayElement = displayElements.find(de => de.id === element.id)
       if (!displayElement) return element
 
+      // Ensure layouts object exists
+      const layouts = element.layouts || { landscape: {}, portrait: {} }
+      
+      // Update only the current orientation's layout
+      const updatedLayouts = {
+        ...layouts,
+        [orientation]: {
+          x: displayElement.x,
+          y: displayElement.y,
+          width: displayElement.width,
+          height: displayElement.height,
+          zIndex: displayElement.zIndex,
+          hidden: displayElement.hidden
+        }
+      }
+
       return {
         ...element,
-        layouts: {
-          ...element.layouts,
-          [orientation]: {
-            x: displayElement.x,
-            y: displayElement.y,
-            width: displayElement.width,
-            height: displayElement.height,
-            zIndex: displayElement.zIndex,
-            hidden: displayElement.hidden
-          }
-        }
+        layouts: updatedLayouts
       }
     })
 
@@ -114,6 +123,11 @@
     }
     
     console.log(`Updating page content for ${orientation} with ${updatedElements.length} elements`)
+    console.log('Updated elements:', updatedElements.map(el => ({
+      id: el.id,
+      type: el.type,
+      layouts: el.layouts
+    })))
     
     // Update the page object immediately for local reactivity
     page = {
@@ -186,7 +200,7 @@
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
-    console.log('updateElement called:', { id, updates })
+    console.log('updateElement called:', { id, updates, orientation })
     
     // Check if this is a layout property update
     const layoutProps = ['x', 'y', 'width', 'height', 'zIndex', 'hidden']
@@ -196,16 +210,23 @@
       // Update layout properties for current orientation
       elements = elements.map(el => {
         if (el.id === id) {
-          const currentLayout = el.layouts?.[orientation] || {}
+          // Ensure layouts object exists
+          const layouts = el.layouts || { landscape: {}, portrait: {} }
+          const currentLayout = layouts[orientation] || {}
+          
+          const updatedLayouts = {
+            ...layouts,
+            [orientation]: {
+              ...currentLayout,
+              ...updates
+            }
+          }
+          
+          console.log(`Updating ${orientation} layout for element ${id}:`, updatedLayouts[orientation])
+          
           return {
             ...el,
-            layouts: {
-              ...el.layouts,
-              [orientation]: {
-                ...currentLayout,
-                ...updates
-              }
-            }
+            layouts: updatedLayouts
           }
         }
         return el
@@ -295,15 +316,18 @@
     
     const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
     
+    // Get current layout data for the orientation
+    const currentLayoutData = element.layouts?.[orientation] || {}
+    
     const duplicatedElement = {
       ...element,
       id: Math.random().toString(36).substr(2, 9),
       layouts: {
         ...element.layouts,
         [orientation]: {
-          ...element.layouts[orientation],
-          x: (element.layouts[orientation]?.x || 0) + 20,
-          y: (element.layouts[orientation]?.y || 0) + 20,
+          ...currentLayoutData,
+          x: (currentLayoutData.x || 0) + 20,
+          y: (currentLayoutData.y || 0) + 20,
           zIndex: maxZIndex + 1
         }
       }
@@ -341,19 +365,19 @@
     if (!element) return
     
     const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
-    const currentLayout = element.layouts[orientation]
-    const otherLayout = element.layouts[otherOrientation]
+    const currentLayout = element.layouts?.[orientation] || {}
+    const otherLayout = element.layouts?.[otherOrientation] || {}
     
     // Scale element position and size for the other orientation
     const scaleX = otherOrientation === 'landscape' ? (1600 / 900) : (900 / 1600)
     const scaleY = otherOrientation === 'landscape' ? (900 / 1600) : (1600 / 900)
     
     const scaledLayout = {
-      x: Math.round((currentLayout?.x || 0) * scaleX),
-      y: Math.round((currentLayout?.y || 0) * scaleY),
-      width: Math.round((currentLayout?.width || 0) * scaleX),
-      height: Math.round((currentLayout?.height || 0) * scaleY),
-      zIndex: otherLayout?.zIndex || 0,
+      x: Math.round((currentLayout.x || 0) * scaleX),
+      y: Math.round((currentLayout.y || 0) * scaleY),
+      width: Math.round((currentLayout.width || 0) * scaleX),
+      height: Math.round((currentLayout.height || 0) * scaleY),
+      zIndex: otherLayout.zIndex || 0,
       hidden: false
     }
     
@@ -674,6 +698,7 @@
         updates.height = currentVisualHeight
       }
       
+      console.log('Final update for element:', selectedElementId, 'in orientation:', orientation, 'updates:', updates)
       updateElement(selectedElementId, updates)
     }
     
