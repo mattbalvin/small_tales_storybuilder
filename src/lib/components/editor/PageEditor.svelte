@@ -53,12 +53,17 @@
   $: panX = currentViewState.panX
   $: panY = currentViewState.panY
 
-  // Pan state
+  // Pan state with optimized handling
   let isPanning = false
   let panStartX = 0
   let panStartY = 0
   let panStartPanX = 0
   let panStartPanY = 0
+  
+  // Temporary pan values during drag (to avoid excessive reactivity)
+  let tempPanX = 0
+  let tempPanY = 0
+  let panUpdateScheduled = false
 
   // Cursor state
   let showZoomCursor = false
@@ -140,6 +145,23 @@
         ...viewState[orientation],
         ...updates
       }
+    }
+  }
+
+  // Optimized pan update function with debouncing
+  function schedulePanUpdate(newPanX: number, newPanY: number) {
+    tempPanX = newPanX
+    tempPanY = newPanY
+    
+    if (!panUpdateScheduled) {
+      panUpdateScheduled = true
+      requestAnimationFrame(() => {
+        updateViewState({
+          panX: tempPanX,
+          panY: tempPanY
+        })
+        panUpdateScheduled = false
+      })
     }
   }
 
@@ -804,7 +826,7 @@
     }
   }
 
-  // Pan handling - Fixed implementation
+  // Pan handling - Optimized implementation
   function handleViewportMouseDown(event: MouseEvent) {
     if (!isAltPressed || readonly) return
     
@@ -832,17 +854,16 @@
     const newPanX = panStartPanX + deltaX
     const newPanY = panStartPanY + deltaY
     
-    updateViewState({
-      panX: newPanX,
-      panY: newPanY
-    })
-    
-    constrainPan()
+    // Use optimized pan update to reduce jitter
+    schedulePanUpdate(newPanX, newPanY)
   }
 
   function handlePanEnd(event: MouseEvent) {
     event.preventDefault()
     isPanning = false
+    
+    // Final constraint check
+    constrainPan()
     
     document.removeEventListener('mousemove', handlePanMove)
     document.removeEventListener('mouseup', handlePanEnd)
@@ -928,15 +949,11 @@
         handleZoom(zoomDelta * 0.01, currentCenter.x, currentCenter.y)
       }
 
-      // Pan
+      // Pan with optimized update
       const newPanX = panX + (currentCenter.x - lastTouchCenter.x)
       const newPanY = panY + (currentCenter.y - lastTouchCenter.y)
       
-      updateViewState({
-        panX: newPanX,
-        panY: newPanY
-      })
-      
+      schedulePanUpdate(newPanX, newPanY)
       constrainPan()
 
       lastTouchDistance = currentDistance
