@@ -60,17 +60,17 @@
       portrait: { x: 30, y: 80, width: 250, height: 120, zIndex: 0, hidden: false }
     }
     
-    const layoutData = layouts[orientation]
+    const layoutData = layouts[orientation] || {}
     
     return {
       ...element,
-      // Use layout-specific properties
-      x: layoutData?.x ?? (orientation === 'landscape' ? 50 : 30),
-      y: layoutData?.y ?? (orientation === 'landscape' ? 50 : 80),
-      width: layoutData?.width ?? (orientation === 'landscape' ? 200 : 250),
-      height: layoutData?.height ?? (orientation === 'landscape' ? 100 : 120),
-      zIndex: layoutData?.zIndex ?? 0,
-      hidden: layoutData?.hidden ?? false
+      // Use layout-specific properties with proper defaults
+      x: layoutData.x ?? (orientation === 'landscape' ? 50 : 30),
+      y: layoutData.y ?? (orientation === 'landscape' ? 50 : 80),
+      width: layoutData.width ?? (orientation === 'landscape' ? 200 : 250),
+      height: layoutData.height ?? (orientation === 'landscape' ? 100 : 120),
+      zIndex: layoutData.zIndex ?? 0,
+      hidden: layoutData.hidden ?? false
     }
   })
 
@@ -98,62 +98,14 @@
 
   function updatePageContent() {
     console.log(`=== updatePageContent called for ${orientation} ===`)
-    console.log('Current elements before update:', elements.length)
-    console.log('Current displayElements:', displayElements.map(el => ({ 
-      id: el.id, 
-      type: el.type, 
-      x: el.x, 
-      y: el.y, 
-      width: el.width, 
-      height: el.height 
-    })))
-
-    // Create updated elements array by merging display element layout data back into the elements
-    const updatedElements = elements.map(element => {
-      const displayElement = displayElements.find(de => de.id === element.id)
-      if (!displayElement) {
-        console.log('No display element found for:', element.id)
-        return element
-      }
-
-      // Ensure layouts object exists with both orientations
-      const existingLayouts = element.layouts || { landscape: {}, portrait: {} }
-      
-      // Create the updated layout data for the current orientation
-      const updatedLayoutData = {
-        x: displayElement.x,
-        y: displayElement.y,
-        width: displayElement.width,
-        height: displayElement.height,
-        zIndex: displayElement.zIndex,
-        hidden: displayElement.hidden
-      }
-
-      // Update only the current orientation's layout
-      const updatedLayouts = {
-        ...existingLayouts,
-        [orientation]: updatedLayoutData
-      }
-
-      console.log(`Element ${element.id} layout update for ${orientation}:`, updatedLayoutData)
-
-      return {
-        ...element,
-        layouts: updatedLayouts
-      }
-    })
-
+    
+    // Create the new content structure
     const newContent = {
       ...page.content,
-      elements: updatedElements
+      elements: elements // Use the current elements array as-is
     }
     
-    console.log(`Updated page content for ${orientation} with ${updatedElements.length} elements`)
-    console.log('Final updated elements layouts:', updatedElements.map(el => ({
-      id: el.id,
-      type: el.type,
-      layouts: el.layouts
-    })))
+    console.log(`Dispatching page content update for ${orientation}`)
     
     // Update the page object immediately for local reactivity
     page = {
@@ -242,7 +194,11 @@
       elements = elements.map(el => {
         if (el.id === id) {
           // Ensure layouts object exists
-          const existingLayouts = el.layouts || { landscape: {}, portrait: {} }
+          const existingLayouts = el.layouts || { 
+            landscape: { x: 50, y: 50, width: 200, height: 100, zIndex: 0, hidden: false },
+            portrait: { x: 30, y: 80, width: 250, height: 120, zIndex: 0, hidden: false }
+          }
+          
           const currentLayout = existingLayouts[orientation] || {}
           
           const updatedLayoutData = {
