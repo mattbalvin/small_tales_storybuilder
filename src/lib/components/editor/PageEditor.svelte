@@ -832,12 +832,12 @@
     const newPanX = panStartPanX + deltaX
     const newPanY = panStartPanY + deltaY
     
-    updateViewState({
-      panX: newPanX,
-      panY: newPanY
-    })
+    //updateViewState({
+    //  panX: newPanX,
+    //  panY: newPanY
+    //})
     
-    constrainPan()
+    // constrainPan()
   }
 
   function handlePanEnd(event: MouseEvent) {
