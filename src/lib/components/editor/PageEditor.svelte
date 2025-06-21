@@ -836,7 +836,9 @@
       panX: newPanX,
       panY: newPanY
     })
-    
+
+    // TBD: This function causes really borked jitter right now. It needs to be fixed and re-enabled to ensure proper view constraints.
+    // But right now the app works better without it.
     // constrainPan()
   }
 
