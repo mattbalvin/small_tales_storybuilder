@@ -49,19 +49,26 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
-  // Get elements from the new structure - ensure we have the elements array
+  // Get elements from the page content - this is the source of truth
   $: elements = page.content?.elements || []
 
   // Create display elements with layout-specific properties for current orientation
   $: displayElements = elements.map(element => {
-    const layoutData = element.layouts?.[orientation]
+    // Ensure layouts object exists with both orientations
+    const layouts = element.layouts || { 
+      landscape: { x: 50, y: 50, width: 200, height: 100, zIndex: 0, hidden: false },
+      portrait: { x: 30, y: 80, width: 250, height: 120, zIndex: 0, hidden: false }
+    }
+    
+    const layoutData = layouts[orientation]
+    
     return {
       ...element,
-      // Use layout-specific properties if they exist, otherwise use defaults
-      x: layoutData?.x ?? 50,
-      y: layoutData?.y ?? 50,
-      width: layoutData?.width ?? 200,
-      height: layoutData?.height ?? 100,
+      // Use layout-specific properties
+      x: layoutData?.x ?? (orientation === 'landscape' ? 50 : 30),
+      y: layoutData?.y ?? (orientation === 'landscape' ? 50 : 80),
+      width: layoutData?.width ?? (orientation === 'landscape' ? 200 : 250),
+      height: layoutData?.height ?? (orientation === 'landscape' ? 100 : 120),
       zIndex: layoutData?.zIndex ?? 0,
       hidden: layoutData?.hidden ?? false
     }
@@ -90,26 +97,45 @@
   })
 
   function updatePageContent() {
-    // Update the elements array with the current layout changes
+    console.log(`=== updatePageContent called for ${orientation} ===`)
+    console.log('Current elements before update:', elements.length)
+    console.log('Current displayElements:', displayElements.map(el => ({ 
+      id: el.id, 
+      type: el.type, 
+      x: el.x, 
+      y: el.y, 
+      width: el.width, 
+      height: el.height 
+    })))
+
+    // Create updated elements array by merging display element layout data back into the elements
     const updatedElements = elements.map(element => {
       const displayElement = displayElements.find(de => de.id === element.id)
-      if (!displayElement) return element
+      if (!displayElement) {
+        console.log('No display element found for:', element.id)
+        return element
+      }
 
-      // Ensure layouts object exists
-      const layouts = element.layouts || { landscape: {}, portrait: {} }
+      // Ensure layouts object exists with both orientations
+      const existingLayouts = element.layouts || { landscape: {}, portrait: {} }
       
+      // Create the updated layout data for the current orientation
+      const updatedLayoutData = {
+        x: displayElement.x,
+        y: displayElement.y,
+        width: displayElement.width,
+        height: displayElement.height,
+        zIndex: displayElement.zIndex,
+        hidden: displayElement.hidden
+      }
+
       // Update only the current orientation's layout
       const updatedLayouts = {
-        ...layouts,
-        [orientation]: {
-          x: displayElement.x,
-          y: displayElement.y,
-          width: displayElement.width,
-          height: displayElement.height,
-          zIndex: displayElement.zIndex,
-          hidden: displayElement.hidden
-        }
+        ...existingLayouts,
+        [orientation]: updatedLayoutData
       }
+
+      console.log(`Element ${element.id} layout update for ${orientation}:`, updatedLayoutData)
 
       return {
         ...element,
@@ -122,8 +148,8 @@
       elements: updatedElements
     }
     
-    console.log(`Updating page content for ${orientation} with ${updatedElements.length} elements`)
-    console.log('Updated elements:', updatedElements.map(el => ({
+    console.log(`Updated page content for ${orientation} with ${updatedElements.length} elements`)
+    console.log('Final updated elements layouts:', updatedElements.map(el => ({
       id: el.id,
       type: el.type,
       layouts: el.layouts
@@ -200,38 +226,50 @@
   function updateElement(id: string, updates: any) {
     if (readonly) return
     
-    console.log('updateElement called:', { id, updates, orientation })
+    console.log('=== updateElement called ===')
+    console.log('Element ID:', id)
+    console.log('Updates:', updates)
+    console.log('Current orientation:', orientation)
     
     // Check if this is a layout property update
     const layoutProps = ['x', 'y', 'width', 'height', 'zIndex', 'hidden']
     const isLayoutUpdate = Object.keys(updates).some(key => layoutProps.includes(key))
     
     if (isLayoutUpdate) {
+      console.log('This is a layout update')
+      
       // Update layout properties for current orientation
       elements = elements.map(el => {
         if (el.id === id) {
           // Ensure layouts object exists
-          const layouts = el.layouts || { landscape: {}, portrait: {} }
-          const currentLayout = layouts[orientation] || {}
+          const existingLayouts = el.layouts || { landscape: {}, portrait: {} }
+          const currentLayout = existingLayouts[orientation] || {}
           
-          const updatedLayouts = {
-            ...layouts,
-            [orientation]: {
-              ...currentLayout,
-              ...updates
-            }
+          const updatedLayoutData = {
+            ...currentLayout,
+            ...updates
           }
           
-          console.log(`Updating ${orientation} layout for element ${id}:`, updatedLayouts[orientation])
+          const updatedLayouts = {
+            ...existingLayouts,
+            [orientation]: updatedLayoutData
+          }
           
-          return {
+          console.log(`Updated ${orientation} layout for element ${id}:`, updatedLayoutData)
+          
+          const updatedElement = {
             ...el,
             layouts: updatedLayouts
           }
+          
+          console.log('Full updated element:', updatedElement)
+          return updatedElement
         }
         return el
       })
     } else {
+      console.log('This is a content property update')
+      
       // Update shared content properties
       elements = elements.map(el => {
         if (el.id === id) {
@@ -241,6 +279,7 @@
       })
     }
     
+    // Force reactivity by triggering page content update
     updatePageContent()
     
     // Force a re-render by updating the selected element reference
