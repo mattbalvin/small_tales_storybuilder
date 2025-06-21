@@ -53,12 +53,15 @@
   $: panX = currentViewState.panX
   $: panY = currentViewState.panY
 
-  // Pan state
+  // Pan state - improved to reduce jitter
   let isPanning = false
   let panStartX = 0
   let panStartY = 0
   let panStartPanX = 0
   let panStartPanY = 0
+  let pendingPanX = 0
+  let pendingPanY = 0
+  let panAnimationFrameId: number | null = null
 
   // Cursor state
   let showZoomCursor = false
@@ -592,6 +595,17 @@
     activeElementDOM.style.height = `${currentVisualHeight}px`
   }
 
+  // Smooth pan update function
+  function updatePanVisuals() {
+    if (!isPanning) return
+
+    // Apply pending pan values to view state
+    updateViewState({
+      panX: pendingPanX,
+      panY: pendingPanY
+    })
+  }
+
   // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
     if (readonly || isPanning || isAltPressed) return
@@ -804,7 +818,7 @@
     }
   }
 
-  // Pan handling - Fixed implementation
+  // Improved pan handling - Fixed implementation with reduced jitter
   function handleViewportMouseDown(event: MouseEvent) {
     if (!isAltPressed || readonly) return
     
@@ -816,6 +830,10 @@
     panStartY = event.clientY
     panStartPanX = panX
     panStartPanY = panY
+    
+    // Initialize pending values
+    pendingPanX = panX
+    pendingPanY = panY
 
     document.addEventListener('mousemove', handlePanMove)
     document.addEventListener('mouseup', handlePanEnd)
@@ -829,20 +847,29 @@
     const deltaX = event.clientX - panStartX
     const deltaY = event.clientY - panStartY
     
-    const newPanX = panStartPanX + deltaX
-    const newPanY = panStartPanY + deltaY
+    // Update pending values without constraints during movement
+    pendingPanX = panStartPanX + deltaX
+    pendingPanY = panStartPanY + deltaY
     
-    updateViewState({
-      panX: newPanX,
-      panY: newPanY
-    })
-    
-    constrainPan()
+    // Use animation frame for smooth updates
+    if (panAnimationFrameId) {
+      cancelAnimationFrame(panAnimationFrameId)
+    }
+    panAnimationFrameId = requestAnimationFrame(updatePanVisuals)
   }
 
   function handlePanEnd(event: MouseEvent) {
     event.preventDefault()
     isPanning = false
+    
+    // Cancel any pending animation frame
+    if (panAnimationFrameId) {
+      cancelAnimationFrame(panAnimationFrameId)
+      panAnimationFrameId = null
+    }
+    
+    // Apply final constraints only at the end
+    constrainPan()
     
     document.removeEventListener('mousemove', handlePanMove)
     document.removeEventListener('mouseup', handlePanEnd)
@@ -928,16 +955,14 @@
         handleZoom(zoomDelta * 0.01, currentCenter.x, currentCenter.y)
       }
 
-      // Pan
-      const newPanX = panX + (currentCenter.x - lastTouchCenter.x)
-      const newPanY = panY + (currentCenter.y - lastTouchCenter.y)
+      // Pan - use pending values for smooth movement
+      pendingPanX = panX + (currentCenter.x - lastTouchCenter.x)
+      pendingPanY = panY + (currentCenter.y - lastTouchCenter.y)
       
-      updateViewState({
-        panX: newPanX,
-        panY: newPanY
-      })
-      
-      constrainPan()
+      if (panAnimationFrameId) {
+        cancelAnimationFrame(panAnimationFrameId)
+      }
+      panAnimationFrameId = requestAnimationFrame(updatePanVisuals)
 
       lastTouchDistance = currentDistance
       lastTouchCenter = currentCenter
@@ -997,6 +1022,9 @@
     // Clean up any pending animation frames
     if (animationFrameId) {
       cancelAnimationFrame(animationFrameId)
+    }
+    if (panAnimationFrameId) {
+      cancelAnimationFrame(panAnimationFrameId)
     }
     
     document.removeEventListener('keydown', handleKeyDown)
