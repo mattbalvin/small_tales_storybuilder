@@ -29,7 +29,7 @@
   let isDraggingElement = false
   let dragOverPosition: 'above' | 'below' | null = null
 
-  function addElement(type: 'text' | 'image' | 'audio') {
+  function addElement(type: 'text' | 'image') {
     dispatch('add', { type })
   }
 
@@ -93,8 +93,6 @@
       if (!localElement.properties?.alt) {
         handleImagePropertyChange('alt', alt || filename)
       }
-    } else if (localElement.type === 'audio' && mediaPropertyToUpdate === 'src') {
-      handleAudioPropertyChange('src', url)
     }
 
     closeMediaSelector()
@@ -143,27 +141,6 @@
     })
   }
 
-  async function handleAudioPropertyChange(property: string, value: any) {
-    if (!localElement || localElement.type !== 'audio') return
-    
-    // If it's a src property change and we have a user, process the URL
-    if (property === 'src' && value && $authStore.user) {
-      try {
-        const processedUrl = await mediaService.processUrlForElement(value, $authStore.user.id, 'audio')
-        value = processedUrl
-      } catch (error) {
-        console.warn('Failed to process audio URL:', error)
-      }
-    }
-    
-    updateElement({
-      properties: {
-        ...localElement.properties,
-        [property]: value
-      }
-    })
-  }
-
   function handleAnimationChange(event: Event) {
     if (event.target instanceof HTMLSelectElement && localElement) {
       updateElement({ 
@@ -178,7 +155,6 @@
     switch (type) {
       case 'text': return Type
       case 'image': return Image
-      case 'audio': return Volume2
       default: return Move3D
     }
   }
@@ -190,8 +166,6 @@
         return text.length > 20 ? text.substring(0, 20) + '...' : text
       case 'image':
         return element.properties?.alt || 'Image Element'
-      case 'audio':
-        return 'Audio Element'
       default:
         return 'Element'
     }
@@ -411,7 +385,7 @@
   <div class="p-4 space-y-6 flex-1 overflow-y-auto">
     <!-- Add Elements -->
     <div>
-      <h3 class="font-medium mb-3">Add Elements</h3>
+      <h3 class="font-medium mb-3">Add Visual Elements</h3>
       <div class="grid grid-cols-2 gap-2">
         <Button variant="outline" size="sm" on:click={() => addElement('text')}>
           <Type class="w-4 h-4 mr-2" />
@@ -421,11 +395,10 @@
           <Image class="w-4 h-4 mr-2" />
           Image
         </Button>
-        <Button variant="outline" size="sm" on:click={() => addElement('audio')} class="col-span-2">
-          <Volume2 class="w-4 h-4 mr-2" />
-          Audio
-        </Button>
       </div>
+      <p class="text-xs text-muted-foreground mt-2">
+        Audio elements are managed separately and don't appear on the canvas
+      </p>
     </div>
 
     <!-- Elements List -->
@@ -953,50 +926,6 @@
                       </button>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          {:else if localElement.type === 'audio'}
-            <div>
-              <h4 class="text-sm font-medium mb-2">Audio Properties</h4>
-              <div class="space-y-2">
-                <div>
-                  <label class="text-xs text-muted-foreground">Source URL</label>
-                  <div class="flex gap-2">
-                    <Input
-                      value={localElement.properties?.src || ''}
-                      placeholder="https://... or select from media library"
-                      on:input={(e) => {
-                        if (e.target instanceof HTMLInputElement) {
-                          handleAudioPropertyChange('src', e.target.value);
-                        }
-                      }}
-                      class="flex-1"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      on:click={() => openMediaSelector('audio', 'src')}
-                      title="Select from media library"
-                    >
-                      <FolderOpen class="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <p class="text-xs text-muted-foreground mt-1">
-                    External URLs will be automatically imported to your media library
-                  </p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={localElement.properties?.autoplay || false}
-                    on:change={(e) => {
-                      if (e.target instanceof HTMLInputElement) {
-                        handleAudioPropertyChange('autoplay', e.target.checked);
-                      }
-                    }}
-                  />
-                  <label class="text-sm">Autoplay</label>
                 </div>
               </div>
             </div>

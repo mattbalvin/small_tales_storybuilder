@@ -82,8 +82,8 @@ export interface Database {
               type: 'text' | 'image' | 'audio'
               // Shared content properties
               properties: any
-              // Layout-specific properties
-              layouts: {
+              // Layout-specific properties (only for text and image elements)
+              layouts?: {
                 landscape: {
                   x: number
                   y: number
@@ -102,6 +102,21 @@ export interface Database {
                 }
               }
               animation?: any
+            }>
+            // Page-level audio elements (not positioned)
+            audioElements?: Array<{
+              id: string
+              type: 'audio'
+              properties: {
+                src: string
+                volume: number // 0-100
+                isIdleLoop: boolean
+                actionVolume?: number // 0-100, only if isIdleLoop is true
+                playbackMode?: 'random' | 'trigger' // only if isIdleLoop is false
+                minDelay?: number // seconds, only if playbackMode is 'random'
+                maxDelay?: number // seconds, only if playbackMode is 'random'
+                triggerName?: string // only if playbackMode is 'trigger'
+              }
             }>
             background?: any
             animation?: any
@@ -117,7 +132,7 @@ export interface Database {
               id: string
               type: 'text' | 'image' | 'audio'
               properties: any
-              layouts: {
+              layouts?: {
                 landscape: {
                   x: number
                   y: number
@@ -137,6 +152,20 @@ export interface Database {
               }
               animation?: any
             }>
+            audioElements?: Array<{
+              id: string
+              type: 'audio'
+              properties: {
+                src: string
+                volume?: number
+                isIdleLoop?: boolean
+                actionVolume?: number
+                playbackMode?: 'random' | 'trigger'
+                minDelay?: number
+                maxDelay?: number
+                triggerName?: string
+              }
+            }>
             background?: any
             animation?: any
           }
@@ -151,7 +180,7 @@ export interface Database {
               id: string
               type: 'text' | 'image' | 'audio'
               properties: any
-              layouts: {
+              layouts?: {
                 landscape: {
                   x: number
                   y: number
@@ -170,6 +199,20 @@ export interface Database {
                 }
               }
               animation?: any
+            }>
+            audioElements?: Array<{
+              id: string
+              type: 'audio'
+              properties: {
+                src: string
+                volume?: number
+                isIdleLoop?: boolean
+                actionVolume?: number
+                playbackMode?: 'random' | 'trigger'
+                minDelay?: number
+                maxDelay?: number
+                triggerName?: string
+              }
             }>
             background?: any
             animation?: any

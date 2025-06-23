@@ -2,9 +2,9 @@
   import { createEventDispatcher, onMount, onDestroy } from 'svelte'
   import { cn } from '$lib/utils'
   import ElementToolbar from './ElementToolbar.svelte'
+  import AudioManager from './AudioManager.svelte'
   import TextElement from './elements/TextElement.svelte'
   import ImageElement from './elements/ImageElement.svelte'
-  import AudioElement from './elements/AudioElement.svelte'
   import type { Database } from '$lib/types/database'
 
   type StoryPage = Database['public']['Tables']['story_pages']['Row']
@@ -66,11 +66,14 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
-  // Get elements from the page content - this is the source of truth
-  $: elements = page.content?.elements || []
+  // Get visual elements from the page content (text and image only)
+  $: visualElements = (page.content?.elements || []).filter(el => el.type !== 'audio')
+
+  // Get audio elements from the page content
+  $: audioElements = page.content?.audioElements || []
 
   // Create display elements with layout-specific properties for current orientation
-  $: displayElements = elements.map(element => {
+  $: displayElements = visualElements.map(element => {
     // Ensure layouts object exists with both orientations
     const layouts = element.layouts || { 
       landscape: { x: 50, y: 50, width: 200, height: 100, zIndex: 0, hidden: false },
@@ -149,7 +152,8 @@
     // Create the new content structure
     const newContent = {
       ...page.content,
-      elements: elements // Use the current elements array as-is
+      elements: visualElements, // Only visual elements
+      audioElements: audioElements // Audio elements separately
     }
     
     console.log(`Dispatching page content update for ${orientation}`)
@@ -169,6 +173,28 @@
   function addElement(type: 'text' | 'image' | 'audio') {
     if (readonly) return
     
+    if (type === 'audio') {
+      // Add audio element to audioElements array
+      const newAudioElement = {
+        id: Math.random().toString(36).substr(2, 9),
+        type: 'audio' as const,
+        properties: {
+          src: '',
+          volume: 100,
+          isIdleLoop: false,
+          playbackMode: 'random' as const,
+          minDelay: 1,
+          maxDelay: 5
+        }
+      }
+
+      // Add to audio elements array
+      audioElements = [...audioElements, newAudioElement]
+      updatePageContent()
+      return
+    }
+
+    // For visual elements (text and image)
     // Find the highest z-index and add 1
     const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
     
@@ -187,9 +213,7 @@
       type,
       properties: type === 'text' 
         ? { text: 'New text element', fontSize: orientation === 'landscape' ? 16 : 14, color: '#000000' }
-        : type === 'image'
-        ? { src: '', alt: '', opacity: 100 }
-        : { src: '', autoplay: false },
+        : { src: '', alt: '', opacity: 100 },
       layouts: {
         landscape: {
           x: orientation === 'landscape' ? defaultX : 50,
@@ -210,8 +234,8 @@
       }
     }
 
-    // Add to elements array
-    elements = [...elements, newElement]
+    // Add to visual elements array
+    visualElements = [...visualElements, newElement]
     selectedElementId = newElement.id
     updatePageContent()
   }
@@ -238,7 +262,7 @@
       console.log('This is a layout update')
       
       // Update layout properties for current orientation
-      elements = elements.map(el => {
+      visualElements = visualElements.map(el => {
         if (el.id === id) {
           // Ensure layouts object exists
           const existingLayouts = el.layouts || { 
@@ -274,7 +298,7 @@
       console.log('This is a content property update')
       
       // Update shared content properties
-      elements = elements.map(el => {
+      visualElements = visualElements.map(el => {
         if (el.id === id) {
           return { ...el, ...updates }
         }
@@ -294,7 +318,7 @@
   function deleteElement(id: string) {
     if (readonly) return
     
-    elements = elements.filter(el => el.id !== id)
+    visualElements = visualElements.filter(el => el.id !== id)
     if (selectedElementId === id) {
       selectedElementId = null
     }
@@ -353,7 +377,7 @@
   function duplicateElement(id: string) {
     if (readonly) return
     
-    const element = elements.find(el => el.id === id)
+    const element = visualElements.find(el => el.id === id)
     if (!element) return
     
     const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
@@ -375,7 +399,7 @@
       }
     }
     
-    elements = [...elements, duplicatedElement]
+    visualElements = [...visualElements, duplicatedElement]
     selectedElementId = duplicatedElement.id
     updatePageContent()
   }
@@ -403,7 +427,7 @@
   function copyElementToOtherOrientation(id: string) {
     if (readonly) return
     
-    const element = elements.find(el => el.id === id)
+    const element = visualElements.find(el => el.id === id)
     if (!element) return
     
     const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
@@ -424,7 +448,7 @@
     }
     
     // Update the element's layout for the other orientation
-    elements = elements.map(el => {
+    visualElements = visualElements.map(el => {
       if (el.id === id) {
         return {
           ...el,
@@ -440,6 +464,55 @@
     updatePageContent()
     
     console.log(`Copied element to ${otherOrientation} orientation with scaled dimensions`)
+  }
+
+  // Audio management functions
+  function updateAudioElement(id: string, updates: any) {
+    if (readonly) return
+    
+    audioElements = audioElements.map(el => {
+      if (el.id === id) {
+        return {
+          ...el,
+          properties: {
+            ...el.properties,
+            ...updates
+          }
+        }
+      }
+      return el
+    })
+    
+    updatePageContent()
+  }
+
+  function deleteAudioElement(id: string) {
+    if (readonly) return
+    
+    audioElements = audioElements.filter(el => el.id !== id)
+    updatePageContent()
+  }
+
+  function duplicateAudioElement(id: string) {
+    if (readonly) return
+    
+    const element = audioElements.find(el => el.id === id)
+    if (!element) return
+    
+    const duplicatedElement = {
+      ...element,
+      id: Math.random().toString(36).substr(2, 9)
+    }
+    
+    audioElements = [...audioElements, duplicatedElement]
+    updatePageContent()
+  }
+
+  // Get all trigger names defined on the current page
+  function getPageTriggers(): string[] {
+    // For now, return a basic set of triggers
+    // In the future, this could be expanded to include triggers from interactive elements
+    return ['page_load', 'page_complete', 'element_click', 'custom_trigger']
   }
 
   function getCanvasRect() {
@@ -1127,11 +1200,6 @@
                   {element} 
                   on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
                 />
-              {:else if element.type === 'audio'}
-                <AudioElement 
-                  {element} 
-                  on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
-                />
               {/if}
             {:else}
               <!-- Hidden element placeholder -->
@@ -1188,26 +1256,41 @@
     </div>
   </div>
 
-  <!-- Element Toolbar - Fixed position, unaffected by zoom -->
+  <!-- Sidebar with Element Toolbar and Audio Manager -->
   {#if !readonly}
-    <div class="flex-shrink-0">
-      <ElementToolbar 
-        {selectedElementId}
-        selectedElement={selectedElement}
-        elements={displayElements}
-        {orientation}
-        on:add={(e) => addElement(e.detail.type)}
-        on:update={handleElementUpdate}
-        on:delete={() => selectedElementId && deleteElement(selectedElementId)}
-        on:select={handleElementSelect}
-        on:toggle-visibility={handleToggleVisibility}
-        on:move-back={handleMoveBack}
-        on:move-forward={handleMoveForward}
-        on:duplicate={handleDuplicate}
-        on:delete-element={handleDeleteElement}
-        on:reorder={handleReorder}
-        on:copy-to-other-orientation={handleCopyToOtherOrientation}
-      />
+    <div class="flex-shrink-0 flex">
+      <!-- Element Toolbar -->
+      <div class="w-80">
+        <ElementToolbar 
+          {selectedElementId}
+          selectedElement={selectedElement}
+          elements={displayElements}
+          {orientation}
+          on:add={(e) => addElement(e.detail.type)}
+          on:update={handleElementUpdate}
+          on:delete={() => selectedElementId && deleteElement(selectedElementId)}
+          on:select={handleElementSelect}
+          on:toggle-visibility={handleToggleVisibility}
+          on:move-back={handleMoveBack}
+          on:move-forward={handleMoveForward}
+          on:duplicate={handleDuplicate}
+          on:delete-element={handleDeleteElement}
+          on:reorder={handleReorder}
+          on:copy-to-other-orientation={handleCopyToOtherOrientation}
+        />
+      </div>
+
+      <!-- Audio Manager -->
+      <div class="w-80 border-l">
+        <AudioManager 
+          {audioElements}
+          triggers={getPageTriggers()}
+          {readonly}
+          on:update={(e) => updateAudioElement(e.detail.id, e.detail.updates)}
+          on:delete={(e) => deleteAudioElement(e.detail.id)}
+          on:duplicate={(e) => duplicateAudioElement(e.detail.id)}
+        />
+      </div>
     </div>
   {/if}
 </div>
