@@ -85,6 +85,121 @@ export const mediaService = {
     return asset
   },
 
+  async importFromUrl(url: string, userId: string, tags: string[] = []): Promise<MediaAsset> {
+    try {
+      // Check if URL is already in media library
+      const existingAsset = await this.findAssetByUrl(url)
+      if (existingAsset) {
+        return existingAsset
+      }
+
+      // Check if URL is from our own Supabase storage
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (url.includes(supabaseUrl)) {
+        // This is already a Supabase URL, don't re-import
+        throw new Error('URL is already from media library')
+      }
+
+      // Fetch the file from the external URL
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`)
+      }
+
+      // Get content type and determine file type
+      const contentType = response.headers.get('content-type') || ''
+      let fileType: 'image' | 'audio' | 'video'
+      let fileExtension: string
+
+      if (contentType.startsWith('image/')) {
+        fileType = 'image'
+        fileExtension = contentType.split('/')[1] || 'jpg'
+      } else if (contentType.startsWith('audio/')) {
+        fileType = 'audio'
+        fileExtension = contentType.split('/')[1] || 'mp3'
+      } else if (contentType.startsWith('video/')) {
+        fileType = 'video'
+        fileExtension = contentType.split('/')[1] || 'mp4'
+      } else {
+        // Try to guess from URL
+        const urlLower = url.toLowerCase()
+        if (urlLower.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/)) {
+          fileType = 'image'
+          fileExtension = urlLower.match(/\.(jpg|jpeg|png|gif|webp|svg)/)?.[1] || 'jpg'
+        } else if (urlLower.match(/\.(mp3|wav|ogg|m4a|aac)(\?|$)/)) {
+          fileType = 'audio'
+          fileExtension = urlLower.match(/\.(mp3|wav|ogg|m4a|aac)/)?.[1] || 'mp3'
+        } else if (urlLower.match(/\.(mp4|webm|mov|avi)(\?|$)/)) {
+          fileType = 'video'
+          fileExtension = urlLower.match(/\.(mp4|webm|mov|avi)/)?.[1] || 'mp4'
+        } else {
+          throw new Error('Unable to determine file type from URL')
+        }
+      }
+
+      // Convert response to blob
+      const blob = await response.blob()
+      
+      // Generate filename from URL or use generic name
+      const urlPath = new URL(url).pathname
+      const originalFilename = urlPath.split('/').pop() || `imported-${fileType}`
+      const filename = originalFilename.includes('.') 
+        ? originalFilename 
+        : `${originalFilename}.${fileExtension}`
+
+      // Create File object from blob
+      const file = new File([blob], filename, { type: contentType || `${fileType}/*` })
+
+      // Upload to media library with import tag
+      const importTags = [...tags, 'imported', `imported-${fileType}`]
+      const asset = await this.uploadAsset(file, userId, importTags)
+
+      return asset
+    } catch (error) {
+      console.error('Failed to import from URL:', error)
+      throw error
+    }
+  },
+
+  async findAssetByUrl(url: string): Promise<MediaAsset | null> {
+    let assets: MediaAsset[] = []
+    const unsubscribe = mediaStore.subscribe(state => {
+      assets = state.assets
+    })
+    unsubscribe()
+
+    return assets.find(asset => asset.url === url) || null
+  },
+
+  async processUrlForElement(url: string, userId: string, elementType: 'image' | 'audio'): Promise<string> {
+    if (!url || !url.trim()) {
+      return url
+    }
+
+    try {
+      // Check if it's already a valid HTTP/HTTPS URL
+      const urlObj = new URL(url)
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        return url // Not a web URL, return as-is
+      }
+
+      // Check if URL is from our Supabase storage
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (url.includes(supabaseUrl)) {
+        return url // Already from our storage
+      }
+
+      // Import the external URL to media library
+      const asset = await this.importFromUrl(url, userId, [`auto-import-${elementType}`])
+      
+      console.log(`Successfully imported ${elementType} from external URL to media library:`, asset.filename)
+      return asset.url
+    } catch (error) {
+      console.warn(`Failed to import ${elementType} from URL, using original:`, error)
+      return url // Return original URL if import fails
+    }
+  },
+
   async deleteAsset(id: string) {
     const { error } = await supabase
       .from('media_assets')

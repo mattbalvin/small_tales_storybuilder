@@ -4,6 +4,8 @@
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import MediaSelector from './MediaSelector.svelte'
+  import { mediaService } from '$lib/stores/media'
+  import { authStore } from '$lib/stores/auth'
   import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical, Copy, ArrowLeftRight, FolderOpen } from 'lucide-svelte'
 
   export let selectedElementId: string | null
@@ -120,8 +122,18 @@
     })
   }
 
-  function handleImagePropertyChange(property: string, value: any) {
+  async function handleImagePropertyChange(property: string, value: any) {
     if (!localElement || localElement.type !== 'image') return
+    
+    // If it's a src property change and we have a user, process the URL
+    if (property === 'src' && value && $authStore.user) {
+      try {
+        const processedUrl = await mediaService.processUrlForElement(value, $authStore.user.id, 'image')
+        value = processedUrl
+      } catch (error) {
+        console.warn('Failed to process image URL:', error)
+      }
+    }
     
     updateElement({
       properties: {
@@ -131,8 +143,18 @@
     })
   }
 
-  function handleAudioPropertyChange(property: string, value: any) {
+  async function handleAudioPropertyChange(property: string, value: any) {
     if (!localElement || localElement.type !== 'audio') return
+    
+    // If it's a src property change and we have a user, process the URL
+    if (property === 'src' && value && $authStore.user) {
+      try {
+        const processedUrl = await mediaService.processUrlForElement(value, $authStore.user.id, 'audio')
+        value = processedUrl
+      } catch (error) {
+        console.warn('Failed to process audio URL:', error)
+      }
+    }
     
     updateElement({
       properties: {
@@ -846,6 +868,9 @@
                       <FolderOpen class="w-4 h-4" />
                     </Button>
                   </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    External URLs will be automatically imported to your media library
+                  </p>
                 </div>
                 <div>
                   <label class="text-xs text-muted-foreground">Alt Text</label>
@@ -957,6 +982,9 @@
                       <FolderOpen class="w-4 h-4" />
                     </Button>
                   </div>
+                  <p class="text-xs text-muted-foreground mt-1">
+                    External URLs will be automatically imported to your media library
+                  </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <input

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
+  import { mediaService } from '$lib/stores/media'
+  import { authStore } from '$lib/stores/auth'
 
   export let element: any
 
@@ -13,6 +15,33 @@
     opacity: ${opacity};
     transition: opacity 0.2s ease;
   `
+
+  // Auto-import external URLs to media library
+  async function handleSrcChange(newSrc: string) {
+    if (!newSrc || !$authStore.user) return
+
+    try {
+      // Process the URL through media service (will import if external)
+      const processedUrl = await mediaService.processUrlForElement(newSrc, $authStore.user.id, 'image')
+      
+      // If the URL was changed (imported), update the element
+      if (processedUrl !== newSrc) {
+        dispatch('update', {
+          properties: {
+            ...element.properties,
+            src: processedUrl
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Failed to process image URL:', error)
+    }
+  }
+
+  // Watch for src changes and auto-import if needed
+  $: if (src && $authStore.user) {
+    handleSrcChange(src)
+  }
 </script>
 
 <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded border-2 border-dashed border-gray-300">
