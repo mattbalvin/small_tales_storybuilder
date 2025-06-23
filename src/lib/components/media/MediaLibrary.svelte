@@ -5,7 +5,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, Edit3, Check, X } from 'lucide-svelte'
+  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, FileEdit as Edit3, Check, X } from 'lucide-svelte'
   import { formatFileSize } from '$lib/utils'
 
   $: assets = $mediaStore.assets
