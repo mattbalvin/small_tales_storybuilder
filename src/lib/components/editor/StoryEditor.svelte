@@ -8,7 +8,7 @@
   import PageEditor from './PageEditor.svelte'
   import OrientationToggle from './OrientationToggle.svelte'
   import CollaboratorManager from './CollaboratorManager.svelte'
-  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home, Pencil, Check, X } from 'lucide-svelte'
+  import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home, Pencil, Check, X, GripVertical } from 'lucide-svelte'
 
   export let storyId: string
 
@@ -18,6 +18,12 @@
   let showCollaborators = false
   let editingTitle = false
   let editingTitleValue = ''
+
+  // Drag and drop state
+  let draggedPageIndex: number | null = null
+  let dragOverPageIndex: number | null = null
+  let isDraggingPage = false
+  let dragOverPosition: 'above' | 'below' | null = null
 
   $: story = $storiesStore.currentStory
   $: pages = $storiesStore.currentPages
@@ -113,16 +119,10 @@
       story_id: story.id,
       page_number: 1,
       content: {
-        landscape: {
-          elements: [],
-          background: null,
-          animation: null
-        },
-        portrait: {
-          elements: [],
-          background: null,
-          animation: null
-        }
+        elements: [],
+        audioElements: [],
+        background: null,
+        animation: null
       }
     }
 
@@ -147,16 +147,10 @@
       story_id: story.id,
       page_number: pages.length + 1,
       content: {
-        landscape: {
-          elements: [],
-          background: null,
-          animation: null
-        },
-        portrait: {
-          elements: [],
-          background: null,
-          animation: null
-        }
+        elements: [],
+        audioElements: [],
+        background: null,
+        animation: null
       }
     }
 
@@ -248,6 +242,134 @@
     const newIndex = Math.max(0, Math.min(index, pages.length - 1))
     console.log('Setting currentPageIndex to:', newIndex)
     currentPageIndex = newIndex
+  }
+
+  // Drag and drop functions for page reordering
+  function handlePageDragStart(event: DragEvent, pageIndex: number) {
+    if (!canEdit()) return
+    
+    draggedPageIndex = pageIndex
+    isDraggingPage = true
+    
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', pageIndex.toString())
+    }
+    
+    // Add visual feedback
+    if (event.target instanceof HTMLElement) {
+      event.target.style.opacity = '0.5'
+    }
+  }
+
+  function handlePageDragEnd(event: DragEvent) {
+    isDraggingPage = false
+    draggedPageIndex = null
+    dragOverPageIndex = null
+    dragOverPosition = null
+    
+    // Reset visual feedback
+    if (event.target instanceof HTMLElement) {
+      event.target.style.opacity = '1'
+    }
+  }
+
+  function handlePageDragOver(event: DragEvent, pageIndex: number) {
+    if (!canEdit() || !isDraggingPage || draggedPageIndex === null || draggedPageIndex === pageIndex) return
+    
+    event.preventDefault()
+    dragOverPageIndex = pageIndex
+    
+    // Determine if we're dropping above or below the midpoint
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    dragOverPosition = event.clientY < midY ? 'above' : 'below'
+    
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+  }
+
+  function handlePageDragLeave(event: DragEvent) {
+    // Only clear dragOverPageIndex if we're actually leaving the element
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = event.clientX
+    const y = event.clientY
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      dragOverPageIndex = null
+      dragOverPosition = null
+    }
+  }
+
+  async function handlePageDrop(event: DragEvent, targetPageIndex: number) {
+    if (!canEdit() || draggedPageIndex === null || draggedPageIndex === targetPageIndex) return
+    
+    event.preventDefault()
+    
+    let newIndex = targetPageIndex
+    
+    // Adjust newIndex based on drop position
+    if (dragOverPosition === 'below') {
+      newIndex += 1
+    }
+    
+    // If dropping below the last page, move to end
+    if (newIndex >= pages.length) {
+      newIndex = pages.length - 1
+    }
+    
+    // If dragging from above the target, adjust for the removal
+    if (draggedPageIndex < newIndex) {
+      newIndex -= 1
+    }
+    
+    if (draggedPageIndex !== newIndex) {
+      await reorderPages(draggedPageIndex, newIndex)
+    }
+    
+    draggedPageIndex = null
+    dragOverPageIndex = null
+    dragOverPosition = null
+    isDraggingPage = false
+  }
+
+  async function reorderPages(fromIndex: number, toIndex: number) {
+    if (!canEdit() || fromIndex === toIndex) return
+    
+    try {
+      // Create a new array with the reordered pages
+      const reorderedPages = [...pages]
+      const [movedPage] = reorderedPages.splice(fromIndex, 1)
+      reorderedPages.splice(toIndex, 0, movedPage)
+      
+      // Update page numbers in the database
+      for (let i = 0; i < reorderedPages.length; i++) {
+        const page = reorderedPages[i]
+        const newPageNumber = i + 1
+        
+        if (page.page_number !== newPageNumber) {
+          await storiesService.updatePage(page.id, { page_number: newPageNumber })
+        }
+      }
+      
+      // Reload pages to get the updated order
+      await storiesService.loadStoryPages(storyId)
+      
+      // Adjust current page index if the current page was moved
+      if (fromIndex === currentPageIndex) {
+        currentPageIndex = toIndex
+      } else if (fromIndex < currentPageIndex && toIndex >= currentPageIndex) {
+        currentPageIndex -= 1
+      } else if (fromIndex > currentPageIndex && toIndex <= currentPageIndex) {
+        currentPageIndex += 1
+      }
+      
+      console.log('Pages reordered successfully')
+    } catch (error) {
+      console.error('Failed to reorder pages:', error)
+      alert('Failed to reorder pages. Please try again.')
+    }
   }
 
   function canEdit(): boolean {
@@ -467,22 +589,48 @@
             {/if}
           </Card>
         {:else}
-          <!-- Pages List -->
+          <!-- Pages List with Drag and Drop -->
           <div class="space-y-2 flex-1 overflow-y-auto">
             {#each pages as page, index (page.id)}
               <!-- Use a button instead of Card for better click handling -->
               <button
-                class="w-full p-3 text-left rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}"
+                class="w-full p-3 text-left rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
+                draggable={canEdit()}
                 on:click={() => {
                   console.log('Page clicked:', index, 'page id:', page.id)
                   goToPage(index)
                 }}
+                on:dragstart={(event) => canEdit() && handlePageDragStart(event, index)}
+                on:dragend={handlePageDragEnd}
+                on:dragover={(event) => canEdit() && handlePageDragOver(event, index)}
+                on:dragleave={handlePageDragLeave}
+                on:drop={(event) => canEdit() && handlePageDrop(event, index)}
                 type="button"
                 aria-label="Go to page {index + 1}"
               >
-                <div class="text-sm font-medium">Page {index + 1}</div>
-                <div class="text-xs text-muted-foreground">
-                  {(page.content?.[orientation]?.elements?.length || 0) + (page.content?.elements?.length || 0)} elements
+                <!-- Drop indicator above -->
+                {#if dragOverPageIndex === index && dragOverPosition === 'above'}
+                  <div class="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
+                {/if}
+
+                <div class="flex items-center gap-2">
+                  <!-- Drag Handle -->
+                  {#if canEdit()}
+                    <div class="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripVertical class="w-4 h-4" />
+                    </div>
+                  {/if}
+
+                  <!-- Page Content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium">Page {index + 1}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {(page.content?.elements?.length || 0)} visual elements
+                      {#if page.content?.audioElements?.length}
+                        • {page.content.audioElements.length} audio elements
+                      {/if}
+                    </div>
+                  </div>
                 </div>
                 
                 <!-- Page actions (show on hover) -->
@@ -516,9 +664,21 @@
                     {/if}
                   </div>
                 {/if}
+
+                <!-- Drop indicator below -->
+                {#if dragOverPageIndex === index && dragOverPosition === 'below'}
+                  <div class="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
+                {/if}
               </button>
             {/each}
           </div>
+
+          <!-- Drag and drop instructions -->
+          {#if canEdit() && pages.length > 1}
+            <div class="text-xs text-muted-foreground text-center py-2 border-t">
+              Drag pages to reorder them
+            </div>
+          {/if}
         {/if}
       </div>
 
@@ -629,3 +789,23 @@
     </main>
   </div>
 </div>
+
+<style>
+  /* Custom styles for drag and drop */
+  .cursor-grab {
+    cursor: grab;
+  }
+  
+  .cursor-grabbing {
+    cursor: grabbing;
+  }
+  
+  /* Smooth transitions for drag feedback */
+  button[draggable="true"] {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  
+  button[draggable="true"]:hover {
+    transform: translateY(-1px);
+  }
+</style>
