@@ -3,7 +3,8 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical, Copy, ArrowLeftRight } from 'lucide-svelte'
+  import MediaSelector from './MediaSelector.svelte'
+  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical, Copy, ArrowLeftRight, FolderOpen } from 'lucide-svelte'
 
   export let selectedElementId: string | null
   export let selectedElement: any = null
@@ -14,6 +15,11 @@
   $: localElementId = selectedElementId
   
   const dispatch = createEventDispatcher()
+
+  // Media selector state
+  let showMediaSelector = false
+  let mediaSelectorType: 'image' | 'audio' | 'video' | 'all' = 'all'
+  let mediaPropertyToUpdate = ''
 
   // Drag and drop state
   let draggedElement: any = null
@@ -59,6 +65,37 @@
 
   function reorderElements(fromIndex: number, toIndex: number) {
     dispatch('reorder', { fromIndex, toIndex })
+  }
+
+  // Media selector functions
+  function openMediaSelector(type: 'image' | 'audio' | 'video', property: string) {
+    mediaSelectorType = type
+    mediaPropertyToUpdate = property
+    showMediaSelector = true
+  }
+
+  function closeMediaSelector() {
+    showMediaSelector = false
+    mediaSelectorType = 'all'
+    mediaPropertyToUpdate = ''
+  }
+
+  function handleMediaSelect(event: CustomEvent) {
+    const { url, filename, type, alt } = event.detail
+    
+    if (!localElement || !mediaPropertyToUpdate) return
+
+    // Update the appropriate property based on element type
+    if (localElement.type === 'image' && mediaPropertyToUpdate === 'src') {
+      handleImagePropertyChange('src', url)
+      if (!localElement.properties?.alt) {
+        handleImagePropertyChange('alt', alt || filename)
+      }
+    } else if (localElement.type === 'audio' && mediaPropertyToUpdate === 'src') {
+      handleAudioPropertyChange('src', url)
+    }
+
+    closeMediaSelector()
   }
 
   // Input handlers that validate and update immediately
@@ -142,7 +179,7 @@
   $: sortedElements = [...elements].sort((a, b) => {
     const aZ = a.zIndex ?? 0
     const bZ = b.zIndex ?? 0
-    return aZ - bZ // Lower z-index first (bottom to top in list)
+    return aZ - bZ
   })
 
   // Create a reactive map of element z-indices for efficient lookups
@@ -333,6 +370,20 @@
     selectElement(elementId)
   }
 </script>
+
+{#if showMediaSelector}
+  <!-- Media Selector Modal -->
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Card class="w-full max-w-4xl h-[80vh] overflow-hidden">
+      <MediaSelector 
+        type={mediaSelectorType}
+        selectedUrl={localElement?.properties?.src || ''}
+        on:select={handleMediaSelect}
+        on:close={closeMediaSelector}
+      />
+    </Card>
+  </div>
+{/if}
 
 <aside class="w-80 border-l bg-card flex flex-col h-full">
   <div class="p-4 space-y-6 flex-1 overflow-y-auto">
@@ -775,15 +826,26 @@
               <div class="space-y-2">
                 <div>
                   <label class="text-xs text-muted-foreground">Source URL</label>
-                  <Input
-                    value={localElement.properties?.src || ''}
-                    placeholder="https://..."
-                    on:input={(e) => {
-                      if (e.target instanceof HTMLInputElement) {
-                        handleImagePropertyChange('src', e.target.value);
-                      }
-                    }}
-                  />
+                  <div class="flex gap-2">
+                    <Input
+                      value={localElement.properties?.src || ''}
+                      placeholder="https://... or select from media library"
+                      on:input={(e) => {
+                        if (e.target instanceof HTMLInputElement) {
+                          handleImagePropertyChange('src', e.target.value);
+                        }
+                      }}
+                      class="flex-1"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      on:click={() => openMediaSelector('image', 'src')}
+                      title="Select from media library"
+                    >
+                      <FolderOpen class="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <label class="text-xs text-muted-foreground">Alt Text</label>
@@ -875,15 +937,26 @@
               <div class="space-y-2">
                 <div>
                   <label class="text-xs text-muted-foreground">Source URL</label>
-                  <Input
-                    value={localElement.properties?.src || ''}
-                    placeholder="https://..."
-                    on:input={(e) => {
-                      if (e.target instanceof HTMLInputElement) {
-                        handleAudioPropertyChange('src', e.target.value);
-                      }
-                    }}
-                  />
+                  <div class="flex gap-2">
+                    <Input
+                      value={localElement.properties?.src || ''}
+                      placeholder="https://... or select from media library"
+                      on:input={(e) => {
+                        if (e.target instanceof HTMLInputElement) {
+                          handleAudioPropertyChange('src', e.target.value);
+                        }
+                      }}
+                      class="flex-1"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      on:click={() => openMediaSelector('audio', 'src')}
+                      title="Select from media library"
+                    >
+                      <FolderOpen class="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <input

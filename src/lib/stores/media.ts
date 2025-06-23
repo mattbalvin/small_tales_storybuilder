@@ -100,6 +100,24 @@ export const mediaService = {
     }))
   },
 
+  async updateAssetTags(id: string, tags: string[]) {
+    const { data: asset, error } = await supabase
+      .from('media_assets')
+      .update({ tags })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    mediaStore.update(state => ({
+      ...state,
+      assets: state.assets.map(a => a.id === id ? asset : a)
+    }))
+
+    return asset
+  },
+
   setSearchTerm(term: string) {
     mediaStore.update(state => ({
       ...state,
@@ -124,5 +142,21 @@ export const mediaService = {
           : [...state.selectedAssets, asset]
       }
     })
+  },
+
+  clearSelection() {
+    mediaStore.update(state => ({
+      ...state,
+      selectedAssets: []
+    }))
+  },
+
+  getAssetsByType(type: 'image' | 'audio' | 'video') {
+    let assets: MediaAsset[] = []
+    const unsubscribe = mediaStore.subscribe(state => {
+      assets = state.assets.filter(asset => asset.type === type)
+    })
+    unsubscribe()
+    return assets
   }
 }
