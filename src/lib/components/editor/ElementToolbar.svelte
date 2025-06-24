@@ -6,11 +6,13 @@
   import MediaSelector from './MediaSelector.svelte'
   import { mediaService } from '$lib/stores/media'
   import { authStore } from '$lib/stores/auth'
-  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical, Copy, ArrowLeftRight, FolderOpen } from 'lucide-svelte'
+  import { Type, Image, Volume2, Trash2, Move3d as Move3D, Palette, Eye, EyeOff, ChevronUp, ChevronDown, Layers, GripVertical, Copy, ArrowLeftRight, FolderOpen, Plus, Music, Radio, Zap } from 'lucide-svelte'
 
   export let selectedElementId: string | null
   export let selectedElement: any = null
   export let elements: any[] = []
+  export let audioElements: any[] = []
+  export let triggers: string[] = []
   export let orientation: 'landscape' | 'portrait' = 'landscape'
 
   $: localElement = selectedElement
@@ -29,7 +31,7 @@
   let isDraggingElement = false
   let dragOverPosition: 'above' | 'below' | null = null
 
-  function addElement(type: 'text' | 'image') {
+  function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
   }
 
@@ -69,6 +71,19 @@
     dispatch('reorder', { fromIndex, toIndex })
   }
 
+  // Audio element functions
+  function updateAudioElement(id: string, updates: any) {
+    dispatch('audio-update', { id, updates })
+  }
+
+  function deleteAudioElement(id: string) {
+    dispatch('audio-delete', { id })
+  }
+
+  function duplicateAudioElement(id: string) {
+    dispatch('audio-duplicate', { id })
+  }
+
   // Media selector functions
   function openMediaSelector(type: 'image' | 'audio' | 'video', property: string) {
     mediaSelectorType = type
@@ -95,6 +110,27 @@
       }
     }
 
+    closeMediaSelector()
+  }
+
+  // Audio media selector for audio elements
+  let selectedAudioId: string | null = null
+
+  function openAudioMediaSelector(audioId: string) {
+    selectedAudioId = audioId
+    mediaSelectorType = 'audio'
+    mediaPropertyToUpdate = 'src'
+    showMediaSelector = true
+  }
+
+  function handleAudioMediaSelect(event: CustomEvent) {
+    const { url } = event.detail
+    
+    if (selectedAudioId) {
+      updateAudioElement(selectedAudioId, { src: url })
+    }
+    
+    selectedAudioId = null
     closeMediaSelector()
   }
 
@@ -141,6 +177,22 @@
     })
   }
 
+  async function handleAudioSrcChange(id: string, newSrc: string) {
+    if (!newSrc || !$authStore.user) return
+
+    try {
+      // Process the URL through media service (will import if external)
+      const processedUrl = await mediaService.processUrlForElement(newSrc, $authStore.user.id, 'audio')
+      
+      // If the URL was changed (imported), update the element
+      if (processedUrl !== newSrc) {
+        updateAudioElement(id, { src: processedUrl })
+      }
+    } catch (error) {
+      console.error('Failed to process audio URL:', error)
+    }
+  }
+
   function handleAnimationChange(event: Event) {
     if (event.target instanceof HTMLSelectElement && localElement) {
       updateElement({ 
@@ -168,6 +220,26 @@
         return element.properties?.alt || 'Image Element'
       default:
         return 'Element'
+    }
+  }
+
+  function getAudioIcon(element: any) {
+    if (element.properties?.isIdleLoop) {
+      return Music // Background music
+    } else if (element.properties?.playbackMode === 'trigger') {
+      return Zap // Triggered audio
+    } else {
+      return Radio // Random audio
+    }
+  }
+
+  function getAudioTypeLabel(element: any) {
+    if (element.properties?.isIdleLoop) {
+      return 'Background Loop'
+    } else if (element.properties?.playbackMode === 'trigger') {
+      return 'Triggered Audio'
+    } else {
+      return 'Random Audio'
     }
   }
 
@@ -374,19 +446,19 @@
       <MediaSelector 
         type={mediaSelectorType}
         selectedUrl={localElement?.properties?.src || ''}
-        on:select={handleMediaSelect}
+        on:select={selectedAudioId ? handleAudioMediaSelect : handleMediaSelect}
         on:close={closeMediaSelector}
       />
     </Card>
   </div>
 {/if}
 
-<aside class="w-80 border-l bg-card flex flex-col h-full">
+<aside class="w-full border-l bg-card flex flex-col h-full">
   <div class="p-4 space-y-6 flex-1 overflow-y-auto">
     <!-- Add Elements -->
     <div>
-      <h3 class="font-medium mb-3">Add Visual Elements</h3>
-      <div class="grid grid-cols-2 gap-2">
+      <h3 class="font-medium mb-3">Add Elements</h3>
+      <div class="grid grid-cols-3 gap-2">
         <Button variant="outline" size="sm" on:click={() => addElement('text')}>
           <Type class="w-4 h-4 mr-2" />
           Text
@@ -395,33 +467,34 @@
           <Image class="w-4 h-4 mr-2" />
           Image
         </Button>
+        <Button variant="outline" size="sm" on:click={() => addElement('audio')}>
+          <Volume2 class="w-4 h-4 mr-2" />
+          Audio
+        </Button>
       </div>
-      <p class="text-xs text-muted-foreground mt-2">
-        Audio elements are managed separately and don't appear on the canvas
-      </p>
     </div>
 
-    <!-- Elements List -->
+    <!-- Visual Elements List -->
     <div>
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-medium flex items-center gap-2">
           <Layers class="w-4 h-4" />
-          {orientation} Elements ({elements.length})
+          Visual Elements ({elements.length})
         </h3>
         <div class="text-xs text-muted-foreground">
-          Lowest to highest
+          {orientation}
         </div>
       </div>
       
       {#if elements.length === 0}
-        <div class="text-center py-8 text-muted-foreground">
-          <Layers class="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <p class="text-sm">No elements in {orientation} layout</p>
-          <p class="text-xs">Add elements to get started</p>
+        <div class="text-center py-4 text-muted-foreground">
+          <Layers class="w-6 h-6 mx-auto mb-2 opacity-50" />
+          <p class="text-sm">No visual elements</p>
+          <p class="text-xs">Add text or image elements</p>
         </div>
       {:else}
         <div 
-          class="space-y-1 max-h-64 overflow-y-auto relative"
+          class="space-y-1 max-h-48 overflow-y-auto relative"
           on:dragover={handleListDragOver}
           on:drop={handleListDrop}
         >
@@ -547,6 +620,263 @@
           {#if dragOverElement === 'list-bottom'}
             <div class="h-1 bg-primary rounded-full mx-2 mt-1"></div>
           {/if}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Audio Elements Section -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-medium flex items-center gap-2">
+          <Volume2 class="w-4 h-4" />
+          Audio Elements ({audioElements.length})
+        </h3>
+      </div>
+      
+      {#if audioElements.length === 0}
+        <div class="text-center py-4 text-muted-foreground">
+          <Volume2 class="w-6 h-6 mx-auto mb-2 opacity-50" />
+          <p class="text-sm">No audio elements</p>
+          <p class="text-xs">Add audio for sound effects or music</p>
+        </div>
+      {:else}
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+          {#each audioElements as element (element.id)}
+            {@const AudioIcon = getAudioIcon(element)}
+            <Card class="p-3">
+              <div class="space-y-3">
+                <!-- Header -->
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center">
+                      <svelte:component this={AudioIcon} class="w-3 h-3 text-primary" />
+                    </div>
+                    <div>
+                      <p class="font-medium text-sm">{getAudioTypeLabel(element)}</p>
+                      <p class="text-xs text-muted-foreground">
+                        {element.properties?.src ? 'Audio configured' : 'No audio selected'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      on:click={() => duplicateAudioElement(element.id)}
+                      title="Duplicate audio element"
+                      class="h-6 w-6 p-0"
+                    >
+                      <Copy class="w-3 h-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      on:click={() => deleteAudioElement(element.id)}
+                      title="Delete audio element"
+                      class="text-destructive hover:text-destructive h-6 w-6 p-0"
+                    >
+                      <Trash2 class="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- Audio Source -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-1 block">Audio Source</label>
+                  <div class="flex gap-2">
+                    <Input
+                      value={element.properties?.src || ''}
+                      placeholder="https://... or select from media library"
+                      on:input={(e) => {
+                        if (e.target instanceof HTMLInputElement) {
+                          const newSrc = e.target.value
+                          updateAudioElement(element.id, { src: newSrc })
+                          if (newSrc) {
+                            handleAudioSrcChange(element.id, newSrc)
+                          }
+                        }
+                      }}
+                      class="flex-1 text-xs h-8"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      on:click={() => openAudioMediaSelector(element.id)}
+                      title="Select from media library"
+                      class="h-8 w-8 p-0"
+                    >
+                      <FolderOpen class="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- Volume Control -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-1 block">
+                    Volume: {element.properties?.volume || 100}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={element.properties?.volume || 100}
+                    on:input={(e) => {
+                      if (e.target instanceof HTMLInputElement) {
+                        updateAudioElement(element.id, { volume: parseInt(e.target.value) })
+                      }
+                    }}
+                    class="w-full h-2"
+                  />
+                </div>
+
+                <!-- Idle Loop Checkbox -->
+                <div class="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={element.properties?.isIdleLoop || false}
+                    on:change={(e) => {
+                      if (e.target instanceof HTMLInputElement) {
+                        const isIdleLoop = e.target.checked
+                        updateAudioElement(element.id, { 
+                          isIdleLoop,
+                          // Reset other properties when switching modes
+                          ...(isIdleLoop ? { actionVolume: 0 } : { playbackMode: 'random', minDelay: 1, maxDelay: 5 })
+                        })
+                      }
+                    }}
+                  />
+                  <label class="text-xs">Background Idle Loop</label>
+                </div>
+
+                <!-- Conditional Controls -->
+                {#if element.properties?.isIdleLoop}
+                  <!-- Action Volume for Idle Loop -->
+                  <div>
+                    <label class="text-xs text-muted-foreground mb-1 block">
+                      Action Volume: {element.properties?.actionVolume || 0}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={element.properties?.actionVolume || 0}
+                      on:input={(e) => {
+                        if (e.target instanceof HTMLInputElement) {
+                          updateAudioElement(element.id, { actionVolume: parseInt(e.target.value) })
+                        }
+                      }}
+                      class="w-full h-2"
+                    />
+                    <p class="text-xs text-muted-foreground mt-1">
+                      Volume when other audio is playing
+                    </p>
+                  </div>
+                {:else}
+                  <!-- Playback Mode for Non-Idle Audio -->
+                  <div>
+                    <label class="text-xs text-muted-foreground mb-2 block">Playback Mode</label>
+                    <div class="space-y-2">
+                      <!-- Random Mode -->
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="playback-{element.id}"
+                          value="random"
+                          checked={element.properties?.playbackMode === 'random'}
+                          on:change={(e) => {
+                            if (e.target instanceof HTMLInputElement && e.target.checked) {
+                              updateAudioElement(element.id, { 
+                                playbackMode: 'random',
+                                minDelay: element.properties?.minDelay || 1,
+                                maxDelay: element.properties?.maxDelay || 5
+                              })
+                            }
+                          }}
+                        />
+                        <label class="text-xs">Random</label>
+                      </div>
+
+                      {#if element.properties?.playbackMode === 'random'}
+                        <div class="ml-4 grid grid-cols-2 gap-2">
+                          <div>
+                            <label class="text-xs text-muted-foreground">Min Delay (s)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={element.properties?.minDelay || 1}
+                              on:input={(e) => {
+                                if (e.target instanceof HTMLInputElement) {
+                                  updateAudioElement(element.id, { minDelay: parseInt(e.target.value) || 1 })
+                                }
+                              }}
+                              class="text-xs h-7"
+                            />
+                          </div>
+                          <div>
+                            <label class="text-xs text-muted-foreground">Max Delay (s)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={element.properties?.maxDelay || 5}
+                              on:input={(e) => {
+                                if (e.target instanceof HTMLInputElement) {
+                                  updateAudioElement(element.id, { maxDelay: parseInt(e.target.value) || 5 })
+                                }
+                              }}
+                              class="text-xs h-7"
+                            />
+                          </div>
+                        </div>
+                      {/if}
+
+                      <!-- Trigger Mode -->
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="playback-{element.id}"
+                          value="trigger"
+                          checked={element.properties?.playbackMode === 'trigger'}
+                          on:change={(e) => {
+                            if (e.target instanceof HTMLInputElement && e.target.checked) {
+                              updateAudioElement(element.id, { 
+                                playbackMode: 'trigger',
+                                triggerName: element.properties?.triggerName || ''
+                              })
+                            }
+                          }}
+                        />
+                        <label class="text-xs">On Trigger</label>
+                      </div>
+
+                      {#if element.properties?.playbackMode === 'trigger'}
+                        <div class="ml-4">
+                          <label class="text-xs text-muted-foreground">Trigger Name</label>
+                          <select
+                            class="w-full rounded-md border border-input bg-background px-2 py-1 text-xs h-7"
+                            value={element.properties?.triggerName || ''}
+                            on:change={(e) => {
+                              if (e.target instanceof HTMLSelectElement) {
+                                updateAudioElement(element.id, { triggerName: e.target.value })
+                              }
+                            }}
+                          >
+                            <option value="">Select trigger...</option>
+                            {#each triggers as trigger}
+                              <option value={trigger}>{trigger}</option>
+                            {/each}
+                          </select>
+                          <p class="text-xs text-muted-foreground mt-1">
+                            Audio will play when this trigger is activated
+                          </p>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            </Card>
+          {/each}
         </div>
       {/if}
     </div>

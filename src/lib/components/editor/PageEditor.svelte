@@ -2,7 +2,6 @@
   import { createEventDispatcher, onMount, onDestroy } from 'svelte'
   import { cn } from '$lib/utils'
   import ElementToolbar from './ElementToolbar.svelte'
-  import AudioManager from './AudioManager.svelte'
   import TextElement from './elements/TextElement.svelte'
   import ImageElement from './elements/ImageElement.svelte'
   import type { Database } from '$lib/types/database'
@@ -115,6 +114,9 @@
     const bZ = b.zIndex || 0
     return aZ - bZ
   })
+
+  // Create a reactive map of element z-indices for efficient lookups
+  $: elementZIndexMap = new Map(displayElements.map(el => [el.id, el.zIndex ?? 0]))
 
   // Watch for orientation changes and update view state
   $: if (orientation) {
@@ -1059,6 +1061,19 @@
     copyElementToOtherOrientation(event.detail.elementId)
   }
 
+  // Audio element handlers
+  function handleAudioUpdate(event: CustomEvent) {
+    updateAudioElement(event.detail.id, event.detail.updates)
+  }
+
+  function handleAudioDelete(event: CustomEvent) {
+    deleteAudioElement(event.detail.id)
+  }
+
+  function handleAudioDuplicate(event: CustomEvent) {
+    duplicateAudioElement(event.detail.id)
+  }
+
   // Lifecycle
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -1256,41 +1271,31 @@
     </div>
   </div>
 
-  <!-- Sidebar with Element Toolbar and Audio Manager -->
+  <!-- Sidebar with Element Toolbar -->
   {#if !readonly}
-    <div class="flex-shrink-0 flex">
-      <!-- Element Toolbar -->
-      <div class="w-80">
-        <ElementToolbar 
-          {selectedElementId}
-          selectedElement={selectedElement}
-          elements={displayElements}
-          {orientation}
-          on:add={(e) => addElement(e.detail.type)}
-          on:update={handleElementUpdate}
-          on:delete={() => selectedElementId && deleteElement(selectedElementId)}
-          on:select={handleElementSelect}
-          on:toggle-visibility={handleToggleVisibility}
-          on:move-back={handleMoveBack}
-          on:move-forward={handleMoveForward}
-          on:duplicate={handleDuplicate}
-          on:delete-element={handleDeleteElement}
-          on:reorder={handleReorder}
-          on:copy-to-other-orientation={handleCopyToOtherOrientation}
-        />
-      </div>
-
-      <!-- Audio Manager -->
-      <div class="w-80 border-l">
-        <AudioManager 
-          {audioElements}
-          triggers={getPageTriggers()}
-          {readonly}
-          on:update={(e) => updateAudioElement(e.detail.id, e.detail.updates)}
-          on:delete={(e) => deleteAudioElement(e.detail.id)}
-          on:duplicate={(e) => duplicateAudioElement(e.detail.id)}
-        />
-      </div>
+    <div class="w-80">
+      <ElementToolbar 
+        {selectedElementId}
+        selectedElement={selectedElement}
+        elements={displayElements}
+        {audioElements}
+        triggers={getPageTriggers()}
+        {orientation}
+        on:add={(e) => addElement(e.detail.type)}
+        on:update={handleElementUpdate}
+        on:delete={() => selectedElementId && deleteElement(selectedElementId)}
+        on:select={handleElementSelect}
+        on:toggle-visibility={handleToggleVisibility}
+        on:move-back={handleMoveBack}
+        on:move-forward={handleMoveForward}
+        on:duplicate={handleDuplicate}
+        on:delete-element={handleDeleteElement}
+        on:reorder={handleReorder}
+        on:copy-to-other-orientation={handleCopyToOtherOrientation}
+        on:audio-update={handleAudioUpdate}
+        on:audio-delete={handleAudioDelete}
+        on:audio-duplicate={handleAudioDuplicate}
+      />
     </div>
   {/if}
 </div>
