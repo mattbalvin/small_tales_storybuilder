@@ -100,6 +100,13 @@ export const mediaService = {
         throw new Error('URL is already from media library')
       }
 
+      // Get the current session to use the access token
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('User must be authenticated to import media')
+      }
+
       // Use the edge function to fetch the file (bypasses CORS)
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-media`
       
@@ -107,7 +114,7 @@ export const mediaService = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ url })
       })
