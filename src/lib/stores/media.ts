@@ -42,61 +42,116 @@ export const mediaService = {
   },
 
   async uploadAsset(file: File, userId: string, tags: string[] = []) {
-    // Upload file to Supabase storage
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${Date.now()}.${fileExt}`
-    const filePath = `${userId}/${fileName}`
+    try {
+      console.log('Starting upload for file:', file.name, 'size:', file.size, 'type:', file.type)
+      
+      // Generate unique filename to avoid conflicts
+      const fileExt = file.name.split('.').pop()
+      const timestamp = Date.now()
+      const randomSuffix = Math.random().toString(36).substring(2, 8)
+      const fileName = `${timestamp}-${randomSuffix}.${fileExt}`
+      const filePath = `${userId}/${fileName}`
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('media')
-      .upload(filePath, file)
+      console.log('Uploading to path:', filePath)
 
-    if (uploadError) throw uploadError
+      // Upload file to Supabase storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('media')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('media')
-      .getPublicUrl(filePath)
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        throw new Error(`Upload failed: ${uploadError.message}`)
+      }
 
-    // Save asset metadata
-    const assetData = {
-      user_id: userId,
-      filename: file.name,
-      url: publicUrl,
-      type: file.type.startsWith('image/') ? 'image' as const : 
-            file.type.startsWith('audio/') ? 'audio' as const : 'video' as const,
-      size: file.size,
-      tags
+      console.log('Upload successful:', uploadData)
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('media')
+        .getPublicUrl(filePath)
+
+      console.log('Public URL generated:', publicUrl)
+
+      // Determine file type
+      let fileType: 'image' | 'audio' | 'video'
+      if (file.type.startsWith('image/')) {
+        fileType = 'image'
+      } else if (file.type.startsWith('audio/')) {
+        fileType = 'audio'
+      } else if (file.type.startsWith('video/')) {
+        fileType = 'video'
+      } else {
+        // Fallback based on file extension
+        const ext = fileExt?.toLowerCase()
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) {
+          fileType = 'image'
+        } else if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext || '')) {
+          fileType = 'audio'
+        } else if (['mp4', 'webm', 'mov', 'avi'].includes(ext || '')) {
+          fileType = 'video'
+        } else {
+          throw new Error(`Unsupported file type: ${file.type}`)
+        }
+      }
+
+      // Save asset metadata to database
+      const assetData = {
+        user_id: userId,
+        filename: file.name,
+        url: publicUrl,
+        type: fileType,
+        size: file.size,
+        tags
+      }
+
+      console.log('Saving asset metadata:', assetData)
+
+      const { data: asset, error } = await supabase
+        .from('media_assets')
+        .insert(assetData)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Database error:', error)
+        // Try to clean up the uploaded file
+        await supabase.storage.from('media').remove([filePath])
+        throw new Error(`Failed to save asset metadata: ${error.message}`)
+      }
+
+      console.log('Asset saved successfully:', asset)
+
+      // Update store
+      mediaStore.update(state => ({
+        ...state,
+        assets: [asset, ...state.assets]
+      }))
+
+      return asset
+    } catch (error) {
+      console.error('Upload failed:', error)
+      throw error
     }
-
-    const { data: asset, error } = await supabase
-      .from('media_assets')
-      .insert(assetData)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    mediaStore.update(state => ({
-      ...state,
-      assets: [asset, ...state.assets]
-    }))
-
-    return asset
   },
 
   async importFromUrl(url: string, userId: string, tags: string[] = []): Promise<MediaAsset> {
     try {
+      console.log('Starting import from URL:', url)
+      
       // Check if URL is already in media library
       const existingAsset = await this.findAssetByUrl(url)
       if (existingAsset) {
+        console.log('Asset already exists in library:', existingAsset.filename)
         return existingAsset
       }
 
       // Check if URL is from our own Supabase storage
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       if (url.includes(supabaseUrl)) {
-        // This is already a Supabase URL, don't re-import
         throw new Error('URL is already from media library')
       }
 
@@ -109,6 +164,8 @@ export const mediaService = {
 
       // Use the edge function to fetch the file (bypasses CORS)
       const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-media`
+      
+      console.log('Calling import-media edge function...')
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -139,13 +196,14 @@ export const mediaService = {
       const result = await response.json()
       
       if (!result.success) {
-        // Check if the error message indicates a 403 Forbidden from the external source
         const errorMessage = result.error || 'Failed to import media'
         if (errorMessage.toLowerCase().includes('403') || errorMessage.toLowerCase().includes('forbidden')) {
           throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
         }
         throw new Error(errorMessage)
       }
+
+      console.log('Import successful, processing file data...')
 
       const { arrayBuffer, filename, contentType, fileType, size } = result.data
 
@@ -156,10 +214,13 @@ export const mediaService = {
       // Create File object from blob
       const file = new File([blob], filename, { type: contentType })
 
+      console.log('Created file object:', { name: file.name, size: file.size, type: file.type })
+
       // Upload to media library with import tag
       const importTags = [...tags, 'imported', `imported-${fileType}`]
       const asset = await this.uploadAsset(file, userId, importTags)
 
+      console.log('Import completed successfully:', asset.filename)
       return asset
     } catch (error) {
       console.error('Failed to import from URL:', error)
@@ -195,6 +256,8 @@ export const mediaService = {
         return url // Already from our storage
       }
 
+      console.log(`Processing external ${elementType} URL for import:`, url)
+
       // Import the external URL to media library
       const asset = await this.importFromUrl(url, userId, [`auto-import-${elementType}`])
       
@@ -207,6 +270,28 @@ export const mediaService = {
   },
 
   async deleteAsset(id: string) {
+    // Get asset info first to delete from storage
+    const asset = await supabase
+      .from('media_assets')
+      .select('url, user_id')
+      .eq('id', id)
+      .single()
+
+    if (asset.data) {
+      // Extract file path from URL
+      const url = asset.data.url
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (url.includes(supabaseUrl)) {
+        const pathMatch = url.match(/\/storage\/v1\/object\/public\/media\/(.+)$/)
+        if (pathMatch) {
+          const filePath = pathMatch[1]
+          // Delete from storage
+          await supabase.storage.from('media').remove([filePath])
+        }
+      }
+    }
+
+    // Delete from database
     const { error } = await supabase
       .from('media_assets')
       .delete()
