@@ -65,6 +65,9 @@
   let isAltPressed = false
   let isCtrlPressed = false
 
+  // Text editing state
+  let isEditingText = false
+
   // Get visual elements from the page content (text and image only)
   $: visualElements = (page.content?.elements || []).filter(el => el.type !== 'audio')
 
@@ -214,7 +217,7 @@
       id: Math.random().toString(36).substr(2, 9),
       type,
       properties: type === 'text' 
-        ? { text: 'New text element', fontSize: orientation === 'landscape' ? 16 : 14, color: '#000000' }
+        ? { text: 'Click to edit text...', fontSize: orientation === 'landscape' ? 16 : 14, color: '#000000' }
         : { src: '', alt: '', opacity: 100 },
       layouts: {
         landscape: {
@@ -243,7 +246,7 @@
   }
 
   function selectElement(id: string) {
-    if (readonly || isPanning) return
+    if (readonly || isPanning || isEditingText) return
     selectedElementId = id
     console.log('Selected element:', id)
   }
@@ -582,7 +585,7 @@
 
   // Mouse event handlers for dragging and resizing
   function handleMouseDown(event: MouseEvent, elementId: string) {
-    if (readonly || isPanning || isAltPressed) return
+    if (readonly || isPanning || isAltPressed || isEditingText) return
     
     event.preventDefault()
     event.stopPropagation()
@@ -773,7 +776,7 @@
   }
 
   function handleCanvasClick(event: MouseEvent) {
-    if (readonly || isPanning || isAltPressed) return
+    if (readonly || isPanning || isAltPressed || isEditingText) return
     
     // Only deselect if clicking on the canvas itself, not on an element
     const target = event.target as HTMLElement
@@ -965,6 +968,12 @@
     deleteAudioElement(event.detail.id)
   }
 
+  // Text editing handlers
+  function handleTextElementUpdate(event: CustomEvent) {
+    const { elementId, updates } = event.detail
+    updateElement(elementId, updates)
+  }
+
   // Lifecycle
   onMount(() => {
     document.addEventListener('keydown', handleKeyDown)
@@ -1089,9 +1098,9 @@
             class:border-2={selectedElementId === element.id && !readonly}
             class:border-primary={selectedElementId === element.id && !readonly}
             class:border-transparent={selectedElementId !== element.id || readonly}
-            class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed}
-            class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
-            class:cursor-default={readonly || isPanning || isAltPressed}
+            class:cursor-move={!readonly && selectedElementId === element.id && !isResizing && !isPanning && !isAltPressed && !isEditingText}
+            class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed && !isEditingText}
+            class:cursor-default={readonly || isPanning || isAltPressed || isEditingText}
             class:opacity-30={element.hidden}
             role="button"
             tabindex="0"
@@ -1102,15 +1111,19 @@
               height: {isResizing && selectedElementId === element.id ? currentVisualHeight : element.height}px; 
               z-index: {element.zIndex || 0};
             "
-            on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && handleMouseDown(e, element.id)}
-            on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && selectElement(element.id)}
+            on:mousedown={(e) => !readonly && !isPanning && !isAltPressed && !isEditingText && handleMouseDown(e, element.id)}
+            on:click|stopPropagation={() => !readonly && !isPanning && !isAltPressed && !isEditingText && selectElement(element.id)}
           >
             {#if !element.hidden}
               {#if element.type === 'text'}
                 <TextElement 
                   {element} 
                   {readonly}
-                  on:update={(e) => !readonly && updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })} 
+                  on:update={(e) => {
+                    if (!readonly) {
+                      updateElement(element.id, { properties: { ...element.properties, ...e.detail.properties } })
+                    }
+                  }}
                 />
               {:else if element.type === 'image'}
                 <ImageElement 
@@ -1126,7 +1139,7 @@
             {/if}
 
             <!-- Resize handles (only show when selected and not readonly) -->
-            {#if selectedElementId === element.id && !readonly && !isAltPressed}
+            {#if selectedElementId === element.id && !readonly && !isAltPressed && !isEditingText}
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
                 style="left: -6px; top: -6px; z-index: 20;"
