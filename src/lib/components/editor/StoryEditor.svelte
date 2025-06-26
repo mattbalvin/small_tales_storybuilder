@@ -134,15 +134,26 @@
     if (!story || !$authStore.user || !canEdit() || !pages[pageIndex]) return
 
     const originalPage = pages[pageIndex]
+    const insertPosition = pageIndex + 1 // Insert right after the current page
+    
     const newPage = {
       story_id: story.id,
-      page_number: pages.length + 1,
+      page_number: insertPosition + 1, // Set page number for the insert position
       content: JSON.parse(JSON.stringify(originalPage.content)) // Deep copy
     }
 
     try {
+      // First, shift all pages after the insert position to make room
+      for (let i = pages.length - 1; i >= insertPosition; i--) {
+        const page = pages[i]
+        await storiesService.updatePage(page.id, { page_number: page.page_number + 1 })
+      }
+      
+      // Create the new page
       await storiesService.createPage(newPage)
-      currentPageIndex = pages.length - 1
+      
+      // Set current page to the newly created page
+      currentPageIndex = insertPosition
     } catch (error) {
       console.error('Failed to duplicate page:', error)
     }
@@ -150,10 +161,6 @@
 
   async function deletePage(pageIndex: number) {
     if (!story || !$authStore.user || !canEdit() || !pages[pageIndex]) return
-
-    if (!confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
-      return
-    }
 
     const pageToDelete = pages[pageIndex]
     
@@ -216,14 +223,22 @@
 
   // Drag and drop functions for page reordering
   function handlePageDragStart(event: DragEvent, pageIndex: number) {
-    if (!canEdit()) return
+    if (!canEdit()) {
+      event.preventDefault()
+      return
+    }
     
+    // Set dragging state immediately
     draggedPageIndex = pageIndex
     isDraggingPage = true
     
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move'
       event.dataTransfer.setData('text/plain', pageIndex.toString())
+      // Set a drag image to improve visual feedback
+      if (event.target instanceof HTMLElement) {
+        event.dataTransfer.setDragImage(event.target, 0, 0)
+      }
     }
     
     // Add visual feedback
@@ -233,6 +248,7 @@
   }
 
   function handlePageDragEnd(event: DragEvent) {
+    // Always reset state, regardless of canEdit status
     isDraggingPage = false
     draggedPageIndex = null
     dragOverPageIndex = null
@@ -245,8 +261,11 @@
   }
 
   function handlePageDragOver(event: DragEvent, pageIndex: number) {
-    if (!canEdit() || !isDraggingPage || draggedPageIndex === null || draggedPageIndex === pageIndex) return
-    
+    if (!canEdit() || !isDraggingPage || draggedPageIndex === null || draggedPageIndex === pageIndex) {
+      event.preventDefault()
+      return
+    }
+
     event.preventDefault()
     dragOverPageIndex = pageIndex
     
@@ -254,7 +273,7 @@
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const midY = rect.top + rect.height / 2
     dragOverPosition = event.clientY < midY ? 'above' : 'below'
-    
+
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move'
     }
@@ -265,7 +284,7 @@
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const x = event.clientX
     const y = event.clientY
-    
+
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       dragOverPageIndex = null
       dragOverPosition = null
@@ -273,59 +292,81 @@
   }
 
   async function handlePageDrop(event: DragEvent, targetPageIndex: number) {
-    if (!canEdit() || draggedPageIndex === null || draggedPageIndex === targetPageIndex) return
-    
+    if (!canEdit() || draggedPageIndex === null || draggedPageIndex === targetPageIndex) {
+      event.preventDefault()
+      return
+    }
+
     event.preventDefault()
-    
+    event.stopPropagation()
+
     let newIndex = targetPageIndex
-    
+
     // Adjust newIndex based on drop position
     if (dragOverPosition === 'below') {
       newIndex += 1
     }
-    
+
     // If dropping below the last page, move to end
     if (newIndex >= pages.length) {
       newIndex = pages.length - 1
     }
-    
+
     // If dragging from above the target, adjust for the removal
     if (draggedPageIndex < newIndex) {
       newIndex -= 1
     }
-    
+
     if (draggedPageIndex !== newIndex) {
-      await reorderPages(draggedPageIndex, newIndex)
+      try {
+        await reorderPages(draggedPageIndex, newIndex)
+      } catch (error) {
+        console.error('Failed to reorder pages:', error)
+        // Reset state on error
+        isDraggingPage = false
+        draggedPageIndex = null
+        dragOverPageIndex = null
+        dragOverPosition = null
+      }
     }
-    
+
+    // Always reset state
+    isDraggingPage = false
     draggedPageIndex = null
     dragOverPageIndex = null
     dragOverPosition = null
-    isDraggingPage = false
   }
 
   async function reorderPages(fromIndex: number, toIndex: number) {
     if (!canEdit() || fromIndex === toIndex) return
-    
+
+    // Validate indices
+    if (fromIndex < 0 || fromIndex >= pages.length || toIndex < 0 || toIndex >= pages.length) {
+      console.error('Invalid page indices for reordering:', { fromIndex, toIndex, pagesLength: pages.length })
+      return
+    }
+
     try {
       // Create a new array with the reordered pages
       const reorderedPages = [...pages]
       const [movedPage] = reorderedPages.splice(fromIndex, 1)
       reorderedPages.splice(toIndex, 0, movedPage)
-      
+
       // Update page numbers in the database
-      for (let i = 0; i < reorderedPages.length; i++) {
-        const page = reorderedPages[i]
+      const updatePromises = reorderedPages.map((page, i) => {
         const newPageNumber = i + 1
-        
         if (page.page_number !== newPageNumber) {
-          await storiesService.updatePage(page.id, { page_number: newPageNumber })
+          return storiesService.updatePage(page.id, { page_number: newPageNumber })
         }
-      }
-      
+        return Promise.resolve()
+      })
+
+      // Wait for all updates to complete
+      await Promise.all(updatePromises)
+
       // Reload pages to get the updated order
       await storiesService.loadStoryPages(storyId)
-      
+
       // Adjust current page index if the current page was moved
       if (fromIndex === currentPageIndex) {
         currentPageIndex = toIndex
@@ -334,11 +375,15 @@
       } else if (fromIndex > currentPageIndex && toIndex <= currentPageIndex) {
         currentPageIndex += 1
       }
-      
-      console.log('Pages reordered successfully')
+
+      // Ensure currentPageIndex is within bounds
+      currentPageIndex = Math.max(0, Math.min(currentPageIndex, pages.length - 1))
+
+      console.log('Pages reordered successfully', { fromIndex, toIndex, newCurrentIndex: currentPageIndex })
     } catch (error) {
       console.error('Failed to reorder pages:', error)
-      alert('Failed to reorder pages. Please try again.')
+      // Don't show alert, let the calling function handle the error
+      throw error
     }
   }
 
@@ -567,15 +612,18 @@
               <button
                 class="w-full p-3 text-left rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
                 draggable={canEdit()}
-                on:click={() => {
-                  console.log('Page clicked:', index, 'page id:', page.id)
-                  goToPage(index)
+                on:click={(event) => {
+                  // Only handle click if we haven't started dragging
+                  if (!isDraggingPage && draggedPageIndex === null) {
+                    console.log('Page clicked:', index, 'page id:', page.id)
+                    goToPage(index)
+                  }
                 }}
-                on:dragstart={(event) => canEdit() && handlePageDragStart(event, index)}
+                on:dragstart={(event) => handlePageDragStart(event, index)}
                 on:dragend={handlePageDragEnd}
-                on:dragover={(event) => canEdit() && handlePageDragOver(event, index)}
+                on:dragover={(event) => handlePageDragOver(event, index)}
                 on:dragleave={handlePageDragLeave}
-                on:drop={(event) => canEdit() && handlePageDrop(event, index)}
+                on:drop={(event) => handlePageDrop(event, index)}
                 type="button"
                 aria-label="Go to page {index + 1}"
               >

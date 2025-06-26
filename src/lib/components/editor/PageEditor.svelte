@@ -1012,6 +1012,7 @@
       <div class="flex items-center gap-2">
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={() => handleZoom(-1)}
           disabled={readonly}
         >
@@ -1022,6 +1023,7 @@
         </span>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={() => handleZoom(1)}
           disabled={readonly}
         >
@@ -1029,6 +1031,7 @@
         </button>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={resetZoom}
           disabled={readonly}
         >
@@ -1036,6 +1039,7 @@
         </button>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={fitToScreen}
           disabled={readonly}
         >
@@ -1052,6 +1056,8 @@
     <div 
       bind:this={viewportElement}
       class="flex-1 overflow-hidden bg-muted/20 relative"
+      role="application"
+      tabindex="0"
       style="cursor: {cursorStyle}"
       on:wheel={handleWheel}
       on:mousedown={handleViewportMouseDown}
@@ -1072,7 +1078,10 @@
           transform: translate({panX}px, {panY}px) scale({zoomLevel});
           transform-origin: 0 0;
         "
+        role="button"
+        tabindex="0"
         on:click={handleCanvasClick}
+        on:keydown={handleKeyDown}
       >
         {#each sortedElements as element (element.id)}
           <div
@@ -1084,6 +1093,8 @@
             class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
             class:cursor-default={readonly || isPanning || isAltPressed}
             class:opacity-30={element.hidden}
+            role="button"
+            tabindex="0"
             style="
               left: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualX : element.x}px; 
               top: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualY : element.y}px; 
@@ -1120,21 +1131,29 @@
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
                 style="left: -6px; top: -6px; z-index: 20;"
                 data-handle="nw"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
                 style="right: -6px; top: -6px; z-index: 20;"
                 data-handle="ne"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
                 style="left: -6px; bottom: -6px; z-index: 20;"
                 data-handle="sw"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
                 style="right: -6px; bottom: -6px; z-index: 20;"
                 data-handle="se"
+                role="button"
+                tabindex="0"
               ></div>
             {/if}
           </div>
