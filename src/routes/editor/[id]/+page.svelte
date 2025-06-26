@@ -14,6 +14,7 @@
   $: storyId = params.id
   $: story = $storiesStore.currentStory
   $: currentStoryLoading = $storiesStore.currentStoryLoading
+  $: currentCollaborators = $storiesStore.currentCollaborators
 
   let loadError: string | null = null
 
@@ -36,13 +37,16 @@
   }
 
   // Reactive statement to load story when conditions are met
+  // This ensures collaborator data is always loaded, even for newly created stories
   $: if ($authStore.user && 
         storyId && 
         storyId !== 'undefined' && 
         storyId.trim() !== '' && 
-        (!story || story.id !== storyId) && 
-        !currentStoryLoading) {
+        !currentStoryLoading &&
+        ((!story || story.id !== storyId) || 
+         (story && story.id === storyId && currentCollaborators.length === 0))) {
     console.log('Loading story:', storyId, 'for user:', $authStore.user.id)
+    console.log('Reason: story mismatch or missing collaborators')
     loadStory(storyId)
   }
 
@@ -75,6 +79,7 @@
     hasUser: !!$authStore.user,
     userId: $authStore.user?.id,
     currentStoryLoading,
+    collaboratorsCount: currentCollaborators.length,
     loadError
   })
 </script>
