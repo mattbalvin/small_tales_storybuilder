@@ -6,7 +6,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil, Play } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
@@ -59,6 +59,10 @@
 
   function previewStory(storyId: string) {
     dispatch('preview-story', { storyId })
+  }
+
+  function playStory(storyId: string) {
+    window.location.hash = `#/play/${storyId}`
   }
 
   function startEditingTitle(story: any) {
@@ -340,9 +344,9 @@
                 <Edit class="w-3 h-3 mr-1" />
                 Edit
               </Button>
-              <Button variant="outline" size="sm" class="flex-1" on:click={() => previewStory(story.id)}>
-                <Eye class="w-3 h-3 mr-1" />
-                Preview
+              <Button variant="outline" size="sm" class="flex-1" on:click={() => playStory(story.id)}>
+                <Play class="w-3 h-3 mr-1" />
+                Play
               </Button>
               <Button 
                 variant="outline" 
