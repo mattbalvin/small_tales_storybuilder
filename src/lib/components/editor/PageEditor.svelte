@@ -375,37 +375,7 @@
       updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
     }
   }
-  
-  function duplicateElement(id: string) {
-    if (readonly) return
-    
-    const element = visualElements.find(el => el.id === id)
-    if (!element) return
-    
-    const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
-    
-    // Get current layout data for the orientation
-    const currentLayoutData = element.layouts?.[orientation] || {}
-    
-    const duplicatedElement = {
-      ...element,
-      id: Math.random().toString(36).substr(2, 9),
-      layouts: {
-        ...element.layouts,
-        [orientation]: {
-          ...currentLayoutData,
-          x: (currentLayoutData.x || 0) + 20,
-          y: (currentLayoutData.y || 0) + 20,
-          zIndex: maxZIndex + 1
-        }
-      }
-    }
-    
-    visualElements = [...visualElements, duplicatedElement]
-    selectedElementId = duplicatedElement.id
-    updatePageContent()
-  }
-
+ 
   function reorderElements(fromIndex: number, toIndex: number) {
     if (readonly) return
     
@@ -424,48 +394,6 @@
     sortedByZIndex.forEach((element, index) => {
       updateElement(element.id, { zIndex: index })
     })
-  }
-
-  function copyElementToOtherOrientation(id: string) {
-    if (readonly) return
-    
-    const element = visualElements.find(el => el.id === id)
-    if (!element) return
-    
-    const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
-    const currentLayout = element.layouts?.[orientation] || {}
-    const otherLayout = element.layouts?.[otherOrientation] || {}
-    
-    // Scale element position and size for the other orientation
-    const scaleX = otherOrientation === 'landscape' ? (1600 / 900) : (900 / 1600)
-    const scaleY = otherOrientation === 'landscape' ? (900 / 1600) : (1600 / 900)
-    
-    const scaledLayout = {
-      x: Math.round((currentLayout.x || 0) * scaleX),
-      y: Math.round((currentLayout.y || 0) * scaleY),
-      width: Math.round((currentLayout.width || 0) * scaleX),
-      height: Math.round((currentLayout.height || 0) * scaleY),
-      zIndex: otherLayout.zIndex || 0,
-      hidden: false
-    }
-    
-    // Update the element's layout for the other orientation
-    visualElements = visualElements.map(el => {
-      if (el.id === id) {
-        return {
-          ...el,
-          layouts: {
-            ...el.layouts,
-            [otherOrientation]: scaledLayout
-          }
-        }
-      }
-      return el
-    })
-    
-    updatePageContent()
-    
-    console.log(`Copied element to ${otherOrientation} orientation with scaled dimensions`)
   }
 
   // Audio management functions
@@ -492,21 +420,6 @@
     if (readonly) return
     
     audioElements = audioElements.filter(el => el.id !== id)
-    updatePageContent()
-  }
-
-  function duplicateAudioElement(id: string) {
-    if (readonly) return
-    
-    const element = audioElements.find(el => el.id === id)
-    if (!element) return
-    
-    const duplicatedElement = {
-      ...element,
-      id: Math.random().toString(36).substr(2, 9)
-    }
-    
-    audioElements = [...audioElements, duplicatedElement]
     updatePageContent()
   }
 
@@ -1035,20 +948,12 @@
     moveElementForward(event.detail.elementId)
   }
 
-  function handleDuplicate(event: CustomEvent) {
-    duplicateElement(event.detail.elementId)
-  }
-
   function handleDeleteElement(event: CustomEvent) {
     deleteElement(event.detail.elementId)
   }
 
   function handleReorder(event: CustomEvent) {
     reorderElements(event.detail.fromIndex, event.detail.toIndex)
-  }
-
-  function handleCopyToOtherOrientation(event: CustomEvent) {
-    copyElementToOtherOrientation(event.detail.elementId)
   }
 
   // Audio element handlers
@@ -1058,10 +963,6 @@
 
   function handleAudioDelete(event: CustomEvent) {
     deleteAudioElement(event.detail.id)
-  }
-
-  function handleAudioDuplicate(event: CustomEvent) {
-    duplicateAudioElement(event.detail.id)
   }
 
   // Lifecycle
@@ -1278,13 +1179,10 @@
         on:toggle-visibility={handleToggleVisibility}
         on:move-back={handleMoveBack}
         on:move-forward={handleMoveForward}
-        on:duplicate={handleDuplicate}
         on:delete-element={handleDeleteElement}
         on:reorder={handleReorder}
-        on:copy-to-other-orientation={handleCopyToOtherOrientation}
         on:audio-update={handleAudioUpdate}
         on:audio-delete={handleAudioDelete}
-        on:audio-duplicate={handleAudioDuplicate}
       />
     </div>
   {/if}

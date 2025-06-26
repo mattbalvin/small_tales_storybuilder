@@ -59,7 +59,7 @@
           <nav class="flex items-center gap-6">
             <a href="#/dashboard" class="text-sm font-medium">Dashboard</a>
             <a href="#/media" class="text-sm font-medium text-muted-foreground hover:text-foreground">Media Library</a>
-            <a href="#/analytics" class="text-sm font-medium text-muted-foreground hover:text-foreground">Analytics</a>
+            <!-- <a href="#/analytics" class="text-sm font-medium text-muted-foreground hover:text-foreground">Analytics</a> -->
           </nav>
         {/if}
       </div>
