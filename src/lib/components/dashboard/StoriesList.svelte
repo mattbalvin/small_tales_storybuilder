@@ -6,7 +6,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil, Play } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil, Play, Share, Copy, ExternalLink } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
@@ -21,6 +21,9 @@
   let editingStoryId: string | null = null
   let editingTitle = ''
   let showCoverSelector: string | null = null
+  let showShareModal: string | null = null
+  let shareUrl = ''
+  let copySuccess = false
   let fileInput: HTMLInputElement
 
   onMount(async () => {
@@ -63,6 +66,46 @@
 
   function playStory(storyId: string) {
     window.location.hash = `#/play/${storyId}`
+  }
+
+  function shareStory(storyId: string) {
+    const baseUrl = window.location.origin + window.location.pathname
+    shareUrl = `${baseUrl}#/play/${storyId}`
+    showShareModal = storyId
+    copySuccess = false
+  }
+
+  function closeShareModal() {
+    showShareModal = null
+    shareUrl = ''
+    copySuccess = false
+  }
+
+  async function copyShareUrl() {
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      copySuccess = true
+      setTimeout(() => {
+        copySuccess = false
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      copySuccess = true
+      setTimeout(() => {
+        copySuccess = false
+      }, 2000)
+    }
+  }
+
+  function openShareUrl() {
+    window.open(shareUrl, '_blank')
   }
 
   function startEditingTitle(story: any) {
@@ -351,6 +394,14 @@
               <Button 
                 variant="outline" 
                 size="sm" 
+                on:click={() => shareStory(story.id)}
+                title="Share story"
+              >
+                <Share class="w-3 h-3" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
                 class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 on:click={() => confirmDeleteStory(story)}
                 disabled={deletingStoryId === story.id}
@@ -368,6 +419,61 @@
     </div>
   {/if}
 </div>
+
+<!-- Share Modal -->
+{#if showShareModal}
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <Card class="w-full max-w-md p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Share Story</h3>
+        <Button variant="ghost" size="sm" on:click={closeShareModal}>
+          <X class="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-medium mb-2 block">Shareable Link</label>
+          <div class="flex gap-2">
+            <Input
+              value={shareUrl}
+              readonly
+              class="flex-1 text-sm"
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              on:click={copyShareUrl}
+              class={copySuccess ? 'bg-green-100 text-green-700' : ''}
+            >
+              {#if copySuccess}
+                <Check class="w-4 h-4" />
+              {:else}
+                <Copy class="w-4 h-4" />
+              {/if}
+            </Button>
+          </div>
+          {#if copySuccess}
+            <p class="text-xs text-green-600 mt-1">Link copied to clipboard!</p>
+          {:else}
+            <p class="text-xs text-muted-foreground mt-1">Anyone with this link can view and play your story</p>
+          {/if}
+        </div>
+
+        <div class="flex gap-2">
+          <Button variant="outline" class="flex-1" on:click={openShareUrl}>
+            <ExternalLink class="w-4 h-4 mr-2" />
+            Open Link
+          </Button>
+          <Button class="flex-1" on:click={copyShareUrl}>
+            <Copy class="w-4 h-4 mr-2" />
+            Copy Link
+          </Button>
+        </div>
+      </div>
+    </Card>
+  </div>
+{/if}
 
 <!-- Cover Image Selector Modal -->
 {#if showCoverSelector}
