@@ -46,7 +46,10 @@
           </span>
           <button 
             class="text-sm text-muted-foreground hover:text-foreground"
-            on:click={() => authService.signOut()}
+            on:click={() => {
+              authService.signOut()
+              window.location.hash = '#/'
+            }}
           >
             Sign Out
           </button>

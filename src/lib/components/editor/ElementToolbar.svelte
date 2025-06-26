@@ -988,31 +988,6 @@
             </p>
           </div>
 
-          <!-- Cross-Orientation Actions -->
-          <div>
-            <h4 class="text-sm font-medium mb-2">Cross-Layout Actions</h4>
-            <div class="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                class="flex-1"
-                on:click={() => copyElementToOtherOrientation(localElement.id)}
-              >
-                <ArrowLeftRight class="w-3 h-3 mr-1" />
-                Copy to {orientation === 'landscape' ? 'Portrait' : 'Landscape'}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                class="flex-1"
-                on:click={() => duplicateElement(localElement.id)}
-              >
-                <Copy class="w-3 h-3 mr-1" />
-                Duplicate
-              </Button>
-            </div>
-          </div>
-
           <!-- Type-specific properties -->
           {#if localElement.type === 'text'}
             <div>

@@ -16,7 +16,9 @@
   // Redirect authenticated users to dashboard
   onMount(() => {
     const unsubscribe = authStore.subscribe(($authStore) => {
-      if ($authStore.user && !$authStore.loading) {
+      // Only redirect if user is authenticated, not loading, and we're not on the home page
+      // This allows users who just signed out to stay on the landing page
+      if ($authStore.user && !$authStore.loading && window.location.hash !== '#/' && window.location.hash !== '') {
         window.location.hash = '#/dashboard'
       }
     })
