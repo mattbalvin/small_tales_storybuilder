@@ -100,55 +100,37 @@ export const mediaService = {
         throw new Error('URL is already from media library')
       }
 
-      // Fetch the file from the external URL
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.statusText}`)
-      }
-
-      // Get content type and determine file type
-      const contentType = response.headers.get('content-type') || ''
-      let fileType: 'image' | 'audio' | 'video'
-      let fileExtension: string
-
-      if (contentType.startsWith('image/')) {
-        fileType = 'image'
-        fileExtension = contentType.split('/')[1] || 'jpg'
-      } else if (contentType.startsWith('audio/')) {
-        fileType = 'audio'
-        fileExtension = contentType.split('/')[1] || 'mp3'
-      } else if (contentType.startsWith('video/')) {
-        fileType = 'video'
-        fileExtension = contentType.split('/')[1] || 'mp4'
-      } else {
-        // Try to guess from URL
-        const urlLower = url.toLowerCase()
-        if (urlLower.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/)) {
-          fileType = 'image'
-          fileExtension = urlLower.match(/\.(jpg|jpeg|png|gif|webp|svg)/)?.[1] || 'jpg'
-        } else if (urlLower.match(/\.(mp3|wav|ogg|m4a|aac)(\?|$)/)) {
-          fileType = 'audio'
-          fileExtension = urlLower.match(/\.(mp3|wav|ogg|m4a|aac)/)?.[1] || 'mp3'
-        } else if (urlLower.match(/\.(mp4|webm|mov|avi)(\?|$)/)) {
-          fileType = 'video'
-          fileExtension = urlLower.match(/\.(mp4|webm|mov|avi)/)?.[1] || 'mp4'
-        } else {
-          throw new Error('Unable to determine file type from URL')
-        }
-      }
-
-      // Convert response to blob
-      const blob = await response.blob()
+      // Use the edge function to fetch the file (bypasses CORS)
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-media`
       
-      // Generate filename from URL or use generic name
-      const urlPath = new URL(url).pathname
-      const originalFilename = urlPath.split('/').pop() || `imported-${fileType}`
-      const filename = originalFilename.includes('.') 
-        ? originalFilename 
-        : `${originalFilename}.${fileExtension}`
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ url })
+      })
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to import media')
+      }
+
+      const { arrayBuffer, filename, contentType, fileType, size } = result.data
+
+      // Convert array back to Uint8Array and create blob
+      const uint8Array = new Uint8Array(arrayBuffer)
+      const blob = new Blob([uint8Array], { type: contentType })
+      
       // Create File object from blob
-      const file = new File([blob], filename, { type: contentType || `${fileType}/*` })
+      const file = new File([blob], filename, { type: contentType })
 
       // Upload to media library with import tag
       const importTags = [...tags, 'imported', `imported-${fileType}`]
