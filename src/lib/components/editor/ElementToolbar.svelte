@@ -59,14 +59,6 @@
     dispatch('move-forward', { elementId })
   }
 
-  function duplicateElement(elementId: string) {
-    dispatch('duplicate', { elementId })
-  }
-
-  function copyElementToOtherOrientation(elementId: string) {
-    dispatch('copy-to-other-orientation', { elementId })
-  }
-
   function reorderElements(fromIndex: number, toIndex: number) {
     dispatch('reorder', { fromIndex, toIndex })
   }
@@ -78,10 +70,6 @@
 
   function deleteAudioElement(id: string) {
     dispatch('audio-delete', { id })
-  }
-
-  function duplicateAudioElement(id: string) {
-    dispatch('audio-duplicate', { id })
   }
 
   // Media selector functions
@@ -420,18 +408,6 @@
     }
   }
 
-  function handleDuplicateElement(event: MouseEvent, elementId: string) {
-    event.preventDefault()
-    event.stopPropagation()
-    duplicateElement(elementId)
-  }
-
-  function handleCopyToOtherOrientation(event: MouseEvent, elementId: string) {
-    event.preventDefault()
-    event.stopPropagation()
-    copyElementToOtherOrientation(elementId)
-  }
-
   function handleElementClick(event: MouseEvent, elementId: string) {
     event.preventDefault()
     event.stopPropagation()
@@ -495,6 +471,7 @@
       {:else}
         <div 
           class="space-y-1 max-h-48 overflow-y-auto relative"
+          role="list"
           on:dragover={handleListDragOver}
           on:drop={handleListDrop}
         >
@@ -540,28 +517,8 @@
                 </div>
               </div>
 
-              <!-- Element Controls -->
-              <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <!-- Copy to other orientation -->
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0"
-                  on:click={(event) => handleCopyToOtherOrientation(event, element.id)}
-                  title="Copy to {orientation === 'landscape' ? 'portrait' : 'landscape'} layout"
-                >
-                  <ArrowLeftRight class="w-3 h-3" />
-                </button>
-
-                <!-- Duplicate -->
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-6 w-6 p-0"
-                  on:click={(event) => handleDuplicateElement(event, element.id)}
-                  title="Duplicate element"
-                >
-                  <Copy class="w-3 h-3" />
-                </button>
-
+                <!-- Element Controls -->
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <!-- Visibility Toggle -->
                 <button
                   type="button"
@@ -660,15 +617,6 @@
                   </div>
                   
                   <div class="flex items-center gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      on:click={() => duplicateAudioElement(element.id)}
-                      title="Duplicate audio element"
-                      class="h-6 w-6 p-0"
-                    >
-                      <Copy class="w-3 h-3" />
-                    </Button>
                     <Button 
                       variant="ghost" 
                       size="sm"
@@ -986,31 +934,6 @@
             <p class="text-xs text-muted-foreground mt-1">
               Higher values appear in front of lower values
             </p>
-          </div>
-
-          <!-- Cross-Orientation Actions -->
-          <div>
-            <h4 class="text-sm font-medium mb-2">Cross-Layout Actions</h4>
-            <div class="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                class="flex-1"
-                on:click={() => copyElementToOtherOrientation(localElement.id)}
-              >
-                <ArrowLeftRight class="w-3 h-3 mr-1" />
-                Copy to {orientation === 'landscape' ? 'Portrait' : 'Landscape'}
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                class="flex-1"
-                on:click={() => duplicateElement(localElement.id)}
-              >
-                <Copy class="w-3 h-3 mr-1" />
-                Duplicate
-              </Button>
-            </div>
           </div>
 
           <!-- Type-specific properties -->

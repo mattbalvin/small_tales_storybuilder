@@ -375,37 +375,7 @@
       updateElement(elementAtNextLevel.id, { zIndex: element.zIndex || 0 })
     }
   }
-  
-  function duplicateElement(id: string) {
-    if (readonly) return
-    
-    const element = visualElements.find(el => el.id === id)
-    if (!element) return
-    
-    const maxZIndex = displayElements.reduce((max, el) => Math.max(max, el.zIndex || 0), 0)
-    
-    // Get current layout data for the orientation
-    const currentLayoutData = element.layouts?.[orientation] || {}
-    
-    const duplicatedElement = {
-      ...element,
-      id: Math.random().toString(36).substr(2, 9),
-      layouts: {
-        ...element.layouts,
-        [orientation]: {
-          ...currentLayoutData,
-          x: (currentLayoutData.x || 0) + 20,
-          y: (currentLayoutData.y || 0) + 20,
-          zIndex: maxZIndex + 1
-        }
-      }
-    }
-    
-    visualElements = [...visualElements, duplicatedElement]
-    selectedElementId = duplicatedElement.id
-    updatePageContent()
-  }
-
+ 
   function reorderElements(fromIndex: number, toIndex: number) {
     if (readonly) return
     
@@ -424,48 +394,6 @@
     sortedByZIndex.forEach((element, index) => {
       updateElement(element.id, { zIndex: index })
     })
-  }
-
-  function copyElementToOtherOrientation(id: string) {
-    if (readonly) return
-    
-    const element = visualElements.find(el => el.id === id)
-    if (!element) return
-    
-    const otherOrientation = orientation === 'landscape' ? 'portrait' : 'landscape'
-    const currentLayout = element.layouts?.[orientation] || {}
-    const otherLayout = element.layouts?.[otherOrientation] || {}
-    
-    // Scale element position and size for the other orientation
-    const scaleX = otherOrientation === 'landscape' ? (1600 / 900) : (900 / 1600)
-    const scaleY = otherOrientation === 'landscape' ? (900 / 1600) : (1600 / 900)
-    
-    const scaledLayout = {
-      x: Math.round((currentLayout.x || 0) * scaleX),
-      y: Math.round((currentLayout.y || 0) * scaleY),
-      width: Math.round((currentLayout.width || 0) * scaleX),
-      height: Math.round((currentLayout.height || 0) * scaleY),
-      zIndex: otherLayout.zIndex || 0,
-      hidden: false
-    }
-    
-    // Update the element's layout for the other orientation
-    visualElements = visualElements.map(el => {
-      if (el.id === id) {
-        return {
-          ...el,
-          layouts: {
-            ...el.layouts,
-            [otherOrientation]: scaledLayout
-          }
-        }
-      }
-      return el
-    })
-    
-    updatePageContent()
-    
-    console.log(`Copied element to ${otherOrientation} orientation with scaled dimensions`)
   }
 
   // Audio management functions
@@ -492,21 +420,6 @@
     if (readonly) return
     
     audioElements = audioElements.filter(el => el.id !== id)
-    updatePageContent()
-  }
-
-  function duplicateAudioElement(id: string) {
-    if (readonly) return
-    
-    const element = audioElements.find(el => el.id === id)
-    if (!element) return
-    
-    const duplicatedElement = {
-      ...element,
-      id: Math.random().toString(36).substr(2, 9)
-    }
-    
-    audioElements = [...audioElements, duplicatedElement]
     updatePageContent()
   }
 
@@ -1035,20 +948,12 @@
     moveElementForward(event.detail.elementId)
   }
 
-  function handleDuplicate(event: CustomEvent) {
-    duplicateElement(event.detail.elementId)
-  }
-
   function handleDeleteElement(event: CustomEvent) {
     deleteElement(event.detail.elementId)
   }
 
   function handleReorder(event: CustomEvent) {
     reorderElements(event.detail.fromIndex, event.detail.toIndex)
-  }
-
-  function handleCopyToOtherOrientation(event: CustomEvent) {
-    copyElementToOtherOrientation(event.detail.elementId)
   }
 
   // Audio element handlers
@@ -1058,10 +963,6 @@
 
   function handleAudioDelete(event: CustomEvent) {
     deleteAudioElement(event.detail.id)
-  }
-
-  function handleAudioDuplicate(event: CustomEvent) {
-    duplicateAudioElement(event.detail.id)
   }
 
   // Lifecycle
@@ -1111,6 +1012,7 @@
       <div class="flex items-center gap-2">
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={() => handleZoom(-1)}
           disabled={readonly}
         >
@@ -1121,6 +1023,7 @@
         </span>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={() => handleZoom(1)}
           disabled={readonly}
         >
@@ -1128,6 +1031,7 @@
         </button>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={resetZoom}
           disabled={readonly}
         >
@@ -1135,6 +1039,7 @@
         </button>
         <button
           class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+          role="button"
           on:click={fitToScreen}
           disabled={readonly}
         >
@@ -1151,6 +1056,8 @@
     <div 
       bind:this={viewportElement}
       class="flex-1 overflow-hidden bg-muted/20 relative"
+      role="application"
+      tabindex="0"
       style="cursor: {cursorStyle}"
       on:wheel={handleWheel}
       on:mousedown={handleViewportMouseDown}
@@ -1171,7 +1078,10 @@
           transform: translate({panX}px, {panY}px) scale({zoomLevel});
           transform-origin: 0 0;
         "
+        role="button"
+        tabindex="0"
         on:click={handleCanvasClick}
+        on:keydown={handleKeyDown}
       >
         {#each sortedElements as element (element.id)}
           <div
@@ -1183,6 +1093,8 @@
             class:cursor-pointer={!readonly && selectedElementId !== element.id && !isPanning && !isAltPressed}
             class:cursor-default={readonly || isPanning || isAltPressed}
             class:opacity-30={element.hidden}
+            role="button"
+            tabindex="0"
             style="
               left: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualX : element.x}px; 
               top: {(isDragging || isResizing) && selectedElementId === element.id ? currentVisualY : element.y}px; 
@@ -1219,21 +1131,29 @@
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
                 style="left: -6px; top: -6px; z-index: 20;"
                 data-handle="nw"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
                 style="right: -6px; top: -6px; z-index: 20;"
                 data-handle="ne"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
                 style="left: -6px; bottom: -6px; z-index: 20;"
                 data-handle="sw"
+                role="button"
+                tabindex="0"
               ></div>
               <div 
                 class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
                 style="right: -6px; bottom: -6px; z-index: 20;"
                 data-handle="se"
+                role="button"
+                tabindex="0"
               ></div>
             {/if}
           </div>
@@ -1278,13 +1198,10 @@
         on:toggle-visibility={handleToggleVisibility}
         on:move-back={handleMoveBack}
         on:move-forward={handleMoveForward}
-        on:duplicate={handleDuplicate}
         on:delete-element={handleDeleteElement}
         on:reorder={handleReorder}
-        on:copy-to-other-orientation={handleCopyToOtherOrientation}
         on:audio-update={handleAudioUpdate}
         on:audio-delete={handleAudioDelete}
-        on:audio-duplicate={handleAudioDuplicate}
       />
     </div>
   {/if}
