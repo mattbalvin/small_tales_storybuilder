@@ -740,14 +740,9 @@
       const canvasMouseX = (event.clientX - canvasRect.left - panX) / zoomLevel
       const canvasMouseY = (event.clientY - canvasRect.top - panY) / zoomLevel
       
-      const newX = Math.max(0, Math.min(
-        canvasMouseX - dragOffset.x,
-        canvasWidth - element.width
-      ))
-      const newY = Math.max(0, Math.min(
-        canvasMouseY - dragOffset.y,
-        canvasHeight - element.height
-      ))
+      // Allow positioning anywhere - no boundary constraints
+      const newX = canvasMouseX - dragOffset.x
+      const newY = canvasMouseY - dragOffset.y
       
       // Update visual state
       currentVisualX = Math.round(newX)
@@ -769,48 +764,43 @@
       let newX = resizeStartData.x
       let newY = resizeStartData.y
 
-      // Apply resize based on handle
+      // Apply resize based on handle - allow any size, no minimum constraints
       switch (resizeHandle) {
         case 'se': // bottom-right
-          newWidth = Math.max(50, resizeStartData.width + deltaX)
-          newHeight = Math.max(30, resizeStartData.height + deltaY)
+          newWidth = Math.max(10, resizeStartData.width + deltaX)
+          newHeight = Math.max(10, resizeStartData.height + deltaY)
           break
         case 'sw': // bottom-left
-          newWidth = Math.max(50, resizeStartData.width - deltaX)
-          newHeight = Math.max(30, resizeStartData.height + deltaY)
-          newX = Math.max(0, resizeStartData.x + deltaX)
-          if (newWidth === 50) {
-            newX = resizeStartData.x + resizeStartData.width - 50
+          newWidth = Math.max(10, resizeStartData.width - deltaX)
+          newHeight = Math.max(10, resizeStartData.height + deltaY)
+          newX = resizeStartData.x + deltaX
+          if (newWidth === 10) {
+            newX = resizeStartData.x + resizeStartData.width - 10
           }
           break
         case 'ne': // top-right
-          newWidth = Math.max(50, resizeStartData.width + deltaX)
-          newHeight = Math.max(30, resizeStartData.height - deltaY)
-          newY = Math.max(0, resizeStartData.y + deltaY)
-          if (newHeight === 30) {
-            newY = resizeStartData.y + resizeStartData.height - 30
+          newWidth = Math.max(10, resizeStartData.width + deltaX)
+          newHeight = Math.max(10, resizeStartData.height - deltaY)
+          newY = resizeStartData.y + deltaY
+          if (newHeight === 10) {
+            newY = resizeStartData.y + resizeStartData.height - 10
           }
           break
         case 'nw': // top-left
-          newWidth = Math.max(50, resizeStartData.width - deltaX)
-          newHeight = Math.max(30, resizeStartData.height - deltaY)
-          newX = Math.max(0, resizeStartData.x + deltaX)
-          newY = Math.max(0, resizeStartData.y + deltaY)
-          if (newWidth === 50) {
-            newX = resizeStartData.x + resizeStartData.width - 50
+          newWidth = Math.max(10, resizeStartData.width - deltaX)
+          newHeight = Math.max(10, resizeStartData.height - deltaY)
+          newX = resizeStartData.x + deltaX
+          newY = resizeStartData.y + deltaY
+          if (newWidth === 10) {
+            newX = resizeStartData.x + resizeStartData.width - 10
           }
-          if (newHeight === 30) {
-            newY = resizeStartData.y + resizeStartData.height - 30
+          if (newHeight === 10) {
+            newY = resizeStartData.y + resizeStartData.height - 10
           }
           break
       }
 
-      // Ensure element stays within canvas bounds
-      newX = Math.max(0, Math.min(newX, canvasWidth - newWidth))
-      newY = Math.max(0, Math.min(newY, canvasHeight - newHeight))
-      newWidth = Math.min(newWidth, canvasWidth - newX)
-      newHeight = Math.min(newHeight, canvasHeight - newY)
-
+      // No boundary constraints - allow elements to extend beyond canvas
       // Update visual state
       currentVisualX = Math.round(newX)
       currentVisualY = Math.round(newY)
