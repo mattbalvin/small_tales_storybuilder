@@ -29,7 +29,18 @@
   $: pages = $storiesStore.currentPages
   $: currentPage = pages[currentPageIndex]
   $: collaborators = $storiesStore.currentCollaborators
+  $: currentStoryLoading = $storiesStore.currentStoryLoading
   $: userPermission = getUserPermissionLevel()
+
+  // Reactive statement to create default page when story is loaded and has no pages
+  $: if (story && 
+        !currentStoryLoading && 
+        pages.length === 0 && 
+        $authStore.user && 
+        canEdit()) {
+    console.log('Creating default page for newly loaded story')
+    createDefaultPage()
+  }
 
   // Get user permission level from collaborators
   function getUserPermissionLevel(): 'owner' | 'editor' | 'viewer' | null {
@@ -88,12 +99,6 @@
     
     if (storyId) {
       await storiesService.loadStoryPages(storyId)
-      
-      // If no pages exist, create a default blank page (only if user can edit)
-      if ($storiesStore.currentPages.length === 0 && canEdit()) {
-        console.log('No pages found, creating default page')
-        await createDefaultPage()
-      }
     }
   })
 
@@ -425,7 +430,8 @@
       userId: c.user_id, 
       permission: c.permission_level,
       email: c.users?.email 
-    })) || []
+    })) || [],
+    currentStoryLoading
   })
 </script>
 
