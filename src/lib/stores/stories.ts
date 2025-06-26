@@ -199,6 +199,33 @@ export const storiesService = {
         }
       }
 
+      // Create the default first page for the new story
+      console.log('Creating default page for new story:', data.id)
+      const defaultPage = {
+        story_id: data.id,
+        page_number: 1,
+        content: {
+          elements: [],
+          audioElements: [],
+          background: null,
+          animation: null
+        }
+      }
+
+      const { data: pageData, error: pageError } = await supabase
+        .from('story_pages')
+        .insert(defaultPage)
+        .select()
+        .single()
+
+      if (pageError) {
+        console.error('Failed to create default page:', pageError)
+        // Don't throw here, the story was created successfully
+        // The user can manually add pages if needed
+      } else {
+        console.log('Default page created successfully:', pageData)
+      }
+
       storiesStore.update(state => ({
         ...state,
         stories: [data, ...state.stories],

@@ -32,16 +32,6 @@
   $: currentStoryLoading = $storiesStore.currentStoryLoading
   $: userPermission = getUserPermissionLevel()
 
-  // Reactive statement to create default page when story is loaded and has no pages
-  $: if (story && 
-        !currentStoryLoading && 
-        pages.length === 0 && 
-        $authStore.user && 
-        canEdit()) {
-    console.log('Creating default page for newly loaded story')
-    createDefaultPage()
-  }
-
   // Get user permission level from collaborators
   function getUserPermissionLevel(): 'owner' | 'editor' | 'viewer' | null {
     if (!$authStore.user || !collaborators || collaborators.length === 0) {
@@ -112,34 +102,6 @@
     currentPageIndex = 0
   }
 
-  async function createDefaultPage() {
-    if (!story || !$authStore.user || !canEdit()) {
-      console.log('Cannot create default page:', { hasStory: !!story, hasUser: !!$authStore.user, canEdit: canEdit() })
-      return
-    }
-
-    console.log('Creating default page for story:', story.id)
-    
-    const defaultPage = {
-      story_id: story.id,
-      page_number: 1,
-      content: {
-        elements: [],
-        audioElements: [],
-        background: null,
-        animation: null
-      }
-    }
-
-    try {
-      await storiesService.createPage(defaultPage)
-      currentPageIndex = 0
-      console.log('Default page created successfully')
-    } catch (error) {
-      console.error('Failed to create default page:', error)
-    }
-  }
-
   async function addNewPage() {
     if (!story || !$authStore.user || !canEdit()) {
       console.log('Cannot add page:', { hasStory: !!story, hasUser: !!$authStore.user, canEdit: canEdit() })
@@ -187,7 +149,7 @@
   }
 
   async function deletePage(pageIndex: number) {
-    if (!story || !$authStore.user || !canEdit() || !pages[pageIndex] || pages.length <= 1) return
+    if (!story || !$authStore.user || !canEdit() || !pages[pageIndex]) return
 
     if (!confirm('Are you sure you want to delete this page? This action cannot be undone.')) {
       return
@@ -201,6 +163,9 @@
       // Adjust current page index if necessary
       if (currentPageIndex >= pageIndex && currentPageIndex > 0) {
         currentPageIndex = currentPageIndex - 1
+      } else if (pages.length === 1) {
+        // If this was the last page, reset to 0 (will show empty state)
+        currentPageIndex = 0
       }
 
       // Renumber remaining pages
@@ -516,7 +481,7 @@
             <Plus class="w-4 h-4 mr-1" />
             Add Page
           </Button>
-          {#if pages.length > 1 && currentPage}
+          {#if pages.length > 0 && currentPage}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -566,7 +531,7 @@
     <!-- Sidebar -->
     <aside class="w-64 border-r bg-card p-4 flex flex-col">
       <div class="space-y-4 flex-1">
-        <!-- Pages Header with Add Button -->
+        <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
         <div class="flex items-center justify-between">
           <h2 class="font-medium">Pages</h2>
           {#if canEdit()}
@@ -654,20 +619,18 @@
                     >
                       <Copy class="w-3 h-3" />
                     </Button>
-                    {#if pages.length > 1}
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                        on:click={(event) => { 
-                          event.stopPropagation(); 
-                          deletePage(index); 
-                        }}
-                        title="Delete page"
-                      >
-                        <Trash2 class="w-3 h-3" />
-                      </Button>
-                    {/if}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                      on:click={(event) => { 
+                        event.stopPropagation(); 
+                        deletePage(index); 
+                      }}
+                      title="Delete page"
+                    >
+                      <Trash2 class="w-3 h-3" />
+                    </Button>
                   </div>
                 {/if}
 
@@ -688,8 +651,8 @@
         {/if}
       </div>
 
-      <!-- Page management actions at bottom -->
-      {#if canEdit() && pages.length > 0}
+      <!-- Page management actions at bottom - ALWAYS VISIBLE -->
+      {#if canEdit()}
         <div class="pt-4 border-t space-y-2">
           <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
             <Plus class="w-4 h-4 mr-2" />
@@ -700,17 +663,15 @@
               <Copy class="w-4 h-4 mr-2" />
               Duplicate Current
             </Button>
-            {#if pages.length > 1}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                class="w-full text-destructive hover:text-destructive" 
-                on:click={() => deletePage(currentPageIndex)}
-              >
-                <Trash2 class="w-4 h-4 mr-2" />
-                Delete Current
-              </Button>
-            {/if}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              class="w-full text-destructive hover:text-destructive" 
+              on:click={() => deletePage(currentPageIndex)}
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete Current
+            </Button>
           {/if}
         </div>
       {/if}
