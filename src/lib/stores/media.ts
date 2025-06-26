@@ -121,13 +121,30 @@ export const mediaService = {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
+        
+        // Handle specific HTTP status codes with more descriptive messages
+        if (response.status === 403) {
+          throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
+        } else if (response.status === 404) {
+          throw new Error('Media not found: The URL does not exist or the resource has been moved.')
+        } else if (response.status === 429) {
+          throw new Error('Rate limit exceeded: Too many requests to the external source. Please try again later.')
+        } else if (response.status >= 500) {
+          throw new Error('Server error: The external source is experiencing issues. Please try again later.')
+        }
+        
+        throw new Error(errorData.error || `Failed to fetch media (HTTP ${response.status}): ${response.statusText}`)
       }
 
       const result = await response.json()
       
       if (!result.success) {
-        throw new Error(result.error || 'Failed to import media')
+        // Check if the error message indicates a 403 Forbidden from the external source
+        const errorMessage = result.error || 'Failed to import media'
+        if (errorMessage.toLowerCase().includes('403') || errorMessage.toLowerCase().includes('forbidden')) {
+          throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
+        }
+        throw new Error(errorMessage)
       }
 
       const { arrayBuffer, filename, contentType, fileType, size } = result.data
