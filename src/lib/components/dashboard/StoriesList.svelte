@@ -33,7 +33,7 @@
         await mediaService.loadAssets($authStore.user.id)
       }
     } catch (error) {
-      console.error('Error loading user data:', error)
+      console.log('Unable to load user data. Session logged out or terminated: ', error)
       // Redirect to home page on any error
       window.location.hash = '#/'
     }
