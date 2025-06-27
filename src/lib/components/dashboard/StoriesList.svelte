@@ -27,9 +27,15 @@
   let fileInput: HTMLInputElement
 
   onMount(async () => {
-    if ($authStore.user) {
-      await storiesService.loadStories($authStore.user.id)
-      await mediaService.loadAssets($authStore.user.id)
+    try {
+      if ($authStore.user) {
+        await storiesService.loadStories($authStore.user.id)
+        await mediaService.loadAssets($authStore.user.id)
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error)
+      // Redirect to home page on any error
+      window.location.hash = '#/'
     }
   })
 
