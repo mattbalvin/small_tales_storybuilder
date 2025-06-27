@@ -93,9 +93,6 @@
     // Update the appropriate property based on element type
     if (localElement.type === 'image' && mediaPropertyToUpdate === 'src') {
       handleImagePropertyChange('src', url)
-      if (!localElement.properties?.alt) {
-        handleImagePropertyChange('alt', alt || filename)
-      }
     }
 
     closeMediaSelector()
@@ -1072,42 +1069,22 @@
             <div>
               <h4 class="text-sm font-medium mb-2">Image Properties</h4>
               <div class="space-y-2">
+                <!-- Select Image Button (replaces URL input) -->
                 <div>
-                  <label class="text-xs text-muted-foreground">Source URL</label>
-                  <div class="flex gap-2">
-                    <Input
-                      value={localElement.properties?.src || ''}
-                      placeholder="https://... or select from media library"
-                      on:input={(e) => {
-                        if (e.target instanceof HTMLInputElement) {
-                          handleImagePropertyChange('src', e.target.value);
-                        }
-                      }}
-                      class="flex-1"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      on:click={() => openMediaSelector('image', 'src')}
-                      title="Select from media library"
-                    >
-                      <FolderOpen class="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <p class="text-xs text-muted-foreground mt-1">
-                    External URLs will be automatically imported to your media library
-                  </p>
-                </div>
-                <div>
-                  <label class="text-xs text-muted-foreground">Alt Text</label>
-                  <Input
-                    value={localElement.properties?.alt || ''}
-                    on:input={(e) => {
-                      if (e.target instanceof HTMLInputElement) {
-                        handleImagePropertyChange('alt', e.target.value);
-                      }
-                    }}
-                  />
+                  <label class="text-xs text-muted-foreground mb-2 block">Image Source</label>
+                  <Button 
+                    variant="outline" 
+                    class="w-full"
+                    on:click={() => openMediaSelector('image', 'src')}
+                  >
+                    <Image class="w-4 h-4 mr-2" />
+                    Select Image
+                  </Button>
+                  {#if localElement.properties?.src}
+                    <p class="text-xs text-muted-foreground mt-1 truncate">
+                      Current: {localElement.properties.src.split('/').pop() || 'Image selected'}
+                    </p>
+                  {/if}
                 </div>
                 
                 <!-- Opacity Control -->
@@ -1184,22 +1161,24 @@
             </div>
           {/if}
 
-          <!-- Animation Properties -->
-          <div>
-            <h4 class="text-sm font-medium mb-2">Animation</h4>
-            <select 
-              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              value={localElement.animation?.type || 'none'}
-              on:change={handleAnimationChange}
-            >
-              <option value="none">No animation</option>
-              <option value="fadeIn">Fade In</option>
-              <option value="slideInLeft">Slide In Left</option>
-              <option value="slideInRight">Slide In Right</option>
-              <option value="bounceIn">Bounce In</option>
-              <option value="scaleIn">Scale In</option>
-            </select>
-          </div>
+          <!-- Animation Properties (removed for image elements) -->
+          {#if localElement.type === 'text'}
+            <div>
+              <h4 class="text-sm font-medium mb-2">Animation</h4>
+              <select 
+                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={localElement.animation?.type || 'none'}
+                on:change={handleAnimationChange}
+              >
+                <option value="none">No animation</option>
+                <option value="fadeIn">Fade In</option>
+                <option value="slideInLeft">Slide In Left</option>
+                <option value="slideInRight">Slide In Right</option>
+                <option value="bounceIn">Bounce In</option>
+                <option value="scaleIn">Scale In</option>
+              </select>
+            </div>
+          {/if}
         </div>
       </Card>
     {:else}
