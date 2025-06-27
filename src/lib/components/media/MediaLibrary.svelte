@@ -5,7 +5,8 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, FileEdit as Edit3, Check, X } from 'lucide-svelte'
+  import ImageGenerationModal from './ImageGenerationModal.svelte'
+  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, FileEdit as Edit3, Check, X, Wand2 } from 'lucide-svelte'
   import { formatFileSize } from '$lib/utils'
 
   $: assets = $mediaStore.assets
@@ -17,6 +18,7 @@
   let uploading = false
   let editingAsset: string | null = null
   let editingTags = ''
+  let showImageGeneration = false
 
   onMount(async () => {
     if ($authStore.user) {
@@ -46,6 +48,22 @@
 
   function triggerFileUpload() {
     fileInput.click()
+  }
+
+  function openImageGeneration() {
+    showImageGeneration = true
+  }
+
+  function handleImagesGenerated(event: CustomEvent) {
+    const { assets, count } = event.detail
+    
+    // Refresh the media library to show new images
+    if ($authStore.user) {
+      mediaService.loadAssets($authStore.user.id)
+    }
+    
+    // Show success message
+    alert(`Successfully generated and saved ${count} image${count > 1 ? 's' : ''} to your media library!`)
   }
 
   function getFileIcon(type: string) {
@@ -97,10 +115,16 @@
       <h1 class="text-2xl font-bold">Media Library</h1>
       <p class="text-muted-foreground">Manage your images, audio, and video assets</p>
     </div>
-    <Button on:click={triggerFileUpload} disabled={uploading}>
-      <Upload class="w-4 h-4 mr-2" />
-      {uploading ? 'Uploading...' : 'Upload Files'}
-    </Button>
+    <div class="flex items-center gap-2">
+      <Button variant="outline" on:click={openImageGeneration}>
+        <Wand2 class="w-4 h-4 mr-2" />
+        Generate Images
+      </Button>
+      <Button on:click={triggerFileUpload} disabled={uploading}>
+        <Upload class="w-4 h-4 mr-2" />
+        {uploading ? 'Uploading...' : 'Upload Files'}
+      </Button>
+    </div>
   </div>
 
   <!-- Search and Filter -->
@@ -137,6 +161,12 @@
     class="hidden"
   />
 
+  <!-- Image Generation Modal -->
+  <ImageGenerationModal 
+    bind:show={showImageGeneration}
+    on:images-generated={handleImagesGenerated}
+  />
+
   <!-- Assets Grid -->
   {#if loading}
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -152,23 +182,37 @@
         <Upload class="w-8 h-8 text-primary" />
       </div>
       <h2 class="text-xl font-semibold mb-2">No media files</h2>
-      <p class="text-muted-foreground mb-6">Upload images, audio, or video files to get started</p>
-      <Button on:click={triggerFileUpload}>
-        <Upload class="w-4 h-4 mr-2" />
-        Upload Your First File
-      </Button>
+      <p class="text-muted-foreground mb-6">Upload images, audio, or video files to get started, or generate AI images</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button on:click={triggerFileUpload}>
+          <Upload class="w-4 h-4 mr-2" />
+          Upload Your First File
+        </Button>
+        <Button variant="outline" on:click={openImageGeneration}>
+          <Wand2 class="w-4 h-4 mr-2" />
+          Generate AI Images
+        </Button>
+      </div>
     </Card>
   {:else}
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       {#each filteredAssets as asset}
         <Card class="group relative overflow-hidden hover:shadow-lg transition-shadow">
-          <div class="aspect-square bg-gray-100 flex items-center justify-center">
+          <div class="aspect-square bg-gray-100 flex items-center justify-center relative">
             {#if asset.type === 'image'}
               <img 
                 src={asset.url} 
                 alt={asset.filename}
                 class="w-full h-full object-cover"
               />
+              
+              <!-- AI Generated Badge -->
+              {#if asset.tags.includes('ai-generated')}
+                <div class="absolute top-2 left-2 bg-primary/90 text-primary-foreground px-2 py-1 rounded text-xs font-medium">
+                  <Wand2 class="w-3 h-3 inline mr-1" />
+                  AI
+                </div>
+              {/if}
             {:else}
               <svelte:component this={getFileIcon(asset.type)} class="w-8 h-8 text-muted-foreground" />
             {/if}
