@@ -41,7 +41,7 @@ interface GenerateImageRequest {
 interface ReplicateResponse {
   id: string;
   status: string;
-  output?: string[];
+  output?: string[] | string;
   error?: string;
   urls?: {
     get: string;
@@ -237,7 +237,18 @@ Deno.serve(async (req: Request) => {
       console.log(`Prediction ${prediction.id} status: ${status.status} (attempt ${attempts})`);
 
       if (status.status === 'succeeded') {
-        if (!status.output || !Array.isArray(status.output) || status.output.length === 0) {
+        // Handle both string and array outputs from Replicate
+        let outputImages: string[] = [];
+        
+        if (typeof status.output === 'string') {
+          // Single image URL returned as string
+          outputImages = [status.output];
+        } else if (Array.isArray(status.output)) {
+          // Multiple images returned as array
+          outputImages = status.output;
+        }
+        
+        if (outputImages.length === 0) {
           return new Response(
             JSON.stringify({ error: "No images generated" }),
             {
@@ -250,14 +261,14 @@ Deno.serve(async (req: Request) => {
         console.log('Image generation successful:', {
           model: body.model,
           prompt_length: body.prompt.length,
-          output_count: status.output.length,
+          output_count: outputImages.length,
           prediction_id: prediction.id
         });
 
         return new Response(
           JSON.stringify({
             success: true,
-            images: status.output,
+            images: outputImages,
             model: body.model,
             prompt: body.prompt,
             prediction_id: prediction.id,
