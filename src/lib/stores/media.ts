@@ -324,6 +324,24 @@ export const mediaService = {
     return asset
   },
 
+  async updateAssetFilename(id: string, filename: string) {
+    const { data: asset, error } = await supabase
+      .from('media_assets')
+      .update({ filename })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    mediaStore.update(state => ({
+      ...state,
+      assets: state.assets.map(a => a.id === id ? asset : a)
+    }))
+
+    return asset
+  },
+
   setSearchTerm(term: string) {
     mediaStore.update(state => ({
       ...state,

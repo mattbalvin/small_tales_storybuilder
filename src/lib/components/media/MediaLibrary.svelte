@@ -6,7 +6,7 @@
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import ImageGenerationModal from './ImageGenerationModal.svelte'
-  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, FileEdit as Edit3, Check, X, Wand2 } from 'lucide-svelte'
+  import { Upload, Search, Filter, Image, Volume2, Video, Trash2, Tag, FileEdit as Edit3, Check, X, Wand2, Link, Pencil, Plus } from 'lucide-svelte'
   import { formatFileSize } from '$lib/utils'
 
   $: assets = $mediaStore.assets
@@ -18,7 +18,12 @@
   let uploading = false
   let editingAsset: string | null = null
   let editingTags = ''
+  let editingFilename: string | null = null
+  let editingFilenameValue = ''
   let showImageGeneration = false
+  let showImportUrl = false
+  let importUrl = ''
+  let importing = false
 
   onMount(async () => {
     if ($authStore.user) {
@@ -52,6 +57,45 @@
 
   function openImageGeneration() {
     showImageGeneration = true
+  }
+
+  function openImportUrl() {
+    showImportUrl = true
+    importUrl = ''
+  }
+
+  function closeImportUrl() {
+    showImportUrl = false
+    importUrl = ''
+    importing = false
+  }
+
+  async function handleImportUrl() {
+    if (!importUrl.trim() || !$authStore.user) return
+
+    importing = true
+
+    try {
+      // Validate URL format
+      const url = new URL(importUrl.trim())
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        throw new Error('Please enter a valid HTTP or HTTPS URL')
+      }
+
+      // Import the URL using the media service
+      await mediaService.importFromUrl(importUrl.trim(), $authStore.user.id, ['imported-url'])
+      
+      // Refresh the media library
+      await mediaService.loadAssets($authStore.user.id)
+      
+      closeImportUrl()
+      alert('Media imported successfully!')
+    } catch (error) {
+      console.error('Import failed:', error)
+      alert(`Failed to import media: ${error.message}`)
+    } finally {
+      importing = false
+    }
   }
 
   function handleImagesGenerated(event: CustomEvent) {
@@ -91,7 +135,62 @@
       editingTags = ''
     } catch (error) {
       console.error('Failed to update tags:', error)
+      alert('Failed to update tags. Please try again.')
     }
+  }
+
+  function startEditingFilename(asset: any) {
+    editingFilename = asset.id
+    // Remove file extension for editing
+    const lastDotIndex = asset.filename.lastIndexOf('.')
+    editingFilenameValue = lastDotIndex > 0 ? asset.filename.substring(0, lastDotIndex) : asset.filename
+  }
+
+  function cancelEditingFilename() {
+    editingFilename = null
+    editingFilenameValue = ''
+  }
+
+  async function saveAssetFilename(assetId: string, originalFilename: string) {
+    if (!editingFilenameValue.trim()) {
+      cancelEditingFilename()
+      return
+    }
+
+    try {
+      // Get file extension from original filename
+      const lastDotIndex = originalFilename.lastIndexOf('.')
+      const extension = lastDotIndex > 0 ? originalFilename.substring(lastDotIndex) : ''
+      const newFilename = editingFilenameValue.trim() + extension
+
+      await mediaService.updateAssetFilename(assetId, newFilename)
+      editingFilename = null
+      editingFilenameValue = ''
+    } catch (error) {
+      console.error('Failed to update filename:', error)
+      alert('Failed to update filename. Please try again.')
+    }
+  }
+
+  function addTag(assetId: string, newTag: string) {
+    if (!newTag.trim()) return
+    
+    const asset = assets.find(a => a.id === assetId)
+    if (!asset) return
+
+    const currentTags = asset.tags || []
+    if (currentTags.includes(newTag.trim())) return // Tag already exists
+
+    const updatedTags = [...currentTags, newTag.trim()]
+    mediaService.updateAssetTags(assetId, updatedTags)
+  }
+
+  function removeTag(assetId: string, tagToRemove: string) {
+    const asset = assets.find(a => a.id === assetId)
+    if (!asset) return
+
+    const updatedTags = asset.tags.filter(tag => tag !== tagToRemove)
+    mediaService.updateAssetTags(assetId, updatedTags)
   }
 
   function copyAssetUrl(url: string) {
@@ -99,6 +198,22 @@
       // Could show a toast notification here
       console.log('URL copied to clipboard')
     })
+  }
+
+  function handleTagKeydown(event: KeyboardEvent, assetId: string) {
+    if (event.key === 'Enter') {
+      saveAssetTags(assetId)
+    } else if (event.key === 'Escape') {
+      cancelEditingTags()
+    }
+  }
+
+  function handleFilenameKeydown(event: KeyboardEvent, assetId: string, originalFilename: string) {
+    if (event.key === 'Enter') {
+      saveAssetFilename(assetId, originalFilename)
+    } else if (event.key === 'Escape') {
+      cancelEditingFilename()
+    }
   }
 
   $: filteredAssets = assets.filter(asset => {
@@ -116,13 +231,17 @@
       <p class="text-muted-foreground">Manage your images, audio, and video assets</p>
     </div>
     <div class="flex items-center gap-2">
+      <Button variant="outline" on:click={triggerFileUpload} disabled={uploading}>
+        <Upload class="w-4 h-4 mr-2" />
+        {uploading ? 'Uploading...' : 'Upload Files'}
+      </Button>
+      <Button variant="outline" on:click={openImportUrl}>
+        <Link class="w-4 h-4 mr-2" />
+        Import URL
+      </Button>
       <Button variant="outline" on:click={openImageGeneration}>
         <Wand2 class="w-4 h-4 mr-2" />
         Generate Images
-      </Button>
-      <Button on:click={triggerFileUpload} disabled={uploading}>
-        <Upload class="w-4 h-4 mr-2" />
-        {uploading ? 'Uploading...' : 'Upload Files'}
       </Button>
     </div>
   </div>
@@ -161,6 +280,54 @@
     class="hidden"
   />
 
+  <!-- Import URL Modal -->
+  {#if showImportUrl}
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <Card class="w-full max-w-md p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Import from URL</h3>
+          <Button variant="ghost" size="sm" on:click={closeImportUrl}>
+            <X class="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="text-sm font-medium mb-2 block">Media URL</label>
+            <Input
+              bind:value={importUrl}
+              placeholder="https://example.com/image.jpg"
+              class="w-full"
+              disabled={importing}
+            />
+            <p class="text-xs text-muted-foreground mt-1">
+              Enter a direct link to an image, audio, or video file
+            </p>
+          </div>
+
+          <div class="flex gap-2">
+            <Button variant="outline" class="flex-1" on:click={closeImportUrl} disabled={importing}>
+              Cancel
+            </Button>
+            <Button 
+              class="flex-1" 
+              on:click={handleImportUrl} 
+              disabled={!importUrl.trim() || importing}
+            >
+              {#if importing}
+                <div class="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                Importing...
+              {:else}
+                <Link class="w-4 h-4 mr-2" />
+                Import
+              {/if}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  {/if}
+
   <!-- Image Generation Modal -->
   <ImageGenerationModal 
     bind:show={showImageGeneration}
@@ -187,6 +354,10 @@
         <Button on:click={triggerFileUpload}>
           <Upload class="w-4 h-4 mr-2" />
           Upload Your First File
+        </Button>
+        <Button variant="outline" on:click={openImportUrl}>
+          <Link class="w-4 h-4 mr-2" />
+          Import from URL
         </Button>
         <Button variant="outline" on:click={openImageGeneration}>
           <Wand2 class="w-4 h-4 mr-2" />
@@ -232,24 +403,53 @@
 
           <!-- Info -->
           <div class="p-2">
-            <p class="text-xs font-medium truncate">{asset.filename}</p>
-            <p class="text-xs text-muted-foreground">{formatFileSize(asset.size)}</p>
+            <!-- Filename -->
+            <div class="mb-1">
+              {#if editingFilename === asset.id}
+                <div class="flex items-center gap-1">
+                  <Input
+                    bind:value={editingFilenameValue}
+                    class="text-xs h-6 flex-1"
+                    on:keydown={(e) => handleFilenameKeydown(e, asset.id, asset.filename)}
+                    on:blur={() => saveAssetFilename(asset.id, asset.filename)}
+                    autofocus
+                  />
+                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={() => saveAssetFilename(asset.id, asset.filename)}>
+                    <Check class="w-3 h-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={cancelEditingFilename}>
+                    <X class="w-3 h-3" />
+                  </Button>
+                </div>
+              {:else}
+                <div class="flex items-center justify-between group/filename">
+                  <p class="text-xs font-medium truncate flex-1">{asset.filename}</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    class="h-6 w-6 p-0 opacity-0 group-hover/filename:opacity-100 transition-opacity"
+                    on:click={() => startEditingFilename(asset)}
+                    title="Rename file"
+                  >
+                    <Pencil class="w-3 h-3" />
+                  </Button>
+                </div>
+              {/if}
+            </div>
+            
+            <p class="text-xs text-muted-foreground mb-2">{formatFileSize(asset.size)}</p>
             
             <!-- Tags -->
-            <div class="mt-1">
+            <div>
               {#if editingAsset === asset.id}
                 <div class="flex items-center gap-1">
                   <Input
                     bind:value={editingTags}
                     placeholder="tag1, tag2, tag3"
-                    class="text-xs h-6"
-                    on:keydown={(e) => {
-                      if (e.key === 'Enter') {
-                        saveAssetTags(asset.id)
-                      } else if (e.key === 'Escape') {
-                        cancelEditingTags()
-                      }
-                    }}
+                    class="text-xs h-6 flex-1"
+                    on:keydown={(e) => handleTagKeydown(e, asset.id)}
+                    on:blur={() => saveAssetTags(asset.id)}
+                    autofocus
                   />
                   <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={() => saveAssetTags(asset.id)}>
                     <Check class="w-3 h-3" />
@@ -259,10 +459,17 @@
                   </Button>
                 </div>
               {:else}
-                <div class="flex items-center justify-between">
-                  <div class="flex flex-wrap gap-1">
+                <div class="flex items-center justify-between group/tags">
+                  <div class="flex flex-wrap gap-1 flex-1 min-h-[20px]">
                     {#each asset.tags.slice(0, 2) as tag}
-                      <span class="text-xs bg-muted px-1 rounded">{tag}</span>
+                      <button
+                        class="text-xs bg-muted px-1 rounded hover:bg-destructive/20 hover:text-destructive transition-colors group/tag"
+                        on:click={() => removeTag(asset.id, tag)}
+                        title="Click to remove tag"
+                      >
+                        {tag}
+                        <X class="w-2 h-2 inline ml-1 opacity-0 group-hover/tag:opacity-100" />
+                      </button>
                     {/each}
                     {#if asset.tags.length > 2}
                       <span class="text-xs text-muted-foreground">+{asset.tags.length - 2}</span>
@@ -271,7 +478,7 @@
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    class="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
+                    class="h-6 w-6 p-0 opacity-0 group-hover/tags:opacity-100 transition-opacity"
                     on:click={() => startEditingTags(asset)}
                     title="Edit tags"
                   >
