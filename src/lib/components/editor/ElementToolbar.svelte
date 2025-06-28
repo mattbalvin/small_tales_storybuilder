@@ -1087,6 +1087,82 @@
                   {/if}
                 </div>
                 
+                <!-- Zoom Control -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-2 block">Image Zoom</label>
+                  <div class="space-y-2">
+                    <div>
+                      <label class="text-xs text-muted-foreground">Scale: {(localElement.properties?.scale ?? 100)}%</label>
+                      <input
+                        type="range"
+                        min="10"
+                        max="500"
+                        step="5"
+                        value={localElement.properties?.scale ?? 100}
+                        on:input={(e) => {
+                          if (e.target instanceof HTMLInputElement) {
+                            const scale = parseInt(e.target.value) || 100;
+                            handleImagePropertyChange('scale', scale);
+                          }
+                        }}
+                        class="w-full h-2"
+                      />
+                    </div>
+                    
+                    <!-- Scale Preview -->
+                    {#if localElement.properties?.src}
+                      <div class="mt-2">
+                        <label class="text-xs text-muted-foreground">Preview</label>
+                        <div 
+                          class="w-full h-16 rounded border border-input bg-gray-100 flex items-center justify-center overflow-hidden"
+                        >
+                          <img 
+                            src={localElement.properties.src} 
+                            alt="Preview"
+                            class="max-w-none max-h-none object-cover"
+                            style="
+                              transform: scale({(localElement.properties?.scale ?? 100) / 100});
+                              opacity: {(localElement.properties?.opacity ?? 100) / 100};
+                            "
+                          />
+                        </div>
+                      </div>
+                    {/if}
+                    
+                    <!-- Quick Scale Presets -->
+                    <div class="flex gap-1">
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('scale', 50)}
+                      >
+                        50%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('scale', 100)}
+                      >
+                        100%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('scale', 150)}
+                      >
+                        150%
+                      </button>
+                      <button
+                        type="button"
+                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                        on:click={() => handleImagePropertyChange('scale', 200)}
+                      >
+                        200%
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Opacity Control -->
                 <div>
                   <label class="text-xs text-muted-foreground mb-2 block">Opacity</label>
@@ -1106,23 +1182,6 @@
                         }}
                       />
                     </div>
-                    
-                    <!-- Opacity Preview -->
-                    {#if localElement.properties?.src}
-                      <div class="mt-2">
-                        <label class="text-xs text-muted-foreground">Preview</label>
-                        <div 
-                          class="w-full h-16 rounded border border-input bg-gray-100 flex items-center justify-center overflow-hidden"
-                        >
-                          <img 
-                            src={localElement.properties.src} 
-                            alt="Preview"
-                            class="max-w-full max-h-full object-contain"
-                            style="opacity: {(localElement.properties?.opacity ?? 100) / 100};"
-                          />
-                        </div>
-                      </div>
-                    {/if}
                     
                     <!-- Quick Opacity Presets -->
                     <div class="flex gap-1">

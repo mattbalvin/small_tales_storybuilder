@@ -10,10 +10,13 @@
   $: src = element.properties?.src
   $: alt = element.properties?.alt || 'Image element'
   $: opacity = element.properties?.opacity !== undefined ? element.properties.opacity / 100 : 1
+  $: scale = element.properties?.scale !== undefined ? element.properties.scale / 100 : 1
 
   $: imageStyle = `
     opacity: ${opacity};
-    transition: opacity 0.2s ease;
+    transform: scale(${scale});
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform-origin: center center;
   `
 
   // Track the last processed URL to avoid infinite loops
@@ -71,12 +74,12 @@
   }
 </script>
 
-<div class="w-full h-full flex items-center justify-center bg-gray-100 rounded border-2 border-dashed border-gray-300">
+<div class="w-full h-full flex items-center justify-center bg-gray-100 rounded border-2 border-dashed border-gray-300 overflow-hidden">
   {#if src}
     <img 
       {src} 
       {alt} 
-      class="w-full h-full object-cover rounded"
+      class="max-w-none max-h-none object-cover"
       style={imageStyle}
       on:error={() => {
         console.error('Image failed to load:', src)
