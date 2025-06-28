@@ -167,61 +167,82 @@ export const mediaService = {
       
       console.log('Calling import-media edge function...')
       
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ url })
-      })
+      // Add timeout to the fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+      
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ url }),
+          signal: controller.signal
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+          
+          // Handle specific HTTP status codes with more descriptive messages
+          if (response.status === 403) {
+            throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
+          } else if (response.status === 404) {
+            throw new Error('Media not found: The URL does not exist or the resource has been moved.')
+          } else if (response.status === 408) {
+            throw new Error('Request timeout: The external resource is taking too long to respond. Please try again or use a different URL.')
+          } else if (response.status === 429) {
+            throw new Error('Rate limit exceeded: Too many requests to the external source. Please try again later.')
+          } else if (response.status >= 500) {
+            throw new Error('Server error: The external source is experiencing issues. Please try again later.')
+          }
+          
+          throw new Error(errorData.error || `Failed to fetch media (HTTP ${response.status}): ${response.statusText}`)
+        }
+
+        const result = await response.json()
         
-        // Handle specific HTTP status codes with more descriptive messages
-        if (response.status === 403) {
-          throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
-        } else if (response.status === 404) {
-          throw new Error('Media not found: The URL does not exist or the resource has been moved.')
-        } else if (response.status === 429) {
-          throw new Error('Rate limit exceeded: Too many requests to the external source. Please try again later.')
-        } else if (response.status >= 500) {
-          throw new Error('Server error: The external source is experiencing issues. Please try again later.')
+        if (!result.success) {
+          const errorMessage = result.error || 'Failed to import media'
+          if (errorMessage.toLowerCase().includes('403') || errorMessage.toLowerCase().includes('forbidden')) {
+            throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
+          } else if (errorMessage.toLowerCase().includes('timeout')) {
+            throw new Error('Request timeout: The external resource is taking too long to respond. Please try again or use a different URL.')
+          }
+          throw new Error(errorMessage)
+        }
+
+        console.log('Import successful, processing file data...')
+
+        const { arrayBuffer, filename, contentType, fileType, size } = result.data
+
+        // Convert array back to Uint8Array and create blob
+        const uint8Array = new Uint8Array(arrayBuffer)
+        const blob = new Blob([uint8Array], { type: contentType })
+        
+        // Create File object from blob
+        const file = new File([blob], filename, { type: contentType })
+
+        console.log('Created file object:', { name: file.name, size: file.size, type: file.type })
+
+        // Upload to media library with import tag
+        const importTags = [...tags, 'imported', `imported-${fileType}`]
+        const asset = await this.uploadAsset(file, userId, importTags)
+
+        console.log('Import completed successfully:', asset.filename)
+        return asset
+      } catch (fetchError) {
+        clearTimeout(timeoutId)
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout: The import operation is taking too long. Please try again or use a different URL.')
         }
         
-        throw new Error(errorData.error || `Failed to fetch media (HTTP ${response.status}): ${response.statusText}`)
+        throw fetchError
       }
-
-      const result = await response.json()
-      
-      if (!result.success) {
-        const errorMessage = result.error || 'Failed to import media'
-        if (errorMessage.toLowerCase().includes('403') || errorMessage.toLowerCase().includes('forbidden')) {
-          throw new Error('Access denied: The external media URL is not publicly accessible or requires authentication. Please ensure the URL is publicly available or try a different source.')
-        }
-        throw new Error(errorMessage)
-      }
-
-      console.log('Import successful, processing file data...')
-
-      const { arrayBuffer, filename, contentType, fileType, size } = result.data
-
-      // Convert array back to Uint8Array and create blob
-      const uint8Array = new Uint8Array(arrayBuffer)
-      const blob = new Blob([uint8Array], { type: contentType })
-      
-      // Create File object from blob
-      const file = new File([blob], filename, { type: contentType })
-
-      console.log('Created file object:', { name: file.name, size: file.size, type: file.type })
-
-      // Upload to media library with import tag
-      const importTags = [...tags, 'imported', `imported-${fileType}`]
-      const asset = await this.uploadAsset(file, userId, importTags)
-
-      console.log('Import completed successfully:', asset.filename)
-      return asset
     } catch (error) {
       console.error('Failed to import from URL:', error)
       throw error
