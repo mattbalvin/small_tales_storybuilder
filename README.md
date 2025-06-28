@@ -61,6 +61,7 @@ A comprehensive interactive storybook authoring platform built with Svelte, Tail
 - Node.js 18+ and npm
 - Supabase account
 - Git
+- Supabase CLI (for edge functions and advanced features)
 
 ### Installation
 
@@ -84,18 +85,50 @@ A comprehensive interactive storybook authoring platform built with Svelte, Tail
      ```
    - Update the environment variables with your Supabase credentials
 
-4. **Initialize the database**
+4. **Authenticate with Supabase CLI (Required for Edge Functions)**
+   - Install the Supabase CLI if not already installed:
+     ```bash
+     npm install -g supabase
+     ```
+   - Login to your Supabase account:
+     ```bash
+     supabase login
+     ```
+   - Link your project (replace `your-project-ref` with your actual project reference):
+     ```bash
+     supabase link --project-ref your-project-ref
+     ```
+   - **Note**: Your project reference can be found in your Supabase dashboard URL: `https://supabase.com/dashboard/project/[PROJECT-REF]`
+
+5. **Initialize the database**
    - Run the migration file in your Supabase SQL editor:
      ```sql
      -- Copy and execute the contents of supabase/migrations/create_initial_schema.sql
      ```
+   - Or use the Supabase CLI to apply migrations:
+     ```bash
+     supabase db push
+     ```
 
-5. **Start the development server**
+6. **Deploy Edge Functions (Optional)**
+   - Deploy all edge functions:
+     ```bash
+     supabase functions deploy
+     ```
+   - Or deploy individual functions:
+     ```bash
+     supabase functions deploy import-media
+     supabase functions deploy generate-audio
+     supabase functions deploy generate-image
+     supabase functions deploy generate-narration
+     ```
+
+7. **Start the development server**
    ```bash
    npm run dev
    ```
 
-6. **Access the application**
+8. **Access the application**
    - Open your browser to `http://localhost:5173`
    - Create an account to start building stories
 
@@ -146,6 +179,7 @@ small-tales-story-builder/
 │   │   └── media/           # Media library
 │   └── app.html             # Main HTML template
 ├── supabase/
+│   ├── functions/           # Edge functions
 │   └── migrations/          # Database migration files
 ├── expo/                    # React Native mobile app
 ├── static/                  # Static assets
@@ -233,6 +267,36 @@ The project includes:
    - Follow Expo's documentation for app store submissions
    - Use EAS Build for advanced build configurations
 
+## Troubleshooting
+
+### Supabase Edge Function Deployment Issues
+
+If you encounter a "401 Unauthorized" error when deploying edge functions:
+
+1. **Ensure you're logged in to Supabase CLI**:
+   ```bash
+   supabase login
+   ```
+
+2. **Verify your project is linked**:
+   ```bash
+   supabase projects list
+   supabase link --project-ref your-project-ref
+   ```
+
+3. **For CI/CD environments**, set the `SUPABASE_ACCESS_TOKEN` environment variable:
+   - Generate an access token from your Supabase dashboard
+   - Add it to your CI/CD environment variables
+   - Use it in your deployment scripts:
+     ```bash
+     export SUPABASE_ACCESS_TOKEN=your-access-token
+     supabase functions deploy
+     ```
+
+4. **Check your project permissions**:
+   - Ensure you have the necessary permissions to deploy functions
+   - Verify you're deploying to the correct project
+
 ## Environment Variables
 
 Required environment variables:
@@ -242,6 +306,9 @@ Required environment variables:
 Optional for advanced features:
 - `VITE_OPENAI_API_KEY`: For AI-generated content
 - `VITE_ANALYTICS_ID`: For advanced analytics tracking
+
+For CI/CD deployment:
+- `SUPABASE_ACCESS_TOKEN`: For automated edge function deployment
 
 ## Support
 
