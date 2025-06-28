@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabase'
+import { mediaService } from '../stores/media'
 
 export interface ImageGenerationRequest {
   prompt: string
@@ -20,6 +21,20 @@ export interface GeneratedImage {
   prompt: string
   prediction_id: string
   parameters: any
+  generation_info?: {
+    expected_count: number
+    generated_count: number
+    valid_count: number
+    attempts: number
+    duration_seconds: number
+  }
+}
+
+export interface ImportProgress {
+  current: number
+  total: number
+  status: 'downloading' | 'uploading' | 'saving' | 'complete'
+  message: string
 }
 
 export class ImageGenerationService {
@@ -120,7 +135,8 @@ export class ImageGenerationService {
         model: result.model,
         prompt: result.prompt,
         prediction_id: result.prediction_id,
-        parameters: result.parameters
+        parameters: result.parameters,
+        generation_info: result.generation_info
       }
     } catch (error) {
       console.error('Image generation failed:', error)
@@ -131,24 +147,70 @@ export class ImageGenerationService {
   static async generateAndUploadImage(
     options: ImageGenerationRequest,
     userId: string,
-    filename?: string
+    filename?: string,
+    onProgress?: (progress: ImportProgress) => void
   ): Promise<{ urls: string[]; assets: any[] }> {
     try {
       // Generate images
+      onProgress?.({
+        current: 0,
+        total: 1,
+        status: 'downloading',
+        message: 'Generating images with AI...'
+      })
+
       const result = await this.generateImage(options)
       
       const uploadedAssets = []
       const urls = []
+      const totalImages = result.images.length
+
+      onProgress?.({
+        current: 0,
+        total: totalImages,
+        status: 'downloading',
+        message: `Generated ${totalImages} image${totalImages > 1 ? 's' : ''}. Starting import...`
+      })
 
       // Upload each generated image to the media library
       for (let i = 0; i < result.images.length; i++) {
         const imageUrl = result.images[i]
         
-        // Fetch the image data
-        const imageResponse = await fetch(imageUrl)
-        if (!imageResponse.ok) {
-          throw new Error(`Failed to fetch generated image ${i + 1}`)
+        onProgress?.({
+          current: i,
+          total: totalImages,
+          status: 'downloading',
+          message: `Downloading image ${i + 1} of ${totalImages}...`
+        })
+        
+        // Fetch the image data with timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+        
+        let imageResponse: Response
+        try {
+          imageResponse = await fetch(imageUrl, {
+            signal: controller.signal
+          })
+          clearTimeout(timeoutId)
+        } catch (fetchError) {
+          clearTimeout(timeoutId)
+          if (fetchError.name === 'AbortError') {
+            throw new Error(`Timeout downloading image ${i + 1}`)
+          }
+          throw new Error(`Failed to download image ${i + 1}: ${fetchError.message}`)
         }
+        
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch generated image ${i + 1}: HTTP ${imageResponse.status}`)
+        }
+        
+        onProgress?.({
+          current: i,
+          total: totalImages,
+          status: 'uploading',
+          message: `Processing image ${i + 1} of ${totalImages}...`
+        })
         
         const imageBlob = await imageResponse.blob()
         
@@ -157,6 +219,13 @@ export class ImageGenerationService {
         const imageFilename = filename 
           ? `${filename}-${i + 1}.png`
           : `generated-${result.model}-${timestamp}-${i + 1}.png`
+        
+        onProgress?.({
+          current: i,
+          total: totalImages,
+          status: 'uploading',
+          message: `Uploading image ${i + 1} of ${totalImages}...`
+        })
         
         // Upload to Supabase storage
         const filePath = `${userId}/generated/${imageFilename}`
@@ -176,6 +245,13 @@ export class ImageGenerationService {
         const { data: { publicUrl } } = supabase.storage
           .from('media')
           .getPublicUrl(filePath)
+
+        onProgress?.({
+          current: i,
+          total: totalImages,
+          status: 'saving',
+          message: `Saving metadata for image ${i + 1} of ${totalImages}...`
+        })
 
         // Save asset metadata to database
         const { data: asset, error: assetError } = await supabase
@@ -203,7 +279,19 @@ export class ImageGenerationService {
 
         uploadedAssets.push(asset)
         urls.push(publicUrl)
+
+        onProgress?.({
+          current: i + 1,
+          total: totalImages,
+          status: i + 1 === totalImages ? 'complete' : 'uploading',
+          message: i + 1 === totalImages 
+            ? `Successfully imported ${totalImages} image${totalImages > 1 ? 's' : ''}!`
+            : `Completed image ${i + 1} of ${totalImages}`
+        })
       }
+
+      // Refresh media library to show new images
+      await mediaService.loadAssets(userId)
 
       return {
         urls,

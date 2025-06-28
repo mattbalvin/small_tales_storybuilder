@@ -1,12 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { authStore } from '$lib/stores/auth'
-  import { ImageGenerationService, type ImageGenerationRequest } from '$lib/services/imageGeneration'
+  import { ImageGenerationService, type ImageGenerationRequest, type ImportProgress } from '$lib/services/imageGeneration'
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import Textarea from '$lib/components/ui/textarea.svelte'
-  import { Wand2, X, Download, Save, Eye, Sparkles, Zap, Palette, Camera } from 'lucide-svelte'
+  import { Wand2, X, Download, Save, Eye, Sparkles, Zap, Palette, Camera, CheckCircle, AlertCircle } from 'lucide-svelte'
 
   const dispatch = createEventDispatcher()
 
@@ -19,9 +19,12 @@
   let numOutputs = 1
   let advancedSettings = false
   let generating = false
+  let importing = false
   let generatedImages: string[] = []
   let generationResult: any = null
   let filename = ''
+  let importProgress: ImportProgress | null = null
+  let importError: string | null = null
 
   // Advanced settings
   let width = 1024
@@ -113,6 +116,10 @@
   async function saveToLibrary() {
     if (!generationResult || !$authStore.user) return
 
+    importing = true
+    importProgress = null
+    importError = null
+
     try {
       const options: ImageGenerationRequest = {
         prompt: generationResult.prompt,
@@ -123,7 +130,10 @@
       const result = await ImageGenerationService.generateAndUploadImage(
         options,
         $authStore.user.id,
-        filename.trim() || undefined
+        filename.trim() || undefined,
+        (progress) => {
+          importProgress = progress
+        }
       )
 
       dispatch('images-generated', {
@@ -132,10 +142,17 @@
         count: result.assets.length
       })
 
-      closeModal()
+      // Show success for a moment before closing
+      setTimeout(() => {
+        closeModal()
+      }, 1500)
+
     } catch (error) {
       console.error('Failed to save images:', error)
-      alert(`Failed to save images: ${error.message}`)
+      importError = error.message
+      importProgress = null
+    } finally {
+      importing = false
     }
   }
 
@@ -160,6 +177,9 @@
     generationResult = null
     filename = ''
     useRandomSeed = true
+    importing = false
+    importProgress = null
+    importError = null
   }
 
   function useRecommendedModel() {
@@ -172,6 +192,26 @@
       case 'ideogram-v3-balanced': return Palette
       case 'imagen-4': return Camera
       default: return Sparkles
+    }
+  }
+
+  function getProgressIcon(status: string) {
+    switch (status) {
+      case 'complete': return CheckCircle
+      case 'downloading':
+      case 'uploading':
+      case 'saving': return Wand2
+      default: return Wand2
+    }
+  }
+
+  function getProgressColor(status: string) {
+    switch (status) {
+      case 'complete': return 'text-green-600'
+      case 'downloading': return 'text-blue-600'
+      case 'uploading': return 'text-purple-600'
+      case 'saving': return 'text-orange-600'
+      default: return 'text-primary'
     }
   }
 </script>
@@ -417,6 +457,9 @@
               <h3 class="font-medium">Generated Images</h3>
               <div class="text-sm text-muted-foreground">
                 {generatedImages.length} image{generatedImages.length > 1 ? 's' : ''} • {generationResult.model}
+                {#if generationResult.generation_info}
+                  • {Math.round(generationResult.generation_info.duration_seconds)}s
+                {/if}
               </div>
             </div>
 
@@ -462,12 +505,57 @@
                 <p class="font-medium mb-1">Prompt:</p>
                 <p class="text-muted-foreground">{generationResult.prompt}</p>
               </div>
+              {#if generationResult.generation_info}
+                <div class="text-xs text-muted-foreground mt-2 grid grid-cols-2 gap-2">
+                  <span>Generated: {generationResult.generation_info.generated_count}/{generationResult.generation_info.expected_count}</span>
+                  <span>Duration: {Math.round(generationResult.generation_info.duration_seconds)}s</span>
+                </div>
+              {/if}
               {#if generationResult.prediction_id}
-                <div class="text-xs text-muted-foreground mt-2">
-                  Prediction ID: {generationResult.prediction_id}
+                <div class="text-xs text-muted-foreground mt-1">
+                  ID: {generationResult.prediction_id}
                 </div>
               {/if}
             </div>
+
+            <!-- Import Progress -->
+            {#if importing && importProgress}
+              <div class="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div class="flex items-center gap-2 mb-2">
+                  {@const ProgressIcon = getProgressIcon(importProgress.status)}
+                  <svelte:component 
+                    this={ProgressIcon} 
+                    class="w-4 h-4 {getProgressColor(importProgress.status)} {importProgress.status !== 'complete' ? 'animate-spin' : ''}" 
+                  />
+                  <span class="text-sm font-medium {getProgressColor(importProgress.status)}">
+                    {importProgress.message}
+                  </span>
+                </div>
+                
+                {#if importProgress.total > 1}
+                  <div class="w-full bg-muted rounded-full h-2 mb-1">
+                    <div 
+                      class="bg-primary h-2 rounded-full transition-all duration-300"
+                      style="width: {(importProgress.current / importProgress.total) * 100}%"
+                    ></div>
+                  </div>
+                  <div class="text-xs text-muted-foreground text-center">
+                    {importProgress.current} of {importProgress.total} images
+                  </div>
+                {/if}
+              </div>
+            {/if}
+
+            <!-- Import Error -->
+            {#if importError}
+              <div class="mb-4 p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <AlertCircle class="w-4 h-4 text-destructive" />
+                  <span class="text-sm font-medium text-destructive">Import Failed</span>
+                </div>
+                <p class="text-sm text-destructive/80 mt-1">{importError}</p>
+              </div>
+            {/if}
 
             <!-- Filename Input -->
             <div class="mb-4">
@@ -476,6 +564,7 @@
                 bind:value={filename}
                 placeholder="my-generated-image"
                 class="w-full"
+                disabled={importing}
               />
               <p class="text-xs text-muted-foreground mt-1">
                 Images will be saved as: {filename || 'generated'}-1.png, {filename || 'generated'}-2.png, etc.
@@ -483,9 +572,19 @@
             </div>
 
             <!-- Save to Library -->
-            <Button on:click={saveToLibrary} class="w-full" size="lg">
-              <Save class="w-4 h-4 mr-2" />
-              Save {generatedImages.length} Image{generatedImages.length > 1 ? 's' : ''} to Media Library
+            <Button 
+              on:click={saveToLibrary} 
+              class="w-full" 
+              size="lg"
+              disabled={importing}
+            >
+              {#if importing}
+                <div class="w-4 h-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-2"></div>
+                Importing Images...
+              {:else}
+                <Save class="w-4 h-4 mr-2" />
+                Save {generatedImages.length} Image{generatedImages.length > 1 ? 's' : ''} to Media Library
+              {/if}
             </Button>
           </div>
         {/if}

@@ -11,6 +11,7 @@
     - Generates images using specified AI model
     - Returns image URLs and metadata
     - Handles different model parameters
+    - Properly waits for all images when multiple are requested
   
   2. Security
     - Requires authentication
@@ -162,8 +163,11 @@ Deno.serve(async (req: Request) => {
 
     if (body.num_outputs) input.num_outputs = Math.min(Math.max(body.num_outputs, 1), 4);
 
+    const expectedImageCount = input.num_outputs;
+
     console.log('Generating image with model:', body.model);
     console.log('Input parameters:', input);
+    console.log('Expected image count:', expectedImageCount);
 
     // Create prediction
     const createResponse = await fetch('https://api.replicate.com/v1/predictions', {
@@ -212,10 +216,11 @@ Deno.serve(async (req: Request) => {
 
     console.log('Prediction created:', prediction.id);
 
-    // Poll for completion
+    // Poll for completion with proper handling for multiple images
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max wait time
+    const maxAttempts = 120; // 10 minutes max wait time (increased for multiple images)
     const pollInterval = 5000; // 5 seconds
+    let lastStatus = '';
 
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, pollInterval));
@@ -234,7 +239,11 @@ Deno.serve(async (req: Request) => {
 
       const status: ReplicateResponse = await statusResponse.json();
       
-      console.log(`Prediction ${prediction.id} status: ${status.status} (attempt ${attempts})`);
+      // Only log status changes to reduce noise
+      if (status.status !== lastStatus) {
+        console.log(`Prediction ${prediction.id} status: ${status.status} (attempt ${attempts})`);
+        lastStatus = status.status;
+      }
 
       if (status.status === 'succeeded') {
         // Handle both string and array outputs from Replicate
@@ -245,12 +254,52 @@ Deno.serve(async (req: Request) => {
           outputImages = [status.output];
         } else if (Array.isArray(status.output)) {
           // Multiple images returned as array
-          outputImages = status.output;
+          outputImages = status.output.filter(url => typeof url === 'string' && url.length > 0);
         }
         
+        console.log(`Generated ${outputImages.length} images, expected ${expectedImageCount}`);
+        
+        // Validate we got the expected number of images
         if (outputImages.length === 0) {
           return new Response(
-            JSON.stringify({ error: "No images generated" }),
+            JSON.stringify({ 
+              error: "No images generated",
+              details: `Expected ${expectedImageCount} images but received none`
+            }),
+            {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        // If we expected multiple images but got fewer, wait a bit more
+        if (expectedImageCount > 1 && outputImages.length < expectedImageCount && attempts < maxAttempts - 10) {
+          console.log(`Got ${outputImages.length}/${expectedImageCount} images, waiting for more...`);
+          continue;
+        }
+
+        // Validate all URLs are accessible
+        const validImages: string[] = [];
+        for (const imageUrl of outputImages) {
+          try {
+            const testResponse = await fetch(imageUrl, { method: 'HEAD' });
+            if (testResponse.ok) {
+              validImages.push(imageUrl);
+            } else {
+              console.warn(`Image URL not accessible: ${imageUrl} (status: ${testResponse.status})`);
+            }
+          } catch (error) {
+            console.warn(`Failed to validate image URL: ${imageUrl}`, error);
+          }
+        }
+
+        if (validImages.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              error: "Generated images are not accessible",
+              details: "All generated image URLs failed validation"
+            }),
             {
               status: 500,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -261,18 +310,28 @@ Deno.serve(async (req: Request) => {
         console.log('Image generation successful:', {
           model: body.model,
           prompt_length: body.prompt.length,
-          output_count: outputImages.length,
-          prediction_id: prediction.id
+          expected_count: expectedImageCount,
+          generated_count: outputImages.length,
+          valid_count: validImages.length,
+          prediction_id: prediction.id,
+          total_attempts: attempts
         });
 
         return new Response(
           JSON.stringify({
             success: true,
-            images: outputImages,
+            images: validImages,
             model: body.model,
             prompt: body.prompt,
             prediction_id: prediction.id,
-            parameters: input
+            parameters: input,
+            generation_info: {
+              expected_count: expectedImageCount,
+              generated_count: outputImages.length,
+              valid_count: validImages.length,
+              attempts: attempts,
+              duration_seconds: attempts * (pollInterval / 1000)
+            }
           }),
           {
             status: 200,
@@ -284,7 +343,8 @@ Deno.serve(async (req: Request) => {
         return new Response(
           JSON.stringify({ 
             error: "Image generation failed", 
-            details: status.error 
+            details: status.error,
+            prediction_id: prediction.id
           }),
           {
             status: 500,
@@ -293,7 +353,10 @@ Deno.serve(async (req: Request) => {
         );
       } else if (status.status === 'canceled') {
         return new Response(
-          JSON.stringify({ error: "Image generation was canceled" }),
+          JSON.stringify({ 
+            error: "Image generation was canceled",
+            prediction_id: prediction.id
+          }),
           {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -302,14 +365,21 @@ Deno.serve(async (req: Request) => {
       }
 
       // Continue polling for 'starting' or 'processing' status
+      // For multiple images, be more patient
+      if (expectedImageCount > 1 && attempts > 60) {
+        console.log(`Long-running generation for ${expectedImageCount} images, continuing to wait...`);
+      }
     }
 
     // Timeout
+    console.error(`Generation timed out after ${attempts} attempts (${attempts * pollInterval / 1000} seconds)`);
     return new Response(
       JSON.stringify({ 
         error: "Image generation timed out", 
         prediction_id: prediction.id,
-        details: "The image generation is taking longer than expected. You can check the status later using the prediction ID."
+        details: `The image generation is taking longer than expected (${Math.round(attempts * pollInterval / 1000)} seconds). This can happen with multiple images or complex prompts. You can check the status later using the prediction ID.`,
+        expected_count: expectedImageCount,
+        timeout_seconds: Math.round(attempts * pollInterval / 1000)
       }),
       {
         status: 408,
