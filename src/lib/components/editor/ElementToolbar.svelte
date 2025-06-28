@@ -93,6 +93,9 @@
     // Update the appropriate property based on element type
     if (localElement.type === 'image' && mediaPropertyToUpdate === 'src') {
       handleImagePropertyChange('src', url)
+      if (!localElement.properties?.alt) {
+        handleImagePropertyChange('alt', alt || filename)
+      }
     }
 
     closeMediaSelector()
@@ -1010,6 +1013,65 @@
                       </div>
                     </div>
                     
+                    <!-- Background Opacity Slider -->
+                    <div>
+                      <label class="text-xs text-muted-foreground mb-2 block">
+                        Background Opacity: {localElement.properties?.backgroundAlpha ?? 0}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={localElement.properties?.backgroundAlpha ?? 0}
+                        on:input={(e) => {
+                          if (e.target instanceof HTMLInputElement) {
+                            const alpha = parseInt(e.target.value);
+                            handleTextPropertyChange('backgroundAlpha', alpha);
+                          }
+                        }}
+                        class="w-full h-2"
+                      />
+                      
+                      <!-- Quick Alpha Presets -->
+                      <div class="flex gap-1 mt-2">
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleTextPropertyChange('backgroundAlpha', 0)}
+                        >
+                          None
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleTextPropertyChange('backgroundAlpha', 25)}
+                        >
+                          25%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleTextPropertyChange('backgroundAlpha', 50)}
+                        >
+                          50%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleTextPropertyChange('backgroundAlpha', 75)}
+                        >
+                          75%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleTextPropertyChange('backgroundAlpha', 100)}
+                        >
+                          100%
+                        </button>
+                      </div>
+                    </div>
+                    
                     <!-- Background Preview -->
                     {#if localElement.properties?.backgroundColor && localElement.properties?.backgroundAlpha > 0}
                       <div class="mt-2">
@@ -1022,45 +1084,6 @@
                         </div>
                       </div>
                     {/if}
-                    
-                    <!-- Quick Alpha Presets -->
-                    <div class="flex gap-1">
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleTextPropertyChange('backgroundAlpha', 0)}
-                      >
-                        None
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleTextPropertyChange('backgroundAlpha', 25)}
-                      >
-                        25%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleTextPropertyChange('backgroundAlpha', 50)}
-                      >
-                        50%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleTextPropertyChange('backgroundAlpha', 75)}
-                      >
-                        75%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleTextPropertyChange('backgroundAlpha', 100)}
-                      >
-                        100%
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1069,47 +1092,136 @@
             <div>
               <h4 class="text-sm font-medium mb-2">Image Properties</h4>
               <div class="space-y-2">
-                <!-- Select Image Button (replaces URL input) -->
                 <div>
-                  <label class="text-xs text-muted-foreground mb-2 block">Image Source</label>
+                  <label class="text-xs text-muted-foreground">Select Image</label>
                   <Button 
                     variant="outline" 
                     class="w-full"
                     on:click={() => openMediaSelector('image', 'src')}
                   >
-                    <Image class="w-4 h-4 mr-2" />
+                    <FolderOpen class="w-4 h-4 mr-2" />
                     Select Image
                   </Button>
                   {#if localElement.properties?.src}
-                    <p class="text-xs text-muted-foreground mt-1 truncate">
-                      Current: {localElement.properties.src.split('/').pop() || 'Image selected'}
+                    <p class="text-xs text-muted-foreground mt-1">
+                      Current: {localElement.properties.src.split('/').pop()}
                     </p>
                   {/if}
                 </div>
                 
-                <!-- Zoom Control -->
+                <!-- Image Zoom Control -->
                 <div>
                   <label class="text-xs text-muted-foreground mb-2 block">Image Zoom</label>
                   <div class="space-y-2">
                     <div>
-                      <label class="text-xs text-muted-foreground">Scale: {(localElement.properties?.scale ?? 100)}%</label>
+                      <label class="text-xs text-muted-foreground mb-2 block">
+                        Scale: {localElement.properties?.scale ?? 100}%
+                      </label>
                       <input
                         type="range"
                         min="10"
                         max="500"
-                        step="5"
                         value={localElement.properties?.scale ?? 100}
                         on:input={(e) => {
                           if (e.target instanceof HTMLInputElement) {
-                            const scale = parseInt(e.target.value) || 100;
+                            const scale = parseInt(e.target.value);
                             handleImagePropertyChange('scale', scale);
                           }
                         }}
                         class="w-full h-2"
                       />
+                      
+                      <!-- Quick Scale Presets -->
+                      <div class="flex gap-1 mt-2">
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('scale', 50)}
+                        >
+                          50%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('scale', 100)}
+                        >
+                          100%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('scale', 150)}
+                        >
+                          150%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('scale', 200)}
+                        >
+                          200%
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Image Opacity Control -->
+                <div>
+                  <label class="text-xs text-muted-foreground mb-2 block">Image Opacity</label>
+                  <div class="space-y-2">
+                    <div>
+                      <label class="text-xs text-muted-foreground mb-2 block">
+                        Opacity: {localElement.properties?.opacity ?? 100}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={localElement.properties?.opacity ?? 100}
+                        on:input={(e) => {
+                          if (e.target instanceof HTMLInputElement) {
+                            const opacity = parseInt(e.target.value);
+                            handleImagePropertyChange('opacity', opacity);
+                          }
+                        }}
+                        class="w-full h-2"
+                      />
+                      
+                      <!-- Quick Opacity Presets -->
+                      <div class="flex gap-1 mt-2">
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('opacity', 25)}
+                        >
+                          25%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('opacity', 50)}
+                        >
+                          50%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('opacity', 75)}
+                        >
+                          75%
+                        </button>
+                        <button
+                          type="button"
+                          class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
+                          on:click={() => handleImagePropertyChange('opacity', 100)}
+                        >
+                          100%
+                        </button>
+                      </div>
                     </div>
                     
-                    <!-- Scale Preview -->
+                    <!-- Combined Preview -->
                     {#if localElement.properties?.src}
                       <div class="mt-2">
                         <label class="text-xs text-muted-foreground">Preview</label>
@@ -1119,125 +1231,34 @@
                           <img 
                             src={localElement.properties.src} 
                             alt="Preview"
-                            class="max-w-none max-h-none object-cover"
-                            style="
-                              transform: scale({(localElement.properties?.scale ?? 100) / 100});
-                              opacity: {(localElement.properties?.opacity ?? 100) / 100};
-                            "
+                            class="max-w-full max-h-full object-contain"
+                            style="opacity: {(localElement.properties?.opacity ?? 100) / 100}; transform: scale({(localElement.properties?.scale ?? 100) / 100});"
                           />
                         </div>
                       </div>
                     {/if}
-                    
-                    <!-- Quick Scale Presets -->
-                    <div class="flex gap-1">
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('scale', 50)}
-                      >
-                        50%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('scale', 100)}
-                      >
-                        100%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('scale', 150)}
-                      >
-                        150%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('scale', 200)}
-                      >
-                        200%
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Opacity Control -->
-                <div>
-                  <label class="text-xs text-muted-foreground mb-2 block">Opacity</label>
-                  <div class="space-y-2">
-                    <div>
-                      <label class="text-xs text-muted-foreground">Opacity (%)</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={localElement.properties?.opacity ?? 100}
-                        on:input={(e) => {
-                          if (e.target instanceof HTMLInputElement) {
-                            const opacity = Math.max(0, Math.min(100, parseInt(e.target.value) || 100));
-                            handleImagePropertyChange('opacity', opacity);
-                          }
-                        }}
-                      />
-                    </div>
-                    
-                    <!-- Quick Opacity Presets -->
-                    <div class="flex gap-1">
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('opacity', 25)}
-                      >
-                        25%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('opacity', 50)}
-                      >
-                        50%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('opacity', 75)}
-                      >
-                        75%
-                      </button>
-                      <button
-                        type="button"
-                        class="px-2 py-1 text-xs bg-background border rounded hover:bg-muted"
-                        on:click={() => handleImagePropertyChange('opacity', 100)}
-                      >
-                        100%
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
           {/if}
 
-          <!-- Animation Properties (removed for image elements) -->
-          {#if localElement.type === 'text'}
-            <div>
-              <h4 class="text-sm font-medium mb-2">Animation</h4>
-              <select 
-                class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                value={localElement.animation?.type || 'none'}
-                on:change={handleAnimationChange}
-              >
-                <option value="none">No animation</option>
-                <option value="fadeIn">Fade In</option>
-                <option value="slideInLeft">Slide In Left</option>
-                <option value="slideInRight">Slide In Right</option>
-                <option value="bounceIn">Bounce In</option>
-                <option value="scaleIn">Scale In</option>
-              </select>
-            </div>
-          {/if}
+          <!-- Animation Properties -->
+          <div>
+            <h4 class="text-sm font-medium mb-2">Animation</h4>
+            <select 
+              class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={localElement.animation?.type || 'none'}
+              on:change={handleAnimationChange}
+            >
+              <option value="none">No animation</option>
+              <option value="fadeIn">Fade In</option>
+              <option value="slideInLeft">Slide In Left</option>
+              <option value="slideInRight">Slide In Right</option>
+              <option value="bounceIn">Bounce In</option>
+              <option value="scaleIn">Scale In</option>
+            </select>
+          </div>
         </div>
       </Card>
     {:else}
@@ -1251,3 +1272,33 @@
     {/if}
   </div>
 </aside>
+
+<style>
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: hsl(var(--muted));
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: hsl(var(--primary));
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+  }
+</style>
