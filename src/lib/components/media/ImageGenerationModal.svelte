@@ -520,9 +520,9 @@
 
             <!-- Import Progress -->
             {#if importing && importProgress}
+              {@const ProgressIcon = getProgressIcon(importProgress.status)}
               <div class="mb-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
                 <div class="flex items-center gap-2 mb-2">
-                  {@const ProgressIcon = getProgressIcon(importProgress.status)}
                   <svelte:component 
                     this={ProgressIcon} 
                     class="w-4 h-4 {getProgressColor(importProgress.status)} {importProgress.status !== 'complete' ? 'animate-spin' : ''}" 
