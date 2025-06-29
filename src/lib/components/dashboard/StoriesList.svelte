@@ -279,10 +279,12 @@
   {#if loading}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each Array(6) as _}
-        <Card class="p-6 animate-pulse">
-          <div class="h-32 bg-gray-200 rounded mb-4"></div>
-          <div class="h-4 bg-gray-200 rounded mb-2"></div>
-          <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+        <Card class="overflow-hidden animate-pulse">
+          <div class="aspect-video bg-gray-200"></div>
+          <div class="p-4">
+            <div class="h-4 bg-gray-200 rounded mb-2"></div>
+            <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+          </div>
         </Card>
       {/each}
     </div>
@@ -302,8 +304,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each stories as story}
         <Card class="overflow-hidden hover:shadow-lg transition-shadow">
-          <!-- Cover Image with Edit Overlay -->
-          <div class="h-48 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative group">
+          <!-- Cover Image with 16:9 aspect ratio -->
+          <div class="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative group">
             {#if story.cover_image}
               <img 
                 src={story.cover_image} 
