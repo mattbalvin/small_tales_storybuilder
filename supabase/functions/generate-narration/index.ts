@@ -385,13 +385,21 @@ async function generateSingleWordRecording(
 }
 
 function extractUniqueWords(text: string): string[] {
-  // Extract words, normalize, and deduplicate
+  // Improved word extraction that preserves contractions like "fergie's"
   const words = text
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+    // Replace em-dashes, en-dashes, and other punctuation with spaces, but preserve apostrophes in contractions
+    .replace(/[—–\-\.,;:!?\(\)\[\]""\"""''`~@#$%^&*+=<>{}|\\\/]/g, ' ')
+    // Split on whitespace
     .split(/\s+/)
-    .filter(word => word.length > 0 && word.length <= 20) // Filter out empty and very long words
-    .filter(word => /^[a-zA-Z]+$/.test(word)); // Only alphabetic words
+    // Filter out empty strings and very long words
+    .filter(word => word.length > 0 && word.length <= 20)
+    // Only keep words that contain letters (allows apostrophes in contractions)
+    .filter(word => /[a-zA-Z]/.test(word))
+    // Clean up any remaining non-letter, non-apostrophe characters at start/end
+    .map(word => word.replace(/^[^a-zA-Z']+|[^a-zA-Z']+$/g, ''))
+    // Filter out empty results from cleaning
+    .filter(word => word.length > 0);
   
   return [...new Set(words)]; // Remove duplicates
 }
@@ -448,7 +456,7 @@ function estimateWordTimings(text: string, totalDurationMs: number): WordTimesta
   words.forEach((word, index) => {
     const wordDuration = avgWordDuration * (0.8 + Math.random() * 0.4); // Add some variation
     timestamps.push({
-      word: word.replace(/[^\w]/g, ''), // Remove punctuation
+      word: word.replace(/[^\w']/g, ''), // Remove punctuation but keep apostrophes
       start_time: Math.round(currentTime),
       end_time: Math.round(currentTime + wordDuration),
       confidence: 0.5 // Lower confidence for estimated timings

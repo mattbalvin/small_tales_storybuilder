@@ -112,7 +112,25 @@
 
   async function playWord(word: string) {
     if (!player) return
-    await player.playWord(word)
+    
+    try {
+      // Find the word in the recordings (case-insensitive)
+      const wordLower = word.toLowerCase()
+      const wordRecording = generatedNarration?.wordRecordings?.[wordLower]
+      
+      if (wordRecording?.url) {
+        // Create a temporary audio element to play the word
+        const audio = new Audio(wordRecording.url)
+        await audio.play()
+        console.log(`Playing word: "${word}"`)
+      } else {
+        console.warn(`No recording found for word: "${word}"`)
+        // Fallback: try to use the player's playWord method
+        await player.playWord(word)
+      }
+    } catch (error) {
+      console.error(`Failed to play word "${word}":`, error)
+    }
   }
 
   function stopNarration() {
@@ -175,17 +193,26 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  // Helper function to get unique words from text for display
+  // Improved helper function to get unique words from text for display
   function getUniqueWordsFromText(inputText: string): string[] {
     if (!inputText) return []
     
     return inputText
       .toLowerCase()
-      .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+      // Replace em-dashes, en-dashes, and other punctuation with spaces, but preserve apostrophes in contractions
+      .replace(/[—–\-\.,;:!?\(\)\[\]""\"""''`~@#$%^&*+=<>{}|\\\/]/g, ' ')
+      // Split on whitespace
       .split(/\s+/)
-      .filter(word => word.length > 0 && word.length <= 20) // Filter out empty and very long words
-      .filter(word => /^[a-zA-Z]+$/.test(word)) // Only alphabetic words
-      .filter((word, index, array) => array.indexOf(word) === index) // Remove duplicates
+      // Filter out empty strings and very long words
+      .filter(word => word.length > 0 && word.length <= 20)
+      // Only keep words that contain letters (allows apostrophes in contractions)
+      .filter(word => /[a-zA-Z]/.test(word))
+      // Clean up any remaining non-letter, non-apostrophe characters at start/end
+      .map(word => word.replace(/^[^a-zA-Z']+|[^a-zA-Z']+$/g, ''))
+      // Filter out empty results from cleaning
+      .filter(word => word.length > 0)
+      // Remove duplicates
+      .filter((word, index, array) => array.indexOf(word) === index)
   }
 
   // Get unique words count for display
@@ -435,20 +462,27 @@
                 <h4 class="text-sm font-medium mb-2">
                   Individual Word Recordings ({Object.keys(generatedNarration.wordRecordings).length} unique words)
                 </h4>
-                <div class="text-xs text-muted-foreground">
+                <div class="text-xs text-muted-foreground mb-2">
                   Each unique word has been recorded separately for precise pronunciation playback.
                 </div>
                 
                 <!-- Show unique words that were recorded -->
-                <div class="mt-2 max-h-20 overflow-y-auto">
+                <div class="max-h-20 overflow-y-auto border rounded p-2 bg-muted/20">
                   <div class="flex flex-wrap gap-1">
                     {#each Object.keys(generatedNarration.wordRecordings) as word}
-                      <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded border">
+                      <button
+                        class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded border hover:bg-green-200 transition-colors"
+                        on:click={() => playWord(word)}
+                        title="Click to hear this word"
+                      >
                         {word}
-                      </span>
+                      </button>
                     {/each}
                   </div>
                 </div>
+                <p class="text-xs text-muted-foreground mt-1">
+                  Click any word above to hear its individual recording
+                </p>
               </div>
             {/if}
 
@@ -469,6 +503,20 @@
                     <span class="font-medium">{generatedNarration.wordTimestamps?.length || 0}</span>
                   </div>
                 </div>
+                
+                <!-- Show expected words for comparison -->
+                {#if uniqueWordsInText.length > 0}
+                  <div class="mt-2 pt-2 border-t">
+                    <p class="text-xs font-medium mb-1">Expected words:</p>
+                    <div class="flex flex-wrap gap-1">
+                      {#each uniqueWordsInText as word}
+                        <span class="px-1 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
+                          {word}
+                        </span>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
               </div>
             {/if}
 
