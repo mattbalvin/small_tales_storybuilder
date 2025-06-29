@@ -135,7 +135,7 @@
     border: none;
     outline: none;
     resize: none;
-    line-height: 1;
+    line-height: ${element.properties?.lineHeight || 1.3};
     border-radius: 4px;
     cursor: ${readonly ? 'default' : (isEditing ? 'text' : 'pointer')};
     user-select: ${readonly ? 'none' : (isEditing ? 'text' : 'none')};
