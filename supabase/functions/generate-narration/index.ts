@@ -336,6 +336,68 @@ async function generateWordRecordings(
   return recordings;
 }
 
+// Enhanced context templates for better short word pronunciation
+function getWordContext(word: string): string {
+  const wordLower = word.toLowerCase();
+  
+  // Special handling for very short words that need context
+  const shortWordContexts: Record<string, string> = {
+    'a': 'I see a cat.',
+    'an': 'An apple is red.',
+    'the': 'The dog runs.',
+    'to': 'Go to school.',
+    'of': 'A cup of tea.',
+    'in': 'In the house.',
+    'on': 'On the table.',
+    'at': 'At the store.',
+    'by': 'By the river.',
+    'up': 'Up the hill.',
+    'it': 'It is good.',
+    'is': 'It is here.',
+    'be': 'To be happy.',
+    'or': 'Red or blue.',
+    'as': 'As big as.',
+    'no': 'No, thank you.',
+    'so': 'So very nice.',
+    'we': 'We are here.',
+    'he': 'He is tall.',
+    'me': 'Come with me.',
+    'my': 'My favorite book.',
+    'go': 'Let us go.',
+    'do': 'Do your best.',
+    'if': 'If you can.',
+    'am': 'I am happy.',
+    'us': 'Come with us.',
+    'oh': 'Oh, how nice!',
+    'ah': 'Ah, I see.',
+    'hi': 'Hi there, friend!',
+    'ok': 'Ok, sounds good.',
+    'um': 'Um, let me think.',
+    'eh': 'Eh, what do you think?'
+  };
+  
+  // Articles and common short words that benefit from context
+  const articlesAndShortWords = ['a', 'an', 'the', 'to', 'of', 'in', 'on', 'at', 'by', 'up', 'it', 'is', 'be', 'or', 'as', 'no', 'so', 'we', 'he', 'me', 'my', 'go', 'do', 'if', 'am', 'us', 'oh', 'ah', 'hi', 'ok', 'um', 'eh'];
+  
+  // Use predefined context for known short words
+  if (shortWordContexts[wordLower]) {
+    return shortWordContexts[wordLower];
+  }
+  
+  // For other short words (3 characters or less), create a simple context
+  if (word.length <= 3 && articlesAndShortWords.includes(wordLower)) {
+    return `Say the word "${word}" clearly.`;
+  }
+  
+  // For longer words or words not in our special list, use minimal context
+  if (word.length <= 2) {
+    return `The word "${word}" is important.`;
+  }
+  
+  // For regular words, just use the word itself
+  return word;
+}
+
 async function generateSingleWordRecording(
   word: string, 
   voiceId: string, 
@@ -344,7 +406,11 @@ async function generateSingleWordRecording(
   apiKey: string
 ) {
   try {
-    // Generate just the word without any context - this is the key fix
+    // Get appropriate context for the word
+    const contextText = getWordContext(word);
+    
+    console.log(`Generating recording for word "${word}" with context: "${contextText}"`);
+    
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
@@ -353,11 +419,13 @@ async function generateSingleWordRecording(
         'xi-api-key': apiKey,
       },
       body: JSON.stringify({
-        text: word, // Just the word itself, no "The word is" prefix
+        text: contextText,
         model_id: modelId,
         voice_settings: {
           ...voiceSettings,
-          stability: Math.min(voiceSettings.stability + 0.1, 1.0), // Slightly more stable for single words
+          // Slightly more stable settings for individual words
+          stability: Math.min(voiceSettings.stability + 0.1, 1.0),
+          similarity_boost: Math.min(voiceSettings.similarity_boost + 0.05, 1.0),
         },
         output_format: 'mp3_44100_128'
       }),
@@ -374,7 +442,8 @@ async function generateSingleWordRecording(
     return {
       url: audioUrl,
       size_bytes: audioBuffer.byteLength,
-      format: 'audio/mpeg'
+      format: 'audio/mpeg',
+      context: contextText // Store the context used for debugging
     };
   } catch (error) {
     console.error(`Failed to generate recording for word "${word}":`, error);
