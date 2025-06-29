@@ -35,6 +35,10 @@
   let showAudioGeneration = false
   let audioGenerationText = ''
 
+  // Track selected audio element
+  let selectedAudioElementId: string | null = null
+  $: selectedAudioElement = selectedAudioElementId ? audioElements.find(el => el.id === selectedAudioElementId) : null
+
   // Reactive statements for element properties
   $: textProperties = selectedElement?.type === 'text' ? selectedElement.properties : null
   $: imageProperties = selectedElement?.type === 'image' ? selectedElement.properties : null
@@ -85,7 +89,14 @@
   }
 
   function selectElement(elementId: string) {
+    selectedElementId = elementId
+    selectedAudioElementId = null // Clear audio selection
     dispatch('select', { elementId })
+  }
+
+  function selectAudioElement(audioElementId: string) {
+    selectedAudioElementId = audioElementId
+    selectedElementId = null // Clear visual element selection
   }
 
   function openMediaSelector(type: 'image' | 'audio' | 'video' | 'all') {
@@ -101,6 +112,8 @@
       if (alt) updateElementProperty('alt', alt)
     } else if (selectedElement?.type === 'audio') {
       updateElementProperty('src', url)
+    } else if (selectedAudioElement) {
+      updateAudioElement(selectedAudioElement.id, 'src', url)
     }
     
     showMediaSelector = false
@@ -122,6 +135,8 @@
     
     if (selectedElement?.type === 'audio') {
       updateElementProperty('src', url)
+    } else if (selectedAudioElement) {
+      updateAudioElement(selectedAudioElement.id, 'src', url)
     }
     
     showAudioGeneration = false
@@ -136,6 +151,9 @@
   }
 
   function deleteAudioElement(audioId: string) {
+    if (selectedAudioElementId === audioId) {
+      selectedAudioElementId = null
+    }
     dispatch('audio-delete', { id: audioId })
   }
 
@@ -297,11 +315,16 @@
       {:else}
         <div class="space-y-2">
           {#each audioElements as audioElement (audioElement.id)}
-            <div class="flex items-center gap-2 p-2 rounded border bg-muted/30">
-              <Volume2 class="w-3 h-3" />
-              <span class="flex-1 text-xs truncate">
-                {audioElement.properties?.src ? 'Audio Element' : 'No audio source'}
-              </span>
+            <div class="flex items-center gap-2 p-2 rounded border {selectedAudioElementId === audioElement.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}">
+              <button
+                class="flex-1 flex items-center gap-2 text-left"
+                on:click={() => selectAudioElement(audioElement.id)}
+              >
+                <Volume2 class="w-3 h-3" />
+                <span class="text-xs truncate">
+                  {audioElement.properties?.src ? 'Audio Element' : 'No audio source'}
+                </span>
+              </button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -317,12 +340,14 @@
       {/if}
     </div>
 
-    <!-- Element Properties (shown when an element is selected) -->
-    {#if selectedElement}
+    <!-- Element Properties (shown when any element is selected) -->
+    {#if selectedElement || selectedAudioElement}
       <div class="p-4 border-b">
         <h3 class="text-sm font-medium mb-3">
-          {selectedElement.type === 'text' ? 'Text' : 
-           selectedElement.type === 'image' ? 'Image' : 'Audio'} Properties
+          {selectedElement?.type === 'text' ? 'Text' : 
+           selectedElement?.type === 'image' ? 'Image' : 
+           selectedElement?.type === 'audio' ? 'Audio' :
+           selectedAudioElement ? 'Audio Element' : ''} Properties
         </h3>
 
         <!-- Text Properties -->
@@ -482,7 +507,7 @@
           </div>
         {/if}
 
-        <!-- Audio Properties -->
+        <!-- Audio Properties (for visual audio elements) -->
         {#if selectedElement?.type === 'audio'}
           <div class="space-y-3">
             <!-- Audio Source -->
@@ -531,8 +556,129 @@
           </div>
         {/if}
 
+        <!-- Audio Element Properties (for page-level audio elements) -->
+        {#if selectedAudioElement}
+          <div class="space-y-3">
+            <!-- Audio Source -->
+            <div>
+              <label class="text-xs font-medium mb-1 block">Audio Source</label>
+              <div class="flex gap-2">
+                <Input
+                  type="text"
+                  value={selectedAudioElement.properties?.src || ''}
+                  on:input={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'src', e.target.value)}
+                  class="flex-1 text-xs h-8"
+                  placeholder="Audio URL or select from library"
+                />
+                <Button variant="outline" size="sm" on:click={() => openMediaSelector('audio')}>
+                  <Volume2 class="w-3 h-3" />
+                </Button>
+                <Button variant="outline" size="sm" on:click={openAudioGeneration}>
+                  <Wand2 class="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+
+            <!-- Volume -->
+            <div>
+              <label class="text-xs font-medium mb-1 block">Volume: {selectedAudioElement.properties?.volume || 100}%</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={selectedAudioElement.properties?.volume || 100}
+                on:input={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'volume', parseInt(e.target.value))}
+                class="w-full"
+              />
+            </div>
+
+            <!-- Audio Type -->
+            <div>
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedAudioElement.properties?.isIdleLoop || false}
+                  on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'isIdleLoop', e.target.checked)}
+                  class="rounded"
+                />
+                <label class="text-xs font-medium">Idle Loop</label>
+              </div>
+            </div>
+
+            <!-- Conditional properties based on audio type -->
+            {#if selectedAudioElement.properties?.isIdleLoop}
+              <!-- Action Volume for idle loops -->
+              <div>
+                <label class="text-xs font-medium mb-1 block">Action Volume: {selectedAudioElement.properties?.actionVolume || 50}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={selectedAudioElement.properties?.actionVolume || 50}
+                  on:input={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'actionVolume', parseInt(e.target.value))}
+                  class="w-full"
+                />
+              </div>
+            {:else}
+              <!-- Playback Mode for non-idle audio -->
+              <div>
+                <label class="text-xs font-medium mb-1 block">Playback Mode</label>
+                <select
+                  value={selectedAudioElement.properties?.playbackMode || 'random'}
+                  on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'playbackMode', e.target.value)}
+                  class="w-full text-xs h-8 border rounded px-2"
+                >
+                  <option value="random">Random</option>
+                  <option value="trigger">Trigger</option>
+                </select>
+              </div>
+
+              {#if selectedAudioElement.properties?.playbackMode === 'random'}
+                <!-- Random delay settings -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-xs font-medium mb-1 block">Min Delay (s)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={selectedAudioElement.properties?.minDelay || 1}
+                      on:input={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'minDelay', parseInt(e.target.value))}
+                      class="text-xs h-8"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-xs font-medium mb-1 block">Max Delay (s)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={selectedAudioElement.properties?.maxDelay || 5}
+                      on:input={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'maxDelay', parseInt(e.target.value))}
+                      class="text-xs h-8"
+                    />
+                  </div>
+                </div>
+              {:else if selectedAudioElement.properties?.playbackMode === 'trigger'}
+                <!-- Trigger name -->
+                <div>
+                  <label class="text-xs font-medium mb-1 block">Trigger Name</label>
+                  <select
+                    value={selectedAudioElement.properties?.triggerName || ''}
+                    on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'triggerName', e.target.value)}
+                    class="w-full text-xs h-8 border rounded px-2"
+                  >
+                    <option value="">Select trigger...</option>
+                    {#each triggers as trigger}
+                      <option value={trigger}>{trigger}</option>
+                    {/each}
+                  </select>
+                </div>
+              {/if}
+            {/if}
+          </div>
+        {/if}
+
         <!-- Position and Size (for visual elements only) -->
-        {#if selectedElement?.type !== 'audio'}
+        {#if selectedElement && selectedElement.type !== 'audio'}
           <div class="mt-4 pt-4 border-t">
             <h4 class="text-xs font-medium mb-3">Position & Size ({orientation})</h4>
             <div class="grid grid-cols-2 gap-2">
@@ -581,155 +727,18 @@
         <!-- Actions -->
         <div class="mt-4 pt-4 border-t">
           <div class="flex gap-2">
-            <Button variant="destructive" size="sm" on:click={deleteSelectedElement} class="flex-1">
-              <Trash2 class="w-3 h-3 mr-1" />
-              Delete
-            </Button>
+            {#if selectedElement}
+              <Button variant="destructive" size="sm" on:click={deleteSelectedElement} class="flex-1">
+                <Trash2 class="w-3 h-3 mr-1" />
+                Delete
+              </Button>
+            {:else if selectedAudioElement}
+              <Button variant="destructive" size="sm" on:click={() => deleteAudioElement(selectedAudioElement.id)} class="flex-1">
+                <Trash2 class="w-3 h-3 mr-1" />
+                Delete
+              </Button>
+            {/if}
           </div>
-        </div>
-      </div>
-    {/if}
-
-    <!-- Audio Element Properties (for page-level audio elements) -->
-    {#if audioElements.length > 0}
-      <div class="p-4">
-        <h3 class="text-sm font-medium mb-3">Audio Element Settings</h3>
-        <div class="space-y-3">
-          {#each audioElements as audioElement (audioElement.id)}
-            <Card class="p-3">
-              <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-2">
-                  <Volume2 class="w-3 h-3" />
-                  <span class="text-xs font-medium">Audio Element</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                  on:click={() => deleteAudioElement(audioElement.id)}
-                >
-                  <Trash2 class="w-3 h-3" />
-                </Button>
-              </div>
-
-              <!-- Audio Source -->
-              <div class="mb-2">
-                <label class="text-xs text-muted-foreground mb-1 block">Source</label>
-                <div class="flex gap-1">
-                  <Input
-                    type="text"
-                    value={audioElement.properties?.src || ''}
-                    on:input={(e) => e.target && updateAudioElement(audioElement.id, 'src', e.target.value)}
-                    class="flex-1 text-xs h-7"
-                    placeholder="Audio URL"
-                  />
-                  <Button variant="outline" size="sm" class="h-7 w-7 p-0" on:click={() => openMediaSelector('audio')}>
-                    <Volume2 class="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-
-              <!-- Volume -->
-              <div class="mb-2">
-                <label class="text-xs text-muted-foreground mb-1 block">
-                  Volume: {audioElement.properties?.volume || 100}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={audioElement.properties?.volume || 100}
-                  on:input={(e) => e.target && updateAudioElement(audioElement.id, 'volume', parseInt(e.target.value))}
-                  class="w-full h-1"
-                />
-              </div>
-
-              <!-- Audio Type -->
-              <div class="mb-2">
-                <div class="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={audioElement.properties?.isIdleLoop || false}
-                    on:change={(e) => e.target && updateAudioElement(audioElement.id, 'isIdleLoop', e.target.checked)}
-                    class="rounded"
-                  />
-                  <label class="text-xs">Idle Loop</label>
-                </div>
-              </div>
-
-              <!-- Conditional properties based on audio type -->
-              {#if audioElement.properties?.isIdleLoop}
-                <!-- Action Volume for idle loops -->
-                <div>
-                  <label class="text-xs text-muted-foreground mb-1 block">
-                    Action Volume: {audioElement.properties?.actionVolume || 50}%
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={audioElement.properties?.actionVolume || 50}
-                    on:input={(e) => e.target && updateAudioElement(audioElement.id, 'actionVolume', parseInt(e.target.value))}
-                    class="w-full h-1"
-                  />
-                </div>
-              {:else}
-                <!-- Playback Mode for non-idle audio -->
-                <div class="mb-2">
-                  <label class="text-xs text-muted-foreground mb-1 block">Playback Mode</label>
-                  <select
-                    value={audioElement.properties?.playbackMode || 'random'}
-                    on:change={(e) => e.target && updateAudioElement(audioElement.id, 'playbackMode', e.target.value)}
-                    class="w-full text-xs h-7 border rounded px-2"
-                  >
-                    <option value="random">Random</option>
-                    <option value="trigger">Trigger</option>
-                  </select>
-                </div>
-
-                {#if audioElement.properties?.playbackMode === 'random'}
-                  <!-- Random delay settings -->
-                  <div class="grid grid-cols-2 gap-2">
-                    <div>
-                      <label class="text-xs text-muted-foreground mb-1 block">Min Delay (s)</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={audioElement.properties?.minDelay || 1}
-                        on:input={(e) => e.target && updateAudioElement(audioElement.id, 'minDelay', parseInt(e.target.value))}
-                        class="text-xs h-7"
-                      />
-                    </div>
-                    <div>
-                      <label class="text-xs text-muted-foreground mb-1 block">Max Delay (s)</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={audioElement.properties?.maxDelay || 5}
-                        on:input={(e) => e.target && updateAudioElement(audioElement.id, 'maxDelay', parseInt(e.target.value))}
-                        class="text-xs h-7"
-                      />
-                    </div>
-                  </div>
-                {:else if audioElement.properties?.playbackMode === 'trigger'}
-                  <!-- Trigger name -->
-                  <div>
-                    <label class="text-xs text-muted-foreground mb-1 block">Trigger Name</label>
-                    <select
-                      value={audioElement.properties?.triggerName || ''}
-                      on:change={(e) => e.target && updateAudioElement(audioElement.id, 'triggerName', e.target.value)}
-                      class="w-full text-xs h-7 border rounded px-2"
-                    >
-                      <option value="">Select trigger...</option>
-                      {#each triggers as trigger}
-                        <option value={trigger}>{trigger}</option>
-                      {/each}
-                    </select>
-                  </div>
-                {/if}
-              {/if}
-            </Card>
-          {/each}
         </div>
       </div>
     {/if}
@@ -742,7 +751,7 @@
     <div class="w-full max-w-4xl h-[80vh] bg-background rounded-lg overflow-hidden">
       <MediaSelector
         type={mediaSelectorType}
-        selectedUrl={selectedElement?.properties?.src || ''}
+        selectedUrl={(selectedElement?.properties?.src || selectedAudioElement?.properties?.src) || ''}
         on:select={handleMediaSelect}
         on:close={() => showMediaSelector = false}
       />
