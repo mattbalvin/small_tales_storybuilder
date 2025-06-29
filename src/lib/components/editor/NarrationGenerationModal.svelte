@@ -174,6 +174,23 @@
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
+
+  // Helper function to get unique words from text for display
+  function getUniqueWordsFromText(inputText: string): string[] {
+    if (!inputText) return []
+    
+    return inputText
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ') // Replace punctuation with spaces
+      .split(/\s+/)
+      .filter(word => word.length > 0 && word.length <= 20) // Filter out empty and very long words
+      .filter(word => /^[a-zA-Z]+$/.test(word)) // Only alphabetic words
+      .filter((word, index, array) => array.indexOf(word) === index) // Remove duplicates
+  }
+
+  // Get unique words count for display
+  $: uniqueWordsInText = getUniqueWordsFromText(text)
+  $: uniqueWordCount = uniqueWordsInText.length
 </script>
 
 {#if show}
@@ -203,7 +220,7 @@
             />
             <div class="flex items-center justify-between mt-1">
               <p class="text-xs text-muted-foreground">
-                {text.length} characters • {costEstimate.uniqueWords} unique words
+                {text.length} characters • {uniqueWordCount} unique words
               </p>
               <p class="text-xs text-muted-foreground">
                 Est. cost: ${costEstimate.estimatedCost.toFixed(4)}
@@ -339,7 +356,7 @@
               <div class="text-sm text-muted-foreground">
                 {formatDuration(generatedNarration.fullAudio.duration)} • 
                 {formatFileSize(generatedNarration.fullAudio.size_bytes)} • 
-                {generatedNarration.wordTimestamps.length} words
+                {generatedNarration.wordTimestamps?.length || 0} words
               </div>
             </div>
 
@@ -388,19 +405,21 @@
             {/if}
 
             <!-- Word Timestamps Display -->
-            {#if showWordTimestamps && generatedNarration.wordTimestamps.length > 0}
+            {#if showWordTimestamps && generatedNarration.wordTimestamps && generatedNarration.wordTimestamps.length > 0}
               <div class="mb-4">
                 <h4 class="text-sm font-medium mb-2">Word Timeline</h4>
                 <div class="max-h-32 overflow-y-auto border rounded p-2 bg-muted/20">
                   <div class="flex flex-wrap gap-1">
                     {#each generatedNarration.wordTimestamps as wordData, index}
-                      <button
-                        class="px-2 py-1 text-xs rounded border hover:bg-primary/10 transition-colors {currentWord === wordData.word ? 'bg-primary/20 border-primary' : 'bg-background'}"
-                        on:click={() => playWord(wordData.word)}
-                        title="Click to hear this word • {formatDuration(wordData.start_time)} - {formatDuration(wordData.end_time)}"
-                      >
-                        {wordData.word}
-                      </button>
+                      {#if wordData && wordData.word}
+                        <button
+                          class="px-2 py-1 text-xs rounded border hover:bg-primary/10 transition-colors {currentWord === wordData.word ? 'bg-primary/20 border-primary' : 'bg-background'}"
+                          on:click={() => playWord(wordData.word)}
+                          title="Click to hear this word • {formatDuration(wordData.start_time || 0)} - {formatDuration(wordData.end_time || 0)}"
+                        >
+                          {wordData.word}
+                        </button>
+                      {/if}
                     {/each}
                   </div>
                 </div>
@@ -411,13 +430,44 @@
             {/if}
 
             <!-- Individual Word Recordings Info -->
-            {#if includeWordRecordings && Object.keys(generatedNarration.wordRecordings).length > 0}
+            {#if includeWordRecordings && generatedNarration.wordRecordings && Object.keys(generatedNarration.wordRecordings).length > 0}
               <div class="mb-4">
                 <h4 class="text-sm font-medium mb-2">
-                  Individual Word Recordings ({Object.keys(generatedNarration.wordRecordings).length} words)
+                  Individual Word Recordings ({Object.keys(generatedNarration.wordRecordings).length} unique words)
                 </h4>
                 <div class="text-xs text-muted-foreground">
                   Each unique word has been recorded separately for precise pronunciation playback.
+                </div>
+                
+                <!-- Show unique words that were recorded -->
+                <div class="mt-2 max-h-20 overflow-y-auto">
+                  <div class="flex flex-wrap gap-1">
+                    {#each Object.keys(generatedNarration.wordRecordings) as word}
+                      <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded border">
+                        {word}
+                      </span>
+                    {/each}
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Expected vs Actual Word Count -->
+            {#if includeWordRecordings}
+              <div class="mb-4 p-3 bg-muted/20 rounded">
+                <div class="text-sm">
+                  <div class="flex justify-between items-center">
+                    <span>Expected unique words:</span>
+                    <span class="font-medium">{uniqueWordCount}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span>Recorded unique words:</span>
+                    <span class="font-medium">{generatedNarration.wordRecordings ? Object.keys(generatedNarration.wordRecordings).length : 0}</span>
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <span>Word timeline entries:</span>
+                    <span class="font-medium">{generatedNarration.wordTimestamps?.length || 0}</span>
+                  </div>
                 </div>
               </div>
             {/if}
