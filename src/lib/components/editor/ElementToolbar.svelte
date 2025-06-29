@@ -189,6 +189,18 @@
 
   // Sort elements by z-index for display
   $: sortedElements = [...elements].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+
+  // Helper function to get display text for elements
+  function getElementDisplayText(element: any): string {
+    if (element.type === 'text') {
+      const text = element.properties?.text || 'Text Element'
+      // Truncate long text to prevent overflow
+      return text.length > 20 ? text.substring(0, 20) + '...' : text
+    } else if (element.type === 'image') {
+      return 'Image'
+    }
+    return 'Element'
+  }
 </script>
 
 <div class="w-full h-full flex flex-col bg-card border-l">
@@ -236,24 +248,23 @@
               on:dragover={handleDragOver}
               on:drop={(e) => handleDrop(e, index)}
             >
-              <GripVertical class="w-3 h-3 text-muted-foreground cursor-grab" />
+              <GripVertical class="w-3 h-3 text-muted-foreground cursor-grab flex-shrink-0" />
               
               <button
-                class="flex-1 flex items-center gap-2 text-left"
+                class="flex-1 flex items-center gap-2 text-left min-w-0"
                 on:click={() => selectElement(element.id)}
               >
                 {#if element.type === 'text'}
-                  <Type class="w-3 h-3" />
-                  <span class="text-xs truncate">
-                    {element.properties?.text || 'Text Element'}
-                  </span>
+                  <Type class="w-3 h-3 flex-shrink-0" />
                 {:else if element.type === 'image'}
-                  <Image class="w-3 h-3" />
-                  <span class="text-xs truncate">Image</span>
+                  <Image class="w-3 h-3 flex-shrink-0" />
                 {/if}
+                <span class="text-xs truncate min-w-0">
+                  {getElementDisplayText(element)}
+                </span>
               </button>
 
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1 flex-shrink-0">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -317,18 +328,18 @@
           {#each audioElements as audioElement (audioElement.id)}
             <div class="flex items-center gap-2 p-2 rounded border {selectedAudioElementId === audioElement.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}">
               <button
-                class="flex-1 flex items-center gap-2 text-left"
+                class="flex-1 flex items-center gap-2 text-left min-w-0"
                 on:click={() => selectAudioElement(audioElement.id)}
               >
-                <Volume2 class="w-3 h-3" />
-                <span class="text-xs truncate">
+                <Volume2 class="w-3 h-3 flex-shrink-0" />
+                <span class="text-xs truncate min-w-0">
                   {audioElement.properties?.src ? 'Audio Element' : 'No audio source'}
                 </span>
               </button>
               <Button
                 variant="ghost"
                 size="sm"
-                class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                class="h-6 w-6 p-0 text-destructive hover:text-destructive flex-shrink-0"
                 on:click={() => deleteAudioElement(audioElement.id)}
                 title="Delete audio element"
               >
