@@ -149,8 +149,8 @@ export class AudioGenerationService {
     clara: { id: '8LVfoRdkh4zgjr8v5ObE', name: 'Clara', gender: 'female', description: 'Calm, warm storytelling voice' },
     domi: { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', gender: 'female', description: 'Strong, confident narrator' },
     bella: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', gender: 'female', description: 'Friendly, engaging voice' },
-    aria: { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria', gender: 'female', description: 'Calm, informative voice' }
-    amelia: { id: 'ZF6FPAbjXT4488VcRRnw', name: 'Amelia', gender: 'female', description: 'Clear, expressive, British accent narrator' }
+    aria: { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria', gender: 'female', description: 'Calm, informative voice' },
+    amelia: { id: 'ZF6FPAbjXT4488VcRRnw', name: 'Amelia', gender: 'female', description: 'Clear, expressive, British accent narrator' },
     
     // Male voices good for storytelling  
     adam: { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', gender: 'male', description: 'Deep, authoritative narrator' },
