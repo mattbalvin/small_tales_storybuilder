@@ -75,26 +75,21 @@ interface NarrationResource {
 
 // Predefined voices optimized for narration
 const NARRATION_VOICES = {
-  rachel: { 
-    id: 'pNInz6obpgDQGcFmaJgB', 
-    name: 'Rachel', 
-    description: 'Warm, clear storytelling voice' 
-  },
-  josh: { 
-    id: 'TxGEqnHWrfWFTfGW9XjX', 
-    name: 'Josh', 
-    description: 'Deep, authoritative narrator' 
-  },
-  bella: { 
-    id: 'EXAVITQu4vr4xnSDxMaL', 
-    name: 'Bella', 
-    description: 'Friendly, engaging voice' 
-  },
-  dorothy: { 
-    id: 'ThT5KcBeYPX3keUQqHPh', 
-    name: 'Dorothy', 
-    description: 'Gentle, child-friendly voice' 
-  }
+    // Female voices good for storytelling
+    clara: { id: '8LVfoRdkh4zgjr8v5ObE', name: 'Clara', gender: 'female', description: 'Calm, warm storytelling voice' },
+    domi: { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', gender: 'female', description: 'Strong, confident narrator' },
+    bella: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', gender: 'female', description: 'Friendly, engaging voice' },
+    aria: { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria', gender: 'female', description: 'Calm, informative voice' }
+    amelia: { id: 'ZF6FPAbjXT4488VcRRnw', name: 'Amelia', gender: 'female', description: 'Clear, expressive, British accent narrator' }
+    
+    // Male voices good for storytelling  
+    adam: { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', gender: 'male', description: 'Deep, authoritative narrator' },
+    sam: { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', gender: 'male', description: 'Clear, professional voice' },
+    josh: { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', gender: 'male', description: 'Deep, authoritative narrator' },
+    liam: { id: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam', gender: 'male', description: 'Young, energetic warm narrator' },
+    
+    // Child-friendly voices
+    dorothy: { id: 'ThT5KcBeYPX3keUQqHPh', name: 'Dorothy', gender: 'female', description: 'Gentle, child-friendly voice' }
 };
 
 Deno.serve(async (req: Request) => {
@@ -141,7 +136,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const text = body.text.trim();
-    const voiceId = body.voice_id || 'pNInz6obpgDQGcFmaJgB'; // Default to Rachel
+    const voiceId = body.voice_id || '8LVfoRdkh4zgjr8v5ObE'; // Default to Clara
     const modelId = body.model_id || 'eleven_multilingual_v2';
     const includeWordRecordings = body.include_word_recordings !== false; // Default true
 
