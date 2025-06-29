@@ -146,13 +146,17 @@ export class AudioGenerationService {
   // Predefined voices for easy selection
   static readonly VOICES = {
     // Female voices good for storytelling
-    rachel: { id: 'pNInz6obpgDQGcFmaJgB', name: 'Rachel', gender: 'female', description: 'Calm, warm storytelling voice' },
+    clara: { id: '8LVfoRdkh4zgjr8v5ObE', name: 'Clara', gender: 'female', description: 'Calm, warm storytelling voice' },
     domi: { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', gender: 'female', description: 'Strong, confident narrator' },
     bella: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', gender: 'female', description: 'Friendly, engaging voice' },
+    aria: { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria', gender: 'female', description: 'Calm, informative voice' }
+    amelia: { id: 'ZF6FPAbjXT4488VcRRnw', name: 'Amelia', gender: 'female', description: 'Clear, expressive, British accent narrator' }
     
     // Male voices good for storytelling  
     adam: { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', gender: 'male', description: 'Deep, authoritative narrator' },
     sam: { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', gender: 'male', description: 'Clear, professional voice' },
+    josh: { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', gender: 'male', description: 'Deep, authoritative narrator' },
+    liam: { id: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam', gender: 'male', description: 'Young, energetic warm narrator' },
     
     // Child-friendly voices
     dorothy: { id: 'ThT5KcBeYPX3keUQqHPh', name: 'Dorothy', gender: 'female', description: 'Gentle, child-friendly voice' }
