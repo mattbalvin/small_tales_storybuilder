@@ -198,8 +198,126 @@
     </div>
   </div>
 
-  <!-- Element Properties -->
+  <!-- Element Lists and Properties -->
   <div class="flex-1 overflow-y-auto">
+    <!-- Visual Elements List -->
+    <div class="p-4 border-b">
+      <h3 class="text-sm font-medium mb-3">Visual Elements ({orientation})</h3>
+      
+      {#if sortedElements.length === 0}
+        <p class="text-xs text-muted-foreground text-center py-4">
+          No visual elements on this page
+        </p>
+      {:else}
+        <div class="space-y-2">
+          {#each sortedElements as element, index (element.id)}
+            <div
+              class="flex items-center gap-2 p-2 rounded border {selectedElementId === element.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}"
+              draggable="true"
+              on:dragstart={(e) => handleDragStart(e, index)}
+              on:dragover={handleDragOver}
+              on:drop={(e) => handleDrop(e, index)}
+            >
+              <GripVertical class="w-3 h-3 text-muted-foreground cursor-grab" />
+              
+              <button
+                class="flex-1 flex items-center gap-2 text-left"
+                on:click={() => selectElement(element.id)}
+              >
+                {#if element.type === 'text'}
+                  <Type class="w-3 h-3" />
+                  <span class="text-xs truncate">
+                    {element.properties?.text || 'Text Element'}
+                  </span>
+                {:else if element.type === 'image'}
+                  <Image class="w-3 h-3" />
+                  <span class="text-xs truncate">Image</span>
+                {/if}
+              </button>
+
+              <div class="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 w-6 p-0"
+                  on:click={() => toggleElementVisibility(element.id)}
+                  title={element.hidden ? 'Show element' : 'Hide element'}
+                >
+                  {#if element.hidden}
+                    <EyeOff class="w-3 h-3" />
+                  {:else}
+                    <Eye class="w-3 h-3" />
+                  {/if}
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 w-6 p-0"
+                  on:click={() => moveElementBack(element.id)}
+                  title="Move back"
+                >
+                  <ArrowDown class="w-3 h-3" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 w-6 p-0"
+                  on:click={() => moveElementForward(element.id)}
+                  title="Move forward"
+                >
+                  <ArrowUp class="w-3 h-3" />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                  on:click={() => deleteElement(element.id)}
+                  title="Delete element"
+                >
+                  <Trash2 class="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Audio Elements List -->
+    <div class="p-4 border-b">
+      <h3 class="text-sm font-medium mb-3">Audio Elements</h3>
+      
+      {#if audioElements.length === 0}
+        <p class="text-xs text-muted-foreground text-center py-4">
+          No audio elements on this page
+        </p>
+      {:else}
+        <div class="space-y-2">
+          {#each audioElements as audioElement (audioElement.id)}
+            <div class="flex items-center gap-2 p-2 rounded border bg-muted/30">
+              <Volume2 class="w-3 h-3" />
+              <span class="flex-1 text-xs truncate">
+                {audioElement.properties?.src ? 'Audio Element' : 'No audio source'}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                on:click={() => deleteAudioElement(audioElement.id)}
+                title="Delete audio element"
+              >
+                <Trash2 class="w-3 h-3" />
+              </Button>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <!-- Element Properties (shown when an element is selected) -->
     {#if selectedElement}
       <div class="p-4 border-b">
         <h3 class="text-sm font-medium mb-3">
@@ -472,97 +590,11 @@
       </div>
     {/if}
 
-    <!-- Elements List -->
-    <div class="p-4">
-      <h3 class="text-sm font-medium mb-3">Visual Elements ({orientation})</h3>
-      
-      {#if sortedElements.length === 0}
-        <p class="text-xs text-muted-foreground text-center py-4">
-          No elements on this page
-        </p>
-      {:else}
-        <div class="space-y-2">
-          {#each sortedElements as element, index (element.id)}
-            <div
-              class="flex items-center gap-2 p-2 rounded border {selectedElementId === element.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}"
-              draggable="true"
-              on:dragstart={(e) => handleDragStart(e, index)}
-              on:dragover={handleDragOver}
-              on:drop={(e) => handleDrop(e, index)}
-            >
-              <GripVertical class="w-3 h-3 text-muted-foreground cursor-grab" />
-              
-              <button
-                class="flex-1 flex items-center gap-2 text-left"
-                on:click={() => selectElement(element.id)}
-              >
-                {#if element.type === 'text'}
-                  <Type class="w-3 h-3" />
-                  <span class="text-xs truncate">
-                    {element.properties?.text || 'Text Element'}
-                  </span>
-                {:else if element.type === 'image'}
-                  <Image class="w-3 h-3" />
-                  <span class="text-xs truncate">Image</span>
-                {/if}
-              </button>
-
-              <div class="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-6 w-6 p-0"
-                  on:click={() => toggleElementVisibility(element.id)}
-                  title={element.hidden ? 'Show element' : 'Hide element'}
-                >
-                  {#if element.hidden}
-                    <EyeOff class="w-3 h-3" />
-                  {:else}
-                    <Eye class="w-3 h-3" />
-                  {/if}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-6 w-6 p-0"
-                  on:click={() => moveElementBack(element.id)}
-                  title="Move back"
-                >
-                  <ArrowDown class="w-3 h-3" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-6 w-6 p-0"
-                  on:click={() => moveElementForward(element.id)}
-                  title="Move forward"
-                >
-                  <ArrowUp class="w-3 h-3" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                  on:click={() => deleteElement(element.id)}
-                  title="Delete element"
-                >
-                  <Trash2 class="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-
-    <!-- Audio Elements -->
+    <!-- Audio Element Properties (for page-level audio elements) -->
     {#if audioElements.length > 0}
-      <div class="p-4 border-t">
-        <h3 class="text-sm font-medium mb-3">Audio Elements</h3>
-        <div class="space-y-2">
+      <div class="p-4">
+        <h3 class="text-sm font-medium mb-3">Audio Element Settings</h3>
+        <div class="space-y-3">
           {#each audioElements as audioElement (audioElement.id)}
             <Card class="p-3">
               <div class="flex items-center justify-between mb-2">
