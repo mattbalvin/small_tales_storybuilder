@@ -10,7 +10,7 @@
   let isEditing = false
   let originalText = ''
 
-  function startEditing() {
+  function startEditing(event?: MouseEvent) {
     if (readonly) return
     
     isEditing = true
@@ -20,14 +20,42 @@
     setTimeout(() => {
       if (textElement) {
         textElement.focus()
-        // Select all text for easy replacement
-        const range = document.createRange()
-        range.selectNodeContents(textElement)
-        const selection = window.getSelection()
-        selection?.removeAllRanges()
-        selection?.addRange(range)
+        
+        // If this was triggered by a click event, position cursor at click location
+        if (event) {
+          positionCursorAtClick(event)
+        }
       }
     }, 0)
+  }
+
+  function positionCursorAtClick(event: MouseEvent) {
+    if (!textElement) return
+    
+    // Create a range and selection to position cursor at click location
+    const range = document.createRange()
+    const selection = window.getSelection()
+    
+    if (selection) {
+      // Use caretPositionFromPoint or caretRangeFromPoint to get position
+      let caretRange: Range | null = null
+      
+      if (document.caretPositionFromPoint) {
+        const caretPosition = document.caretPositionFromPoint(event.clientX, event.clientY)
+        if (caretPosition) {
+          range.setStart(caretPosition.offsetNode, caretPosition.offset)
+          range.collapse(true)
+          caretRange = range
+        }
+      } else if (document.caretRangeFromPoint) {
+        caretRange = document.caretRangeFromPoint(event.clientX, event.clientY)
+      }
+      
+      if (caretRange) {
+        selection.removeAllRanges()
+        selection.addRange(caretRange)
+      }
+    }
   }
 
   function finishEditing() {
@@ -118,23 +146,46 @@
     ${isEditing ? 'box-shadow: 0 0 0 2px hsl(var(--primary) / 0.5);' : ''}
   `
 
-  // Handle clicks to start editing
+  // Handle clicks to start editing or position cursor
   function handleClick(event: MouseEvent) {
     if (readonly) return
     
-    // Only start editing if not already editing
     if (!isEditing) {
+      // Start editing mode
       event.stopPropagation() // Prevent element selection in parent
-      startEditing()
+      startEditing(event)
     }
+    // If already editing, let the browser handle cursor positioning naturally
   }
 
-  // Handle double-click as alternative way to start editing
+  // Handle double-click to select word
   function handleDoubleClick(event: MouseEvent) {
     if (readonly) return
     
     event.stopPropagation()
-    startEditing()
+    
+    if (!isEditing) {
+      startEditing()
+      // After starting edit mode, select the word at cursor
+      setTimeout(() => {
+        if (textElement) {
+          const selection = window.getSelection()
+          if (selection) {
+            selection.modify('move', 'backward', 'word')
+            selection.modify('extend', 'forward', 'word')
+          }
+        }
+      }, 0)
+    }
+    // If already editing, let the browser handle word selection naturally
+  }
+
+  // Handle mouse down for text selection
+  function handleMouseDown(event: MouseEvent) {
+    if (readonly || !isEditing) return
+    
+    // Allow natural text selection behavior when in edit mode
+    event.stopPropagation() // Prevent triggering parent drag handlers
   }
 </script>
 
@@ -144,6 +195,7 @@
   {style}
   on:click={handleClick}
   on:dblclick={handleDoubleClick}
+  on:mousedown={handleMouseDown}
   on:blur={finishEditing}
   on:keydown={handleKeydown}
   on:input={handleInput}
