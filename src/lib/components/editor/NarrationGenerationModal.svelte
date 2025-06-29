@@ -14,7 +14,7 @@
   export let initialText = ''
 
   let text = initialText
-  let selectedVoice = 'rachel'
+  let selectedVoice = 'clara'
   let selectedPreset = 'storytelling'
   let customSettings = false
   let includeWordRecordings = true
