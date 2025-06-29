@@ -19,6 +19,8 @@
   let showSettings = false
   let audioElement: HTMLAudioElement | null = null
   let currentAudio: string | null = null
+  let publicStoryError: string | null = null
+  let isPublicStory = false
 
   // Story settings
   let volume = 0.7
@@ -33,16 +35,16 @@
   onMount(async () => {
     if (storyId) {
       try {
-        // Load story without requiring authentication for public stories
-        await storiesService.loadStoryPages(storyId)
+        // First try to load story pages directly (public access)
+        await loadPublicStory(storyId)
         
-        // Try to load story details (this might fail for private stories)
-        try {
-          if ($authStore.user) {
+        // If user is authenticated, try to load full story details for better experience
+        if ($authStore.user) {
+          try {
             await storiesService.loadSingleStory(storyId, $authStore.user.id)
+          } catch (error) {
+            console.log('Could not load authenticated story details, continuing with public access')
           }
-        } catch (error) {
-          console.log('Could not load story details (might be public story):', error)
         }
 
         // Load story settings if available
@@ -57,9 +59,52 @@
         detectOrientation()
       } catch (error) {
         console.error('Failed to load story:', error)
+        publicStoryError = 'This story is not available or has been made private.'
       }
     }
   })
+
+  async function loadPublicStory(storyId: string) {
+    try {
+      console.log('Loading public story pages for:', storyId)
+      
+      // Load story pages directly without authentication
+      await storiesService.loadStoryPages(storyId)
+      
+      if (pages.length === 0) {
+        throw new Error('Story not found or has no pages')
+      }
+      
+      // Try to get basic story info if possible
+      if (!story) {
+        // Create a minimal story object for public viewing
+        storiesService.setCurrentStory({
+          id: storyId,
+          title: 'Shared Story',
+          description: '',
+          cover_image: null,
+          age_range: '3-8 years',
+          orientation: 'landscape',
+          status: 'published',
+          settings: {
+            volume: 0.7,
+            autoRead: true,
+            showText: true,
+            readingSpeed: 1.0
+          },
+          author_id: '',
+          created_at: '',
+          updated_at: ''
+        })
+        isPublicStory = true
+      }
+      
+      console.log('Successfully loaded public story with', pages.length, 'pages')
+    } catch (error) {
+      console.error('Failed to load public story:', error)
+      throw error
+    }
+  }
 
   function detectOrientation() {
     if (pages.length === 0) return
@@ -264,6 +309,9 @@
             {#if story.description}
               <p class="text-sm text-muted-foreground">{story.description}</p>
             {/if}
+            {#if isPublicStory}
+              <p class="text-xs text-muted-foreground">Shared Story</p>
+            {/if}
           </div>
         {/if}
       </div>
@@ -283,6 +331,13 @@
         >
           <Settings class="w-4 h-4" />
         </Button>
+
+        <!-- Sign in prompt for public viewers -->
+        {#if isPublicStory && !$authStore.user}
+          <Button variant="outline" size="sm" on:click={() => window.location.hash = '#/auth'}>
+            Sign In
+          </Button>
+        {/if}
       </div>
     </div>
   </header>
@@ -342,6 +397,27 @@
           <p class="text-muted-foreground">Loading story...</p>
         </div>
       </div>
+    {:else if publicStoryError}
+      <!-- Story Not Available -->
+      <div class="flex-1 flex items-center justify-center p-4">
+        <Card class="w-full max-w-md p-8 text-center">
+          <h2 class="text-xl font-semibold mb-2">Story Not Available</h2>
+          <p class="text-muted-foreground mb-6">
+            {publicStoryError}
+          </p>
+          <div class="space-y-3">
+            <Button on:click={navigateHome}>
+              <Home class="w-4 h-4 mr-2" />
+              Go Home
+            </Button>
+            {#if !$authStore.user}
+              <Button variant="outline" on:click={() => window.location.hash = '#/auth'}>
+                Sign In
+              </Button>
+            {/if}
+          </div>
+        </Card>
+      </div>
     {:else if !story && pages.length === 0}
       <!-- Story Not Found -->
       <div class="flex-1 flex items-center justify-center p-4">
@@ -385,6 +461,18 @@
           {/if}
           
           <p class="text-muted-foreground mb-8">{pages.length} pages</p>
+
+          <!-- Public story notice -->
+          {#if isPublicStory}
+            <div class="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
+              <p class="text-sm text-primary">
+                📖 This is a shared story. 
+                {#if !$authStore.user}
+                  <a href="#/auth" class="underline hover:no-underline">Sign in</a> to create your own stories!
+                {/if}
+              </p>
+            </div>
+          {/if}
 
           <!-- Play Buttons -->
           <div class="flex flex-col sm:flex-row gap-4 justify-center">

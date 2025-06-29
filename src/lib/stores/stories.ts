@@ -277,18 +277,27 @@ export const storiesService = {
   },
 
   async loadStoryPages(storyId: string) {
+    console.log('Loading story pages for:', storyId)
+    
     const { data: pages, error } = await supabase
       .from('story_pages')
       .select('*')
       .eq('story_id', storyId)
       .order('page_number')
 
-    if (error) throw error
+    if (error) {
+      console.error('Error loading story pages:', error)
+      throw error
+    }
+
+    console.log('Loaded', pages?.length || 0, 'pages for story', storyId)
 
     storiesStore.update(state => ({
       ...state,
       currentPages: pages || []
     }))
+
+    return pages || []
   },
 
   async createPage(page: Database['public']['Tables']['story_pages']['Insert']) {
