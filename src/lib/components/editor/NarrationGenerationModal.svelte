@@ -15,7 +15,7 @@
 
   let text = initialText
   let selectedVoice = 'clara'
-  let selectedPreset = 'storytelling'
+  let selectedPreset = 'children'
   let customSettings = false
   let includeWordRecordings = true
   let generating = false
