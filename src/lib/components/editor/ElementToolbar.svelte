@@ -217,7 +217,7 @@
                 class="w-full px-2 py-1 text-xs border rounded resize-none"
                 rows="3"
                 value={textProperties.text || ''}
-                on:input={(e) => updateElementProperty('text', e.target.value)}
+                on:input={(e) => e.target && updateElementProperty('text', e.target.value)}
                 placeholder="Enter text..."
               ></textarea>
             </div>
@@ -230,7 +230,7 @@
                 min="8"
                 max="72"
                 value={textProperties.fontSize || 16}
-                on:input={(e) => updateElementProperty('fontSize', parseInt(e.target.value))}
+                on:input={(e) => e.target && updateElementProperty('fontSize', parseInt(e.target.value))}
                 class="text-xs h-8"
               />
             </div>
@@ -244,7 +244,7 @@
                 max="3"
                 step="0.1"
                 value={textProperties.lineHeight || 1.3}
-                on:input={(e) => updateElementProperty('lineHeight', parseFloat(e.target.value))}
+                on:input={(e) => e.target && updateElementProperty('lineHeight', parseFloat(e.target.value))}
                 class="text-xs h-8"
               />
             </div>
@@ -256,13 +256,13 @@
                 <Input
                   type="color"
                   value={textProperties.color || '#000000'}
-                  on:input={(e) => updateElementProperty('color', e.target.value)}
+                  on:input={(e) => e.target && updateElementProperty('color', e.target.value)}
                   class="w-12 h-8 p-1"
                 />
                 <Input
                   type="text"
                   value={textProperties.color || '#000000'}
-                  on:input={(e) => updateElementProperty('color', e.target.value)}
+                  on:input={(e) => e.target && updateElementProperty('color', e.target.value)}
                   class="flex-1 text-xs h-8"
                   placeholder="#000000"
                 />
@@ -277,13 +277,13 @@
                   <Input
                     type="color"
                     value={textProperties.backgroundColor || '#ffffff'}
-                    on:input={(e) => updateElementProperty('backgroundColor', e.target.value)}
+                    on:input={(e) => e.target && updateElementProperty('backgroundColor', e.target.value)}
                     class="w-12 h-8 p-1"
                   />
                   <Input
                     type="text"
                     value={textProperties.backgroundColor || '#ffffff'}
-                    on:input={(e) => updateElementProperty('backgroundColor', e.target.value)}
+                    on:input={(e) => e.target && updateElementProperty('backgroundColor', e.target.value)}
                     class="flex-1 text-xs h-8"
                     placeholder="#ffffff"
                   />
@@ -295,7 +295,7 @@
                     min="0"
                     max="100"
                     value={textProperties.backgroundAlpha || 0}
-                    on:input={(e) => updateElementProperty('backgroundAlpha', parseInt(e.target.value))}
+                    on:input={(e) => e.target && updateElementProperty('backgroundAlpha', parseInt(e.target.value))}
                     class="w-full"
                   />
                 </div>
@@ -314,7 +314,7 @@
                 <Input
                   type="text"
                   value={imageProperties.src || ''}
-                  on:input={(e) => updateElementProperty('src', e.target.value)}
+                  on:input={(e) => e.target && updateElementProperty('src', e.target.value)}
                   class="flex-1 text-xs h-8"
                   placeholder="Image URL or select from library"
                 />
@@ -330,7 +330,7 @@
               <Input
                 type="text"
                 value={imageProperties.alt || ''}
-                on:input={(e) => updateElementProperty('alt', e.target.value)}
+                on:input={(e) => e.target && updateElementProperty('alt', e.target.value)}
                 class="text-xs h-8"
                 placeholder="Describe the image"
               />
@@ -344,7 +344,7 @@
                 min="0"
                 max="100"
                 value={imageProperties.opacity || 100}
-                on:input={(e) => updateElementProperty('opacity', parseInt(e.target.value))}
+                on:input={(e) => e.target && updateElementProperty('opacity', parseInt(e.target.value))}
                 class="w-full"
               />
             </div>
@@ -357,7 +357,7 @@
                 min="10"
                 max="200"
                 value={imageProperties.scale || 100}
-                on:input={(e) => updateElementProperty('scale', parseInt(e.target.value))}
+                on:input={(e) => e.target && updateElementProperty('scale', parseInt(e.target.value))}
                 class="w-full"
               />
             </div>
@@ -374,7 +374,7 @@
                 <Input
                   type="text"
                   value={selectedElement.properties?.src || ''}
-                  on:input={(e) => updateElementProperty('src', e.target.value)}
+                  on:input={(e) => e.target && updateElementProperty('src', e.target.value)}
                   class="flex-1 text-xs h-8"
                   placeholder="Audio URL or select from library"
                 />
@@ -395,7 +395,7 @@
                 min="0"
                 max="100"
                 value={selectedElement.properties?.volume || 100}
-                on:input={(e) => updateElementProperty('volume', parseInt(e.target.value))}
+                on:input={(e) => e.target && updateElementProperty('volume', parseInt(e.target.value))}
                 class="w-full"
               />
             </div>
@@ -405,7 +405,7 @@
               <input
                 type="checkbox"
                 checked={selectedElement.properties?.autoplay || false}
-                on:change={(e) => updateElementProperty('autoplay', e.target.checked)}
+                on:change={(e) => e.target && updateElementProperty('autoplay', e.target.checked)}
                 class="rounded"
               />
               <label class="text-xs font-medium">Autoplay</label>
@@ -423,7 +423,7 @@
                 <Input
                   type="number"
                   value={selectedElement.x || 0}
-                  on:input={(e) => updateElementLayout('x', parseInt(e.target.value))}
+                  on:input={(e) => e.target && updateElementLayout('x', parseInt(e.target.value))}
                   class="text-xs h-8"
                 />
               </div>
@@ -432,7 +432,7 @@
                 <Input
                   type="number"
                   value={selectedElement.y || 0}
-                  on:input={(e) => updateElementLayout('y', parseInt(e.target.value))}
+                  on:input={(e) => e.target && updateElementLayout('y', parseInt(e.target.value))}
                   class="text-xs h-8"
                 />
               </div>
@@ -442,7 +442,7 @@
                   type="number"
                   min="10"
                   value={selectedElement.width || 100}
-                  on:input={(e) => updateElementLayout('width', parseInt(e.target.value))}
+                  on:input={(e) => e.target && updateElementLayout('width', parseInt(e.target.value))}
                   class="text-xs h-8"
                 />
               </div>
@@ -452,7 +452,7 @@
                   type="number"
                   min="10"
                   value={selectedElement.height || 100}
-                  on:input={(e) => updateElementLayout('height', parseInt(e.target.value))}
+                  on:input={(e) => e.target && updateElementLayout('height', parseInt(e.target.value))}
                   class="text-xs h-8"
                 />
               </div>
@@ -587,7 +587,7 @@
                   <Input
                     type="text"
                     value={audioElement.properties?.src || ''}
-                    on:input={(e) => updateAudioElement(audioElement.id, 'src', e.target.value)}
+                    on:input={(e) => e.target && updateAudioElement(audioElement.id, 'src', e.target.value)}
                     class="flex-1 text-xs h-7"
                     placeholder="Audio URL"
                   />
@@ -607,7 +607,7 @@
                   min="0"
                   max="100"
                   value={audioElement.properties?.volume || 100}
-                  on:input={(e) => updateAudioElement(audioElement.id, 'volume', parseInt(e.target.value))}
+                  on:input={(e) => e.target && updateAudioElement(audioElement.id, 'volume', parseInt(e.target.value))}
                   class="w-full h-1"
                 />
               </div>
@@ -618,7 +618,7 @@
                   <input
                     type="checkbox"
                     checked={audioElement.properties?.isIdleLoop || false}
-                    on:change={(e) => updateAudioElement(audioElement.id, 'isIdleLoop', e.target.checked)}
+                    on:change={(e) => e.target && updateAudioElement(audioElement.id, 'isIdleLoop', e.target.checked)}
                     class="rounded"
                   />
                   <label class="text-xs">Idle Loop</label>
@@ -637,7 +637,7 @@
                     min="0"
                     max="100"
                     value={audioElement.properties?.actionVolume || 50}
-                    on:input={(e) => updateAudioElement(audioElement.id, 'actionVolume', parseInt(e.target.value))}
+                    on:input={(e) => e.target && updateAudioElement(audioElement.id, 'actionVolume', parseInt(e.target.value))}
                     class="w-full h-1"
                   />
                 </div>
@@ -647,7 +647,7 @@
                   <label class="text-xs text-muted-foreground mb-1 block">Playback Mode</label>
                   <select
                     value={audioElement.properties?.playbackMode || 'random'}
-                    on:change={(e) => updateAudioElement(audioElement.id, 'playbackMode', e.target.value)}
+                    on:change={(e) => e.target && updateAudioElement(audioElement.id, 'playbackMode', e.target.value)}
                     class="w-full text-xs h-7 border rounded px-2"
                   >
                     <option value="random">Random</option>
@@ -664,7 +664,7 @@
                         type="number"
                         min="0"
                         value={audioElement.properties?.minDelay || 1}
-                        on:input={(e) => updateAudioElement(audioElement.id, 'minDelay', parseInt(e.target.value))}
+                        on:input={(e) => e.target && updateAudioElement(audioElement.id, 'minDelay', parseInt(e.target.value))}
                         class="text-xs h-7"
                       />
                     </div>
@@ -674,7 +674,7 @@
                         type="number"
                         min="0"
                         value={audioElement.properties?.maxDelay || 5}
-                        on:input={(e) => updateAudioElement(audioElement.id, 'maxDelay', parseInt(e.target.value))}
+                        on:input={(e) => e.target && updateAudioElement(audioElement.id, 'maxDelay', parseInt(e.target.value))}
                         class="text-xs h-7"
                       />
                     </div>
@@ -685,7 +685,7 @@
                     <label class="text-xs text-muted-foreground mb-1 block">Trigger Name</label>
                     <select
                       value={audioElement.properties?.triggerName || ''}
-                      on:change={(e) => updateAudioElement(audioElement.id, 'triggerName', e.target.value)}
+                      on:change={(e) => e.target && updateAudioElement(audioElement.id, 'triggerName', e.target.value)}
                       class="w-full text-xs h-7 border rounded px-2"
                     >
                       <option value="">Select trigger...</option>
