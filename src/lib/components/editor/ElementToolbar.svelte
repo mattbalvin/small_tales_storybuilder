@@ -5,6 +5,7 @@
   import Card from '$lib/components/ui/card.svelte'
   import MediaSelector from './MediaSelector.svelte'
   import AudioGenerationModal from './AudioGenerationModal.svelte'
+  import NarrationGenerationModal from './NarrationGenerationModal.svelte'
   import { 
     Type, 
     Image, 
@@ -34,6 +35,8 @@
   let mediaSelectorType: 'image' | 'audio' | 'video' | 'all' = 'all'
   let showAudioGeneration = false
   let audioGenerationText = ''
+  let showNarrationGeneration = false
+  let narrationGenerationText = ''
 
   // Track selected audio element
   let selectedAudioElementId: string | null = null
@@ -140,6 +143,25 @@
     }
     
     showAudioGeneration = false
+  }
+
+  function openNarrationGeneration() {
+    if (selectedElement?.type === 'text') {
+      narrationGenerationText = selectedElement.properties?.text || ''
+      showNarrationGeneration = true
+    }
+  }
+
+  function handleNarrationGenerated(event: CustomEvent) {
+    const { narration, filename } = event.detail
+    
+    if (selectedElement?.type === 'text') {
+      // Store the narration reference in the text element
+      updateElementProperty('narrationId', narration.id)
+      updateElementProperty('narrationData', narration)
+    }
+    
+    showNarrationGeneration = false
   }
 
   // Audio element management
@@ -374,6 +396,71 @@
                 on:input={(e) => e.target && updateElementProperty('text', e.target.value)}
                 placeholder="Enter text..."
               ></textarea>
+            </div>
+
+            <!-- Narration Settings -->
+            <div class="space-y-2 p-3 bg-muted/30 rounded-lg">
+              <h4 class="text-xs font-medium">Narration</h4>
+              
+              <!-- In Main Narration Checkbox -->
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="inMainNarration"
+                  checked={textProperties.inMainNarration || false}
+                  on:change={(e) => e.target && updateElementProperty('inMainNarration', e.target.checked)}
+                  class="rounded"
+                />
+                <label for="inMainNarration" class="text-xs font-medium">In main narration</label>
+              </div>
+
+              <!-- Sequence Number -->
+              {#if textProperties.inMainNarration}
+                <div>
+                  <label class="text-xs font-medium mb-1 block">Sequence</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={textProperties.narrationSequence || 1}
+                    on:input={(e) => e.target && updateElementProperty('narrationSequence', parseInt(e.target.value))}
+                    class="text-xs h-8"
+                    placeholder="1"
+                  />
+                </div>
+              {/if}
+
+              <!-- Generate Narration Button -->
+              <div class="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  on:click={openNarrationGeneration}
+                  class="flex-1"
+                  disabled={!textProperties.text?.trim()}
+                >
+                  <Wand2 class="w-3 h-3 mr-1" />
+                  Generate Narration
+                </Button>
+                
+                {#if textProperties.narrationData}
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    on:click={() => updateElementProperty('narrationData', null)}
+                    title="Remove narration"
+                    class="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 class="w-3 h-3" />
+                  </Button>
+                {/if}
+              </div>
+
+              <!-- Narration Status -->
+              {#if textProperties.narrationData}
+                <div class="text-xs text-muted-foreground">
+                  ✓ Narration generated ({Math.round(textProperties.narrationData.fullAudio.duration / 1000)}s)
+                </div>
+              {/if}
             </div>
 
             <!-- Font Size -->
@@ -765,6 +852,13 @@
   bind:show={showAudioGeneration}
   initialText={audioGenerationText}
   on:audio-generated={handleAudioGenerated}
+/>
+
+<!-- Narration Generation Modal -->
+<NarrationGenerationModal
+  bind:show={showNarrationGeneration}
+  initialText={narrationGenerationText}
+  on:narration-generated={handleNarrationGenerated}
 />
 
 <style>
