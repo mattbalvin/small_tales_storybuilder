@@ -286,30 +286,21 @@ export class NarrationGenerationService {
 
   // Predefined voices optimized for narration
   static readonly VOICES = {
-    rachel: { 
-      id: 'pNInz6obpgDQGcFmaJgB', 
-      name: 'Rachel', 
-      description: 'Warm, clear storytelling voice',
-      gender: 'female'
-    },
-    josh: { 
-      id: 'TxGEqnHWrfWFTfGW9XjX', 
-      name: 'Josh', 
-      description: 'Deep, authoritative narrator',
-      gender: 'male'
-    },
-    bella: { 
-      id: 'EXAVITQu4vr4xnSDxMaL', 
-      name: 'Bella', 
-      description: 'Friendly, engaging voice',
-      gender: 'female'
-    },
-    dorothy: { 
-      id: 'ThT5KcBeYPX3keUQqHPh', 
-      name: 'Dorothy', 
-      description: 'Gentle, child-friendly voice',
-      gender: 'female'
-    }
+    // Female voices good for storytelling
+    clara: { id: '8LVfoRdkh4zgjr8v5ObE', name: 'Clara', gender: 'female', description: 'Calm, warm storytelling voice' },
+    domi: { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', gender: 'female', description: 'Strong, confident narrator' },
+    bella: { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', gender: 'female', description: 'Friendly, engaging voice' },
+    aria: { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria', gender: 'female', description: 'Calm, informative voice' }
+    amelia: { id: 'ZF6FPAbjXT4488VcRRnw', name: 'Amelia', gender: 'female', description: 'Clear, expressive, British accent narrator' }
+    
+    // Male voices good for storytelling  
+    adam: { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', gender: 'male', description: 'Deep, authoritative narrator' },
+    sam: { id: 'yoZ06aMxZJJ28mfd3POQ', name: 'Sam', gender: 'male', description: 'Clear, professional voice' },
+    josh: { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', gender: 'male', description: 'Deep, authoritative narrator' },
+    liam: { id: 'TX3LPaxmHKxFdv7VOQHJ', name: 'Liam', gender: 'male', description: 'Young, energetic warm narrator' },
+    
+    // Child-friendly voices
+    dorothy: { id: 'ThT5KcBeYPX3keUQqHPh', name: 'Dorothy', gender: 'female', description: 'Gentle, child-friendly voice' }
   }
 
   // Voice presets for different narration styles
