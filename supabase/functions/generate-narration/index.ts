@@ -344,9 +344,7 @@ async function generateSingleWordRecording(
   apiKey: string
 ) {
   try {
-    // Use a natural sentence context for better pronunciation
-    const contextText = `The word is: ${word}.`;
-    
+    // Generate just the word without any context - this is the key fix
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
@@ -355,7 +353,7 @@ async function generateSingleWordRecording(
         'xi-api-key': apiKey,
       },
       body: JSON.stringify({
-        text: contextText,
+        text: word, // Just the word itself, no "The word is" prefix
         model_id: modelId,
         voice_settings: {
           ...voiceSettings,
@@ -417,18 +415,22 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
   
   for (const charData of alignment.characters) {
     const char = charData.character;
-    const startTime = Math.round(charData.start_time_ms);
-    const endTime = Math.round(charData.end_time_ms);
+    const startTime = Math.round(charData.start_time_ms || 0);
+    const endTime = Math.round(charData.end_time_ms || 0);
     
     if (/\s/.test(char) || charIndex === alignment.characters.length - 1) {
       // End of word or end of text
       if (currentWord.trim().length > 0) {
-        timestamps.push({
-          word: currentWord.trim(),
-          start_time: wordStartTime,
-          end_time: endTime,
-          confidence: charData.confidence || 1.0
-        });
+        // Clean the word similar to how we extract unique words
+        const cleanWord = currentWord.trim().replace(/^[^a-zA-Z']+|[^a-zA-Z']+$/g, '');
+        if (cleanWord.length > 0) {
+          timestamps.push({
+            word: cleanWord,
+            start_time: wordStartTime,
+            end_time: endTime,
+            confidence: charData.confidence || 1.0
+          });
+        }
       }
       currentWord = '';
       wordStartTime = endTime;
@@ -455,12 +457,16 @@ function estimateWordTimings(text: string, totalDurationMs: number): WordTimesta
   
   words.forEach((word, index) => {
     const wordDuration = avgWordDuration * (0.8 + Math.random() * 0.4); // Add some variation
-    timestamps.push({
-      word: word.replace(/[^\w']/g, ''), // Remove punctuation but keep apostrophes
-      start_time: Math.round(currentTime),
-      end_time: Math.round(currentTime + wordDuration),
-      confidence: 0.5 // Lower confidence for estimated timings
-    });
+    // Clean the word similar to how we extract unique words
+    const cleanWord = word.replace(/^[^a-zA-Z']+|[^a-zA-Z']+$/g, '');
+    if (cleanWord.length > 0) {
+      timestamps.push({
+        word: cleanWord,
+        start_time: Math.round(currentTime),
+        end_time: Math.round(currentTime + wordDuration),
+        confidence: 0.5 // Lower confidence for estimated timings
+      });
+    }
     currentTime += wordDuration;
   });
   
@@ -489,8 +495,11 @@ class NarrationPlayer {
     this.audio = null;
     this.currentWordIndex = -1;
     this.isPlaying = false;
+    this.animationFrame = null;
     this.onWordHighlight = null; // Callback for word highlighting
     this.onPlaybackEnd = null;   // Callback for playback completion
+    this.onPlaybackStart = null; // Callback for playback start
+    this.onPlaybackPause = null; // Callback for playback pause
   }
 
   // Play the full narration with word highlighting
@@ -509,9 +518,13 @@ class NarrationPlayer {
 
     try {
       await this.audio.play();
+      if (this.onPlaybackStart) {
+        this.onPlaybackStart();
+      }
     } catch (error) {
       console.error('Failed to play narration:', error);
       this.isPlaying = false;
+      throw error;
     }
   }
 
@@ -561,6 +574,9 @@ class NarrationPlayer {
     if (this.audio) {
       this.audio.pause();
       this.isPlaying = false;
+      if (this.onPlaybackPause) {
+        this.onPlaybackPause();
+      }
     }
   }
 
@@ -569,6 +585,9 @@ class NarrationPlayer {
     if (this.audio && !this.isPlaying) {
       this.audio.play();
       this.isPlaying = true;
+      if (this.onPlaybackStart) {
+        this.onPlaybackStart();
+      }
     }
   }
 
@@ -579,6 +598,10 @@ class NarrationPlayer {
       this.audio.currentTime = 0;
       this.isPlaying = false;
       this.currentWordIndex = -1;
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
     }
   }
 
@@ -587,7 +610,7 @@ class NarrationPlayer {
     if (!this.audio) return;
 
     const updateHighlight = () => {
-      if (!this.isPlaying) return;
+      if (!this.isPlaying || !this.audio) return;
 
       const currentTimeMs = this.audio.currentTime * 1000;
       const currentWord = this.narration.wordTimestamps.find(w => 
@@ -605,7 +628,7 @@ class NarrationPlayer {
       }
 
       if (this.isPlaying) {
-        requestAnimationFrame(updateHighlight);
+        this.animationFrame = requestAnimationFrame(updateHighlight);
       }
     };
 
@@ -616,11 +639,19 @@ class NarrationPlayer {
 
     this.audio.addEventListener('pause', () => {
       this.isPlaying = false;
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
     });
 
     this.audio.addEventListener('ended', () => {
       this.isPlaying = false;
       this.currentWordIndex = -1;
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
       if (this.onPlaybackEnd) {
         this.onPlaybackEnd();
       }
@@ -653,6 +684,29 @@ class NarrationPlayer {
       voice: this.narration.metadata.voice_name,
       text: this.narration.text
     };
+  }
+
+  // Check if a word has an individual recording
+  hasWordRecording(word) {
+    return word.toLowerCase() in this.narration.wordRecordings;
+  }
+
+  // Get all available words with recordings
+  getAvailableWords() {
+    return Object.keys(this.narration.wordRecordings);
+  }
+
+  // Destroy the player and clean up resources
+  destroy() {
+    this.stop();
+    if (this.audio) {
+      this.audio.src = '';
+      this.audio = null;
+    }
+    this.onWordHighlight = null;
+    this.onPlaybackEnd = null;
+    this.onPlaybackStart = null;
+    this.onPlaybackPause = null;
   }
 }
 

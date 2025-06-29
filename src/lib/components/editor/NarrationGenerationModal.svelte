@@ -76,7 +76,15 @@
       
       // Set up event handlers
       player.onWordHighlight = (word: any, index: number) => {
-        currentWord = word.word
+        // Make sure we have a valid word object with the word property
+        if (word && typeof word === 'object' && word.word) {
+          currentWord = word.word
+        } else if (typeof word === 'string') {
+          currentWord = word
+        } else {
+          console.warn('Invalid word data received:', word)
+          currentWord = null
+        }
       }
       
       player.onPlaybackStart = () => {
