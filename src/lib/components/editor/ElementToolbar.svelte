@@ -450,33 +450,23 @@
         <!-- Image Properties -->
         {#if imageProperties}
           <div class="space-y-3">
-            <!-- Image Source -->
+            <!-- Select Image Button -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Image Source</label>
-              <div class="flex gap-2">
-                <Input
-                  type="text"
-                  value={imageProperties.src || ''}
-                  on:input={(e) => e.target && updateElementProperty('src', e.target.value)}
-                  class="flex-1 text-xs h-8"
-                  placeholder="Image URL or select from library"
-                />
-                <Button variant="outline" size="sm" on:click={() => openMediaSelector('image')}>
-                  <Image class="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-
-            <!-- Alt Text -->
-            <div>
-              <label class="text-xs font-medium mb-1 block">Alt Text</label>
-              <Input
-                type="text"
-                value={imageProperties.alt || ''}
-                on:input={(e) => e.target && updateElementProperty('alt', e.target.value)}
-                class="text-xs h-8"
-                placeholder="Describe the image"
-              />
+              <label class="text-xs font-medium mb-2 block">Image</label>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                on:click={() => openMediaSelector('image')}
+                class="w-full justify-start"
+              >
+                <Image class="w-4 h-4 mr-2" />
+                {imageProperties.src ? 'Change Image' : 'Select Image'}
+              </Button>
+              {#if imageProperties.src}
+                <p class="text-xs text-muted-foreground mt-1 truncate">
+                  Current: {imageProperties.src.split('/').pop() || 'Image selected'}
+                </p>
+              {/if}
             </div>
 
             <!-- Opacity -->
