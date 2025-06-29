@@ -336,66 +336,19 @@ async function generateWordRecordings(
   return recordings;
 }
 
-// Enhanced context templates for better short word pronunciation
-function getWordContext(word: string): string {
+// Determine if a word needs "The word is" prefix for better pronunciation
+function needsWordPrefix(word: string): boolean {
   const wordLower = word.toLowerCase();
   
-  // Special handling for very short words that need context
-  const shortWordContexts: Record<string, string> = {
-    'a': 'I see a cat.',
-    'an': 'An apple is red.',
-    'the': 'The dog runs.',
-    'to': 'Go to school.',
-    'of': 'A cup of tea.',
-    'in': 'In the house.',
-    'on': 'On the table.',
-    'at': 'At the store.',
-    'by': 'By the river.',
-    'up': 'Up the hill.',
-    'it': 'It is good.',
-    'is': 'It is here.',
-    'be': 'To be happy.',
-    'or': 'Red or blue.',
-    'as': 'As big as.',
-    'no': 'No, thank you.',
-    'so': 'So very nice.',
-    'we': 'We are here.',
-    'he': 'He is tall.',
-    'me': 'Come with me.',
-    'my': 'My favorite book.',
-    'go': 'Let us go.',
-    'do': 'Do your best.',
-    'if': 'If you can.',
-    'am': 'I am happy.',
-    'us': 'Come with us.',
-    'oh': 'Oh, how nice!',
-    'ah': 'Ah, I see.',
-    'hi': 'Hi there, friend!',
-    'ok': 'Ok, sounds good.',
-    'um': 'Um, let me think.',
-    'eh': 'Eh, what do you think?'
-  };
+  // Very short words (3 characters or less) that often get mispronounced
+  const shortWords = [
+    'a', 'an', 'the', 'to', 'of', 'in', 'on', 'at', 'by', 'up', 'it', 'is', 'be', 'or', 'as', 
+    'no', 'so', 'we', 'he', 'me', 'my', 'go', 'do', 'if', 'am', 'us', 'oh', 'ah', 'hi', 'ok', 
+    'um', 'eh', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'and', 'but', 'for', 'nor', 'yet'
+  ];
   
-  // Articles and common short words that benefit from context
-  const articlesAndShortWords = ['a', 'an', 'the', 'to', 'of', 'in', 'on', 'at', 'by', 'up', 'it', 'is', 'be', 'or', 'as', 'no', 'so', 'we', 'he', 'me', 'my', 'go', 'do', 'if', 'am', 'us', 'oh', 'ah', 'hi', 'ok', 'um', 'eh'];
-  
-  // Use predefined context for known short words
-  if (shortWordContexts[wordLower]) {
-    return shortWordContexts[wordLower];
-  }
-  
-  // For other short words (3 characters or less), create a simple context
-  if (word.length <= 3 && articlesAndShortWords.includes(wordLower)) {
-    return `Say the word "${word}" clearly.`;
-  }
-  
-  // For longer words or words not in our special list, use minimal context
-  if (word.length <= 2) {
-    return `The word "${word}" is important.`;
-  }
-  
-  // For regular words, just use the word itself
-  return word;
+  // Use prefix for words 3 characters or less that are in our short words list
+  return word.length <= 3 && shortWords.includes(wordLower);
 }
 
 async function generateSingleWordRecording(
@@ -406,10 +359,18 @@ async function generateSingleWordRecording(
   apiKey: string
 ) {
   try {
-    // Get appropriate context for the word
-    const contextText = getWordContext(word);
+    // Determine the text to send to ElevenLabs
+    let textToSpeak: string;
     
-    console.log(`Generating recording for word "${word}" with context: "${contextText}"`);
+    if (needsWordPrefix(word)) {
+      // For short words that need context, use "The word is" prefix
+      textToSpeak = `The word is ${word}.`;
+      console.log(`Generating recording for short word "${word}" with prefix`);
+    } else {
+      // For longer words, just use the word itself
+      textToSpeak = word;
+      console.log(`Generating recording for word "${word}" without prefix`);
+    }
     
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
@@ -419,7 +380,7 @@ async function generateSingleWordRecording(
         'xi-api-key': apiKey,
       },
       body: JSON.stringify({
-        text: contextText,
+        text: textToSpeak,
         model_id: modelId,
         voice_settings: {
           ...voiceSettings,
@@ -443,7 +404,8 @@ async function generateSingleWordRecording(
       url: audioUrl,
       size_bytes: audioBuffer.byteLength,
       format: 'audio/mpeg',
-      context: contextText // Store the context used for debugging
+      text_used: textToSpeak, // Store what text was actually sent for debugging
+      has_prefix: needsWordPrefix(word) // Store whether prefix was used
     };
   } catch (error) {
     console.error(`Failed to generate recording for word "${word}":`, error);
