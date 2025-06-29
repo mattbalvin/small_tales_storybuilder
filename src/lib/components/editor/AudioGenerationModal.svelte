@@ -361,7 +361,6 @@
     </Card>
   </div>
 {/if}
-</script>
 
 <style>
   input[type="range"] {
