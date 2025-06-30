@@ -32,11 +32,13 @@
   <header class="border-b border-periwinkle-blue/20 bg-coral-sunset/90 backdrop-blur-sm sticky top-0 z-50">
     <div class="container flex items-center justify-between py-4">
       <div class="flex items-center gap-3">
-        <img 
-          src="/a-whimsical-logo-illustration-showcasing_nftkY3UMRsCSJrVHAQ-EQQ_Uf0dCZsOS2aeggOLhBgikg-transparent.png" 
-          alt="Small Tales Logo" 
-          class="h-12"
-        />
+        <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#558A80] p-1">
+          <img 
+            src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
+            alt="Small Tales Logo" 
+            class="h-12"
+          />
+        </div>
       </div>
       
       <nav class="hidden md:flex items-center gap-8">
@@ -242,16 +244,18 @@
   </section>
 
   <!-- Footer -->
-  <footer class="bg-dusty-teal text-white py-12 px-4">
+  <footer class="bg-[#558A80] text-white py-12 px-4">
     <div class="container">
       <div class="grid md:grid-cols-4 gap-8">
         <div>
           <div class="flex items-center mb-6">
-            <img 
-              src="/a-whimsical-logo-illustration-showcasing_nftkY3UMRsCSJrVHAQ-EQQ_Uf0dCZsOS2aeggOLhBgikg-transparent.png" 
-              alt="Small Tales Logo" 
-              class="h-10"
-            />
+            <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#E2684F] p-1">
+              <img 
+                src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
+                alt="Small Tales Logo" 
+                class="h-10"
+              />
+            </div>
           </div>
           <p class="text-white">
             Interactive storytelling platform for creators, educators, and storytellers.
