@@ -1,12 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import { Play, Volume2, ArrowLeft, ArrowRight, Home, Settings, Pause, RotateCcw } from 'lucide-svelte'
+  import { NarrationPlayer } from '$lib/services/narrationGeneration'
 
   export let storyId: string
+  export let isPreviewMode: boolean = false
+  export let initialPageIndex: number = 0
 
   $: story = $storiesStore.currentStory
   $: pages = $storiesStore.currentPages
@@ -14,13 +17,18 @@
   $: publicStoryError = null
   $: isPublicStory = false
 
-  let currentPageIndex = 0
-  let isPlaying = false
-  let isAutoReading = false
+  let currentPageIndex = initialPageIndex
+  let isPlaying = isPreviewMode // Auto-start in preview mode
+  let isAutoReading = isPreviewMode // Auto-read in preview mode
   let orientation: 'landscape' | 'portrait' = 'landscape'
   let showSettings = false
   let audioElement: HTMLAudioElement | null = null
   let currentAudio: string | null = null
+
+  // Narration playback state
+  let currentNarrationPlayer: NarrationPlayer | null = null
+  let highlightedWordIndex: number = -1
+  let activeNarrationElementId: string | null = null
 
   // Story settings
   let volume = 0.7
@@ -33,7 +41,18 @@
   $: canGoPrevious = currentPageIndex > 0
 
   onMount(async () => {
-    if (storyId) {
+    if (isPreviewMode) {
+      // In preview mode, we already have the story loaded
+      // Just set the current page index
+      currentPageIndex = initialPageIndex
+      
+      // Auto-start playback in preview mode
+      if (autoRead) {
+        setTimeout(() => {
+          startAutoReading()
+        }, 500) // Small delay to ensure everything is ready
+      }
+    } else if (storyId) {
       try {
         // First try to load story pages directly (public access)
         await loadPublicStory(storyId)
@@ -62,6 +81,11 @@
         publicStoryError = 'This story is not available or has been made private.'
       }
     }
+  })
+
+  onDestroy(() => {
+    // Clean up any audio or narration players
+    stopAudio()
   })
 
   async function loadPublicStory(storyId: string) {
@@ -128,7 +152,10 @@
 
   function startReading() {
     isPlaying = true
-    currentPageIndex = 0
+    
+    if (!isPreviewMode) {
+      currentPageIndex = 0
+    }
     
     if (autoRead) {
       startAutoReading()
@@ -177,8 +204,71 @@
   }
 
   function playPageAudio() {
-    if (!currentPage?.content?.audioElements) return
+    // First, stop any existing audio or narration
+    stopAudio()
+    
+    if (!currentPage?.content) return
+    
+    // Reset narration state
+    highlightedWordIndex = -1
+    activeNarrationElementId = null
+    
+    // Find text elements with narration data
+    const textElements = (currentPage.content.elements || [])
+      .filter(el => el.type === 'text' && el.properties?.narrationData)
+      .sort((a, b) => {
+        // Sort by narrationSequence if available
+        const seqA = a.properties?.narrationSequence || 0
+        const seqB = b.properties?.narrationSequence || 0
+        return seqA - seqB
+      })
+    
+    if (textElements.length > 0) {
+      // Use the first text element with narration
+      const elementWithNarration = textElements[0]
+      console.log('Found text element with narration:', elementWithNarration.id)
+      
+      try {
+        // Create narration player
+        currentNarrationPlayer = new NarrationPlayer(elementWithNarration.properties.narrationData)
+        activeNarrationElementId = elementWithNarration.id
+        
+        // Set up callbacks
+        currentNarrationPlayer.onWordHighlight = (word, index) => {
+          console.log('Word highlight:', word.word, 'index:', index)
+          highlightedWordIndex = index
+        }
+        
+        currentNarrationPlayer.onPlaybackEnd = () => {
+          console.log('Narration playback ended')
+          currentNarrationPlayer = null
+          activeNarrationElementId = null
+          highlightedWordIndex = -1
+          
+          // Auto-advance to next page if auto-reading
+          if (isAutoReading) {
+            setTimeout(() => nextPage(), 1000) // Small delay before advancing
+          }
+        }
+        
+        // Start playback
+        currentNarrationPlayer.playFull()
+        console.log('Started narration playback')
+      } catch (error) {
+        console.error('Failed to play narration:', error)
+        fallbackToRegularAudio()
+      }
+    } else {
+      // No narration found, fall back to regular audio
+      fallbackToRegularAudio()
+    }
+  }
 
+  function fallbackToRegularAudio() {
+    console.log('Falling back to regular audio playback')
+    
+    if (!currentPage?.content?.audioElements) return
+    
     // Find narration audio for this page
     const narrationAudio = currentPage.content.audioElements.find(audio => 
       audio.properties?.src && !audio.properties?.isIdleLoop
@@ -228,11 +318,20 @@
   }
 
   function stopAudio() {
+    // Stop regular audio
     if (audioElement) {
       audioElement.pause()
       audioElement = null
     }
     currentAudio = null
+    
+    // Stop narration player
+    if (currentNarrationPlayer) {
+      currentNarrationPlayer.destroy()
+      currentNarrationPlayer = null
+      activeNarrationElementId = null
+      highlightedWordIndex = -1
+    }
   }
 
   function estimateReadingTime(): number {
@@ -268,9 +367,17 @@
     window.location.hash = '#/'
   }
 
+  function closePreview() {
+    if (isPreviewMode) {
+      // This will be handled by the parent component
+      stopReading()
+    }
+  }
+
   // Get display elements for current orientation
   $: displayElements = currentPage?.content?.elements?.map(element => {
-    const layouts = element.layouts || {
+    // Ensure layouts object exists with both orientations
+    const layouts = element.layouts || { 
       landscape: { x: 50, y: 50, width: 200, height: 100, zIndex: 0, hidden: false },
       portrait: { x: 30, y: 80, width: 250, height: 120, zIndex: 0, hidden: false }
     }
@@ -279,16 +386,16 @@
     
     return {
       ...element,
-      x: layoutData.x ?? 50,
-      y: layoutData.y ?? 50,
-      width: layoutData.width ?? 200,
-      height: layoutData.height ?? 100,
+      x: layoutData.x ?? (orientation === 'landscape' ? 50 : 30),
+      y: layoutData.y ?? (orientation === 'landscape' ? 50 : 80),
+      width: layoutData.width ?? (orientation === 'landscape' ? 200 : 250),
+      height: layoutData.height ?? (orientation === 'landscape' ? 100 : 120),
       zIndex: layoutData.zIndex ?? 0,
       hidden: layoutData.hidden ?? false
     }
   }).filter(el => !el.hidden).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)) || []
 
-  // Canvas dimensions
+  // Canvas dimensions (logical size)
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
 </script>
@@ -298,10 +405,12 @@
   <header class="bg-soft-buttercream/90 backdrop-blur-sm border-b border-periwinkle-blue/20 p-4 shadow-sm">
     <div class="container flex items-center justify-between">
       <div class="flex items-center gap-4">
-        <Button variant="ghost" size="sm" on:click={navigateHome}>
-          <Home class="w-4 h-4 mr-2" />
-          Home
-        </Button>
+        {#if !isPreviewMode}
+          <Button variant="ghost" size="sm" on:click={navigateHome}>
+            <Home class="w-4 h-4 mr-2" />
+            Home
+          </Button>
+        {/if}
         
         {#if story}
           <div>
@@ -333,7 +442,7 @@
         </Button>
 
         <!-- Sign in prompt for public viewers -->
-        {#if isPublicStory && !$authStore.user}
+        {#if isPublicStory && !$authStore.user && !isPreviewMode}
           <Button variant="secondary" size="sm" on:click={() => window.location.hash = '#/auth'}>
             Sign In
           </Button>
@@ -397,7 +506,7 @@
           <p class="text-dusty-teal">Loading story...</p>
         </div>
       </div>
-    {:else if publicStoryError}
+    {:else if publicStoryError && !isPreviewMode}
       <!-- Story Not Available -->
       <div class="flex-1 flex items-center justify-center p-4">
         <Card class="w-full max-w-md p-8 text-center">
@@ -418,7 +527,7 @@
           </div>
         </Card>
       </div>
-    {:else if !story && pages.length === 0}
+    {:else if !story && pages.length === 0 && !isPreviewMode}
       <!-- Story Not Found -->
       <div class="flex-1 flex items-center justify-center p-4">
         <Card class="w-full max-w-md p-8 text-center">
@@ -432,7 +541,7 @@
           </Button>
         </Card>
       </div>
-    {:else if !isPlaying}
+    {:else if !isPlaying && !isPreviewMode}
       <!-- Story Cover / Start Screen -->
       <div class="flex-1 flex items-center justify-center p-4">
         <Card class="w-full max-w-2xl p-8 text-center">
@@ -463,7 +572,7 @@
           <p class="text-dusty-teal mb-8">{pages.length} pages</p>
 
           <!-- Public story notice -->
-          {#if isPublicStory}
+          {#if isPublicStory && !$authStore.user}
             <div class="bg-periwinkle-blue/10 border border-periwinkle-blue/20 rounded-xl p-4 mb-6">
               <p class="text-sm text-periwinkle-blue">
                 📖 This is a shared story. 
@@ -542,7 +651,20 @@
                         line-height: 1.4;
                       "
                     >
-                      {element.properties?.text || ''}
+                      {#if element.properties?.narrationData && activeNarrationElementId === element.id}
+                        <!-- Render with word-by-word highlighting -->
+                        {#each element.properties.narrationData.wordTimestamps as wordData, index}
+                          <span 
+                            class="inline-block {highlightedWordIndex === index ? 'word-highlight' : ''}"
+                          >
+                            {wordData.word}
+                          </span>
+                          {" "}
+                        {/each}
+                      {:else}
+                        <!-- Render as normal text -->
+                        {element.properties?.text || ''}
+                      {/if}
                     </div>
                   {:else if element.type === 'image'}
                     <img 
@@ -667,5 +789,13 @@
   
   input[type="checkbox"] {
     accent-color: hsl(var(--golden-apricot));
+  }
+  
+  /* Word highlighting animation */
+  .word-highlight {
+    background-color: hsl(var(--golden-apricot) / 0.3);
+    border-radius: 4px;
+    padding: 0 2px;
+    transition: background-color 0.2s ease-in-out;
   }
 </style>

@@ -3,9 +3,10 @@
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import StoryEditor from '$lib/components/editor/StoryEditor.svelte'
+  import StoryPlayer from '$lib/components/player/StoryPlayer.svelte'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { LogIn, FileEdit as Edit, AlertCircle } from 'lucide-svelte'
+  import { LogIn, FileEdit as Edit, AlertCircle, X } from 'lucide-svelte'
 
   // This component receives params from svelte-spa-router
   export let params = {}
@@ -15,8 +16,11 @@
   $: story = $storiesStore.currentStory
   $: currentStoryLoading = $storiesStore.currentStoryLoading
   $: currentCollaborators = $storiesStore.currentCollaborators
+  $: currentPages = $storiesStore.currentPages
 
   let loadError: string | null = null
+  let showPreviewModal = false
+  let previewPageIndex = 0
 
   function navigateToAuth() {
     window.location.hash = '#/auth'
@@ -28,6 +32,19 @@
 
   function navigateToDashboard() {
     window.location.hash = '#/dashboard'
+  }
+
+  function handlePreview(event: CustomEvent) {
+    if (event.detail && typeof event.detail.pageIndex === 'number') {
+      previewPageIndex = event.detail.pageIndex;
+    } else {
+      previewPageIndex = 0;
+    }
+    showPreviewModal = true;
+  }
+
+  function closePreview() {
+    showPreviewModal = false;
   }
 
   // Reactive statement to handle authentication redirect
@@ -123,7 +140,26 @@
     </Card>
   </div>
 {:else if story}
-  <StoryEditor {storyId} />
+  <StoryEditor {storyId} on:preview={handlePreview} />
+
+  {#if showPreviewModal}
+    <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div class="relative w-full h-full max-w-[95vw] max-h-[95vh] bg-soft-buttercream rounded-xl overflow-hidden flex flex-col">
+        <div class="absolute top-4 right-4 z-10">
+          <Button variant="outline" size="sm" class="bg-white/80 backdrop-blur-sm" on:click={closePreview}>
+            <X class="w-4 h-4" />
+          </Button>
+        </div>
+        <div class="flex-1 overflow-hidden">
+          <StoryPlayer 
+            {storyId} 
+            isPreviewMode={true} 
+            initialPageIndex={previewPageIndex} 
+          />
+        </div>
+      </div>
+    </div>
+  {/if}
 {:else if loadError}
   <!-- Show specific error message -->
   <div class="h-screen flex items-center justify-center p-4 bg-white">

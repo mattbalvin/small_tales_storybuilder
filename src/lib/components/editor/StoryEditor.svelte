@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, createEventDispatcher } from 'svelte'
   import { storiesStore, storiesService } from '$lib/stores/stories'
   import { authStore } from '$lib/stores/auth'
   import Button from '$lib/components/ui/button.svelte'
@@ -11,6 +11,8 @@
   import { Plus, Play, Save, Settings, Users, Crown, FileEdit as Edit, Eye, Trash2, Copy, Home, Pencil, Check, X, GripVertical } from 'lucide-svelte'
 
   export let storyId: string
+
+  const dispatch = createEventDispatcher()
 
   let currentPageIndex = 0
   let orientation: 'landscape' | 'portrait' = 'landscape'
@@ -81,6 +83,10 @@
     } else if (event.key === 'Escape') {
       cancelEditingTitle()
     }
+  }
+
+  function handlePreview() {
+    dispatch('preview', { pageIndex: currentPageIndex })
   }
 
   onMount(async () => {
@@ -550,7 +556,7 @@
         </Button>
       {/if}
       
-      <Button variant="outline" size="sm">
+      <Button variant="outline" size="sm" on:click={handlePreview}>
         <Play class="w-4 h-4 mr-2" />
         Preview
       </Button>
