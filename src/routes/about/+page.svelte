@@ -108,7 +108,8 @@
       <p class="mt-2">
         <a href="#/" class="text-white hover:text-golden-apricot transition-colors">Home</a> | 
         <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About</a> | 
-        <a href="#/privacy" class="text-white hover:text-golden-apricot transition-colors">Privacy Policy</a>
+        <a href="#/privacy" class="text-white hover:text-golden-apricot transition-colors">Privacy Policy</a> | 
+        <a href="#/terms" class="text-white hover:text-golden-apricot transition-colors">Terms and Conditions</a>
       </p>
     </div>
   </footer>
