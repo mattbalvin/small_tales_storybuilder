@@ -10,6 +10,7 @@
   import StoryEditor from './routes/editor/[id]/+page.svelte'
   import MediaLibrary from './routes/media/+page.svelte'
   import StoryPlay from './routes/play/[id]/+page.svelte'
+  import Privacy from './routes/privacy/+page.svelte'
   //import Analytics from './routes/analytics/+page.svelte'
 
   const routes = {
@@ -19,6 +20,7 @@
     '/editor/:id': StoryEditor,
     '/media': MediaLibrary,
     '/play/:id': StoryPlay,
+    '/privacy': Privacy,
     //'/analytics': Analytics
   }
 

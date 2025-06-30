@@ -287,7 +287,7 @@
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
+            <li><a href="#/privacy" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
           </ul>
         </div>
