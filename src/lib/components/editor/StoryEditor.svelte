@@ -14,7 +14,7 @@
 
   let currentPageIndex = 0
   let orientation: 'landscape' | 'portrait' = 'landscape'
-  let showSafetyZones = true
+  let showSafetyZones = false
   let showCollaborators = false
   let editingTitle = false
   let editingTitleValue = ''
@@ -541,7 +541,8 @@
         </div>
       {/if}
 
-      <OrientationToggle bind:orientation bind:showSafetyZones />
+      <!--OrientationToggle bind:orientation bind:showSafetyZones /-->
+      <OrientationToggle bind:orientation />
       
       {#if canEdit()}
         <Button variant="outline" size="sm" on:click={saveStory}>
@@ -556,14 +557,14 @@
       </Button>
       
       {#if canManage()}
-        <Button 
+        <!--Button 
           variant="outline" 
           size="sm"
           on:click={() => showCollaborators = !showCollaborators}
         >
           <Users class="w-4 h-4 mr-2" />
           Collaborators
-        </Button>
+      </Button-->
       {/if}
       
       <Button variant="outline" size="sm">
@@ -707,13 +708,13 @@
     </aside>
 
     <!-- Main Editor -->
+      <!-- {showSafetyZones}  after {orientation} -->
     <main class="flex-1 flex min-w-0">
       <div class="flex-1 p-4 min-w-0">
         {#if currentPage}
           <PageEditor 
             page={currentPage} 
             {orientation} 
-            {showSafetyZones}
             readonly={!canEdit()}
             on:update={(event) => {
               if (canEdit()) {
