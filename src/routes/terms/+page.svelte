@@ -141,14 +141,14 @@
           Small Tales is designed to be used by children with adult supervision. We encourage parents and guardians to monitor their children's use of our Service. By allowing a child to use our Service, the parent or guardian agrees to these Terms on behalf of the child.
         </p>
 
-        <h2>13. Contact Us</h2>
+        <!--h2>13. Contact Us</h2>
         <p>
           If you have any questions about these Terms, please contact us at:
         </p>
         <p>
           Email: terms@smalltales.com<br>
           Address: 123 Storybook Lane, Imagination City, IC 12345
-        </p>
+        </p-->
       </div>
     </div>
   </div>
