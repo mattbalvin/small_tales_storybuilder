@@ -165,17 +165,6 @@
           </p>
         </Card>
 
-        <!-- Cross-Platform -->
-        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div class="w-16 h-16 bg-dusty-teal/20 rounded-xl flex items-center justify-center mb-6">
-            <Smartphone class="w-8 h-8 text-dusty-teal" />
-          </div>
-          <h3 class="text-xl font-semibold mb-4 text-coral-sunset">Cross-Platform</h3>
-          <p class="text-dusty-teal">
-            Stories work seamlessly on web, mobile, and tablets. Export to multiple formats including EPUB and PDF.
-          </p>
-        </Card>
-
         <!-- Media Library -->
         <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
           <div class="w-16 h-16 bg-golden-apricot/20 rounded-xl flex items-center justify-center mb-6">
@@ -187,8 +176,25 @@
           </p>
         </Card>
 
-        <!-- Collaboration -->
-        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <!-- Cross-Platform - Coming Soon -->
+        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden">
+          <div class="absolute -right-12 top-6 bg-coral-sunset text-white px-10 py-1 transform rotate-45 shadow-md">
+            <span class="text-xs font-bold">COMING SOON</span>
+          </div>
+          <div class="w-16 h-16 bg-dusty-teal/20 rounded-xl flex items-center justify-center mb-6">
+            <Smartphone class="w-8 h-8 text-dusty-teal" />
+          </div>
+          <h3 class="text-xl font-semibold mb-4 text-coral-sunset">Cross-Platform</h3>
+          <p class="text-dusty-teal">
+            Stories work seamlessly on web, mobile, and tablets. Export to multiple formats including EPUB and PDF.
+          </p>
+        </Card>
+
+        <!-- Collaboration - Coming Soon -->
+        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden">
+          <div class="absolute -right-12 top-6 bg-coral-sunset text-white px-10 py-1 transform rotate-45 shadow-md">
+            <span class="text-xs font-bold">COMING SOON</span>
+          </div>
           <div class="w-16 h-16 bg-periwinkle-blue/20 rounded-xl flex items-center justify-center mb-6">
             <Users class="w-8 h-8 text-periwinkle-blue" />
           </div>
@@ -198,8 +204,11 @@
           </p>
         </Card>
 
-        <!-- Analytics -->
-        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105">
+        <!-- Analytics - Coming Soon -->
+        <Card class="p-8 hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden">
+          <div class="absolute -right-12 top-6 bg-coral-sunset text-white px-10 py-1 transform rotate-45 shadow-md">
+            <span class="text-xs font-bold">COMING SOON</span>
+          </div>
           <div class="w-16 h-16 bg-dusty-teal/20 rounded-xl flex items-center justify-center mb-6">
             <BarChart3 class="w-8 h-8 text-dusty-teal" />
           </div>
