@@ -53,7 +53,6 @@
       <nav class="hidden md:flex items-center gap-8">
         <a href="#" class="text-white font-medium">Home</a>
         <a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a>
-        <a href="#" class="text-white hover:text-golden-apricot transition-colors">Characters</a>
         <a href="#" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
       </nav>
       
