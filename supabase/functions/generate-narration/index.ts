@@ -456,10 +456,10 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
   let wordStartTime = 0;
   let charIndex = 0;
   
-  for (const charData of alignment.characters) {
-    const char = charData;
-    const startTime = Math.round(charData.start_time_ms || 0);
-    const endTime = Math.round(charData.end_time_ms || 0);
+  for (let i = 0; i < alignment.characters.length; i++) {
+    const char = alignment.characters[i];
+    const startTime = Math.round(alignment.character_start_times_seconds[i] * 1000.0 || 0);
+    const endTime = Math.round(alignment.character_end_times_seconds[i] * 1000.0 || 0);
     
     console.log(`Processing character: "${char}", startTime: ${startTime}, endTime: ${endTime}, charIndex: ${charIndex}`);
     
