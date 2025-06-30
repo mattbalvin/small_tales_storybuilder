@@ -248,11 +248,11 @@
     <div class="container">
       <div class="flex justify-between items-center mb-8">
         <div class="self-start">
-          <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#E2684F] p-2">
+          <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#E2684F] p-2 w-48">
             <img 
               src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
               alt="Small Tales Logo" 
-              class="h-20 w-48"
+              class="h-20"
             />
           </div>
           <div class="w-64">
