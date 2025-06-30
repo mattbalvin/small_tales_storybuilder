@@ -2,22 +2,32 @@
   import { onMount } from 'svelte'
   import { authStore, authService } from '$lib/stores/auth'
   import { creditService, SUBSCRIPTION_TIERS, type SubscriptionTier } from '$lib/services/creditService'
+  import { stripeService } from '$lib/services/stripeService'
+  import { stripeConfig } from '$lib/stripe-config'
   import UserCreditsDisplay from '$lib/components/auth/UserCreditsDisplay.svelte'
   import UserCreditHistory from '$lib/components/dashboard/UserCreditHistory.svelte'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { LogIn, BookOpen, Zap, CreditCard, Calendar, CheckCircle, AlertCircle, User, Settings, Home } from 'lucide-svelte'
+  import { LogIn, BookOpen, Zap, CreditCard, Calendar, CheckCircle, AlertCircle, User, Settings, Home, Loader2 } from 'lucide-svelte'
 
   let changingSubscription = false
   let subscriptionChangeSuccess = false
   let subscriptionChangeError = false
   let errorMessage = ''
+  let isLoading = false
+  let loadingProduct = ''
 
   // Get the current subscription tier details
   $: currentTierInfo = SUBSCRIPTION_TIERS.find(tier => tier.id === $authStore.profile?.subscription_tier) || SUBSCRIPTION_TIERS[0]
   
-  // Get other available tiers for upgrading/downgrading
-  $: availableTiers = SUBSCRIPTION_TIERS.filter(tier => tier.id !== $authStore.profile?.subscription_tier)
+  // Get subscription products from Stripe config
+  $: subscriptionProducts = stripeConfig.products.filter(p => p.mode === 'subscription')
+  
+  // Map subscription products to tiers
+  $: subscriptionProductMap = {
+    'creator': subscriptionProducts.find(p => p.tier === 'creator'),
+    'creator_pro': subscriptionProducts.find(p => p.tier === 'creator_pro')
+  }
 
   function navigateToAuth() {
     window.location.hash = '#/auth'
@@ -37,29 +47,61 @@
     window.scrollTo(0, 0)
   }
 
-  async function changeSubscription(tierId: 'free' | 'creator' | 'creator_pro') {
-    changingSubscription = true
-    subscriptionChangeSuccess = false
-    subscriptionChangeError = false
-    errorMessage = ''
+  async function handleSubscribe(priceId: string) {
+    if (!$authStore.user) {
+      navigateToAuth()
+      return
+    }
 
     try {
-      const success = await authService.updateSubscription(tierId)
+      isLoading = true
+      loadingProduct = priceId
       
-      if (success) {
-        subscriptionChangeSuccess = true
-        setTimeout(() => {
-          subscriptionChangeSuccess = false
-        }, 3000)
-      } else {
-        throw new Error('Failed to update subscription')
-      }
+      const checkoutUrl = await stripeService.createCheckoutSession(priceId, 'subscription')
+      window.location.href = checkoutUrl
     } catch (error) {
-      console.error('Error changing subscription:', error)
-      subscriptionChangeError = true
-      errorMessage = error.message || 'An error occurred while updating your subscription'
+      console.error('Failed to create checkout session:', error)
+      alert('Failed to create checkout session. Please try again.')
     } finally {
-      changingSubscription = false
+      isLoading = false
+      loadingProduct = ''
+    }
+  }
+
+  async function changeSubscription(tierId: 'free' | 'creator' | 'creator_pro') {
+    if (tierId === 'free') {
+      // For downgrading to free, we'll just update the local subscription
+      changingSubscription = true
+      subscriptionChangeSuccess = false
+      subscriptionChangeError = false
+      errorMessage = ''
+
+      try {
+        const success = await authService.updateSubscription(tierId)
+        
+        if (success) {
+          subscriptionChangeSuccess = true
+          setTimeout(() => {
+            subscriptionChangeSuccess = false
+          }, 3000)
+        } else {
+          throw new Error('Failed to update subscription')
+        }
+      } catch (error) {
+        console.error('Error changing subscription:', error)
+        subscriptionChangeError = true
+        errorMessage = error.message || 'An error occurred while updating your subscription'
+      } finally {
+        changingSubscription = false
+      }
+    } else {
+      // For upgrading to paid plans, use Stripe checkout
+      const product = subscriptionProductMap[tierId]
+      if (product) {
+        await handleSubscribe(product.priceId)
+      } else {
+        alert('Subscription plan not found')
+      }
     }
   }
 
@@ -280,57 +322,129 @@
                 {/if}
                 
                 <!-- Available Plans -->
-                {#if availableTiers.length > 0}
-                  <h3 class="text-lg font-bold text-dusty-teal mb-4">Available Plans</h3>
-                  
-                  <div class="space-y-4">
-                    {#each availableTiers as tier}
-                      <div class="border border-periwinkle-blue/20 rounded-xl p-4 hover:border-periwinkle-blue/40 transition-colors">
-                        <div class="flex items-start gap-3">
-                          <div class={`w-10 h-10 rounded-lg ${
-                            tier.id === 'free' ? 'bg-dusty-teal/20' : 
-                            tier.id === 'creator' ? 'bg-periwinkle-blue/20' : 
-                            'bg-golden-apricot/20'
-                          } flex items-center justify-center flex-shrink-0`}>
-                            <span class={`text-sm font-bold ${
-                              tier.id === 'free' ? 'text-dusty-teal' : 
-                              tier.id === 'creator' ? 'text-periwinkle-blue' : 
-                              'text-golden-apricot'
-                            }`}>
-                              {tier.id === 'free' ? 'F' : tier.id === 'creator' ? 'C' : 'P'}
+                <h3 class="text-lg font-bold text-dusty-teal mb-4">Available Plans</h3>
+                
+                <div class="space-y-4">
+                  {#if currentTierInfo.id !== 'creator'}
+                    <div class="border border-periwinkle-blue/20 rounded-xl p-4 hover:border-periwinkle-blue/40 transition-colors">
+                      <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-periwinkle-blue/20 flex items-center justify-center flex-shrink-0">
+                          <span class="text-sm font-bold text-periwinkle-blue">C</span>
+                        </div>
+                        
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between mb-1">
+                            <h4 class="font-bold">Creator Plan</h4>
+                            <span class="text-coral-sunset font-medium">$10/month</span>
+                          </div>
+                          
+                          <p class="text-sm text-dusty-teal mb-2">For regular storytellers</p>
+                          
+                          <div class="flex items-center gap-2 mb-3">
+                            <Zap class="w-4 h-4 text-golden-apricot" />
+                            <span class="text-sm">
+                              <span class="font-medium text-golden-apricot">100</span> 
+                              <span class="text-muted-foreground">credits monthly</span>
                             </span>
                           </div>
                           
-                          <div class="flex-1">
-                            <div class="flex items-center justify-between mb-1">
-                              <h4 class="font-bold">{tier.name} Plan</h4>
-                              <span class="text-coral-sunset font-medium">${tier.price}/month</span>
-                            </div>
-                            
-                            <p class="text-sm text-dusty-teal mb-2">{tier.description}</p>
-                            
-                            <div class="flex items-center gap-2 mb-3">
-                              <Zap class="w-4 h-4 text-golden-apricot" />
-                              <span class="text-sm">
-                                <span class="font-medium text-golden-apricot">{tier.monthlyCredits}</span> 
-                                <span class="text-muted-foreground">credits monthly</span>
-                              </span>
-                            </div>
-                            
-                            <Button 
-                              variant={tier.id === 'free' ? 'outline' : tier.id === 'creator' ? 'secondary' : 'default'}
-                              class={tier.id === 'free' ? 'text-dusty-teal border-dusty-teal/30' : ''}
-                              on:click={() => changeSubscription(tier.id)}
-                              disabled={changingSubscription}
-                            >
-                              {tier.id === 'free' ? 'Downgrade' : 'Upgrade'} to {tier.name}
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="secondary"
+                            on:click={() => handleSubscribe(subscriptionProductMap.creator.priceId)}
+                            disabled={isLoading && loadingProduct === subscriptionProductMap.creator.priceId}
+                          >
+                            {#if isLoading && loadingProduct === subscriptionProductMap.creator.priceId}
+                              <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            {:else}
+                              {currentTierInfo.id === 'creator_pro' ? 'Downgrade' : 'Upgrade'} to Creator
+                            {/if}
+                          </Button>
                         </div>
                       </div>
-                    {/each}
-                  </div>
-                {/if}
+                    </div>
+                  {/if}
+                  
+                  {#if currentTierInfo.id !== 'creator_pro'}
+                    <div class="border border-golden-apricot/30 rounded-xl p-4 hover:border-golden-apricot/60 transition-colors bg-golden-apricot/5">
+                      <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-golden-apricot/20 flex items-center justify-center flex-shrink-0">
+                          <span class="text-sm font-bold text-golden-apricot">P</span>
+                        </div>
+                        
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between mb-1">
+                            <h4 class="font-bold">Creator Pro Plan</h4>
+                            <span class="text-coral-sunset font-medium">$20/month</span>
+                          </div>
+                          
+                          <p class="text-sm text-dusty-teal mb-2">For serious storytellers</p>
+                          
+                          <div class="flex items-center gap-2 mb-3">
+                            <Zap class="w-4 h-4 text-golden-apricot" />
+                            <span class="text-sm">
+                              <span class="font-medium text-golden-apricot">250</span> 
+                              <span class="text-muted-foreground">credits monthly</span>
+                            </span>
+                          </div>
+                          
+                          <Button 
+                            class="featured-item"
+                            on:click={() => handleSubscribe(subscriptionProductMap.creator_pro.priceId)}
+                            disabled={isLoading && loadingProduct === subscriptionProductMap.creator_pro.priceId}
+                          >
+                            {#if isLoading && loadingProduct === subscriptionProductMap.creator_pro.priceId}
+                              <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            {:else}
+                              Upgrade to Creator Pro
+                            {/if}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
+                  
+                  {#if currentTierInfo.id !== 'free'}
+                    <div class="border border-dusty-teal/20 rounded-xl p-4 hover:border-dusty-teal/40 transition-colors">
+                      <div class="flex items-start gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-dusty-teal/20 flex items-center justify-center flex-shrink-0">
+                          <span class="text-sm font-bold text-dusty-teal">F</span>
+                        </div>
+                        
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between mb-1">
+                            <h4 class="font-bold">Free Plan</h4>
+                            <span class="text-coral-sunset font-medium">$0/month</span>
+                          </div>
+                          
+                          <p class="text-sm text-dusty-teal mb-2">Perfect for getting started</p>
+                          
+                          <div class="flex items-center gap-2 mb-3">
+                            <Zap class="w-4 h-4 text-golden-apricot opacity-50" />
+                            <span class="text-sm text-muted-foreground">
+                              No monthly credits
+                            </span>
+                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            class="text-dusty-teal border-dusty-teal/30"
+                            on:click={() => changeSubscription('free')}
+                            disabled={changingSubscription}
+                          >
+                            {#if changingSubscription}
+                              <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                              Processing...
+                            {:else}
+                              Downgrade to Free
+                            {/if}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
+                </div>
               </div>
             </Card>
             
