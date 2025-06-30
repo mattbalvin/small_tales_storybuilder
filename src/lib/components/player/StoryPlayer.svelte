@@ -386,6 +386,7 @@
     
     return {
       ...element,
+      // Use layout-specific properties with proper defaults
       x: layoutData.x ?? (orientation === 'landscape' ? 50 : 30),
       y: layoutData.y ?? (orientation === 'landscape' ? 50 : 80),
       width: layoutData.width ?? (orientation === 'landscape' ? 200 : 250),
@@ -639,7 +640,6 @@
                 >
                   {#if element.type === 'text' && showText}
                     <div
-                      class="w-full h-full flex items-center justify-center text-center"
                       style="
                         font-size: {(element.properties?.fontSize || 16) * 0.8}px;
                         color: {element.properties?.color || '#000000'};
@@ -649,13 +649,16 @@
                         padding: 8px;
                         border-radius: 8px;
                         line-height: 1.4;
+                        width: 100%;
+                        height: 100%;
+                        overflow: hidden;
                       "
                     >
                       {#if element.properties?.narrationData && activeNarrationElementId === element.id}
                         <!-- Render with word-by-word highlighting -->
                         {#each element.properties.narrationData.wordTimestamps as wordData, index}
                           <span 
-                            class="inline-block {highlightedWordIndex === index ? 'word-highlight' : ''}"
+                            class="inline {highlightedWordIndex === index ? 'word-highlight' : ''}"
                           >
                             {wordData.word}
                           </span>
@@ -693,7 +696,7 @@
               <Button 
                 variant="outline" 
                 on:click={previousPage}
-                disabled={!canGoPrevious}
+                disabled={!canGoPrevious || isPreviewMode}
                 class="accent-element"
               >
                 <ArrowLeft class="w-4 h-4 mr-2" />
@@ -727,7 +730,7 @@
               <Button 
                 variant="outline" 
                 on:click={nextPage}
-                disabled={!canGoNext}
+                disabled={!canGoNext || isPreviewMode}
                 class="accent-element"
               >
                 Next
@@ -736,7 +739,7 @@
             </div>
 
             <!-- Page Navigation -->
-            {#if pages.length > 1}
+            {#if pages.length > 1 && !isPreviewMode}
               <div class="flex justify-center mt-6">
                 <div class="flex gap-2 max-w-full overflow-x-auto">
                   {#each pages as page, index}
