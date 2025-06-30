@@ -13,6 +13,7 @@ interface StoriesState {
   currentCollaborators: StoryCollaborator[]
   loading: boolean
   currentStoryLoading: boolean
+  error: string | null
 }
 
 const initialState: StoriesState = {
@@ -21,43 +22,85 @@ const initialState: StoriesState = {
   currentPages: [],
   currentCollaborators: [],
   loading: false,
-  currentStoryLoading: false
+  currentStoryLoading: false,
+  error: null
 }
 
 export const storiesStore = writable<StoriesState>(initialState)
 
+// Helper function to handle Supabase errors
+function handleSupabaseError(error: any, context: string): Error {
+  console.error(`${context} error:`, error)
+  
+  if (error.message?.includes('Failed to fetch')) {
+    return new Error('Unable to connect to the server. Please check your internet connection and try again.')
+  }
+  
+  if (error.code === 'PGRST301') {
+    return new Error('Story not found or you do not have permission to access it.')
+  }
+  
+  if (error.code === 'PGRST116') {
+    return new Error('No data found.')
+  }
+  
+  if (error.message?.includes('JWT')) {
+    return new Error('Authentication expired. Please sign in again.')
+  }
+  
+  return new Error(error.message || `${context} failed. Please try again.`)
+}
+
 export const storiesService = {
   async loadStories(userId: string) {
-    storiesStore.update(state => ({ ...state, loading: true }))
+    storiesStore.update(state => ({ ...state, loading: true, error: null }))
     
-    // Load stories where user is a collaborator (including owned stories)
-    const { data: stories, error } = await supabase
-      .from('stories')
-      .select(`
-        *,
-        story_collaborators!inner(
-          permission_level,
-          accepted_at
-        )
-      `)
-      .eq('story_collaborators.user_id', userId)
-      .not('story_collaborators.accepted_at', 'is', null)
-      .order('updated_at', { ascending: false })
+    try {
+      // Load stories where user is a collaborator (including owned stories)
+      const { data: stories, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          story_collaborators!inner(
+            permission_level,
+            accepted_at
+          )
+        `)
+        .eq('story_collaborators.user_id', userId)
+        .not('story_collaborators.accepted_at', 'is', null)
+        .order('updated_at', { ascending: false })
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Loading stories')
 
-    storiesStore.update(state => ({
-      ...state,
-      stories: stories || [],
-      loading: false
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        stories: stories || [],
+        loading: false,
+        error: null
+      }))
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load stories'
+      storiesStore.update(state => ({
+        ...state,
+        stories: [],
+        loading: false,
+        error: errorMessage
+      }))
+      throw error
+    }
   },
 
   async loadPublicStoryData(storyId: string) {
-    storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
+    storiesStore.update(state => ({ ...state, currentStoryLoading: true, error: null }))
     
     try {
       console.log('Loading public story data:', storyId)
+      
+      // Test basic connectivity first
+      const { error: healthError } = await supabase.from('stories').select('count', { count: 'exact', head: true })
+      if (healthError) {
+        throw handleSupabaseError(healthError, 'Database connectivity check')
+      }
       
       // Load story metadata - let RLS handle access control
       const { data: storyData, error: storyError } = await supabase
@@ -67,46 +110,38 @@ export const storiesService = {
         .maybeSingle()
 
       if (storyError) {
-        console.error('Public story access error:', storyError)
-        storiesStore.update(state => ({
-          ...state,
-          currentStory: null,
-          currentStoryLoading: false
-        }))
-        throw new Error(`Story not found or not accessible: ${storyError.message}`)
+        throw handleSupabaseError(storyError, 'Loading public story')
       }
 
       if (!storyData) {
-        storiesStore.update(state => ({
-          ...state,
-          currentStory: null,
-          currentStoryLoading: false
-        }))
-        throw new Error('Story not found')
+        throw new Error('Story not found or is not publicly accessible')
       }
 
       storiesStore.update(state => ({
         ...state,
         currentStory: storyData,
         currentCollaborators: [], // No collaborators for public access
-        currentStoryLoading: false
+        currentStoryLoading: false,
+        error: null
       }))
 
       console.log('Public story loaded successfully:', storyData)
       return storyData
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load story'
       console.error('Error in loadPublicStoryData:', error)
       storiesStore.update(state => ({
         ...state,
         currentStory: null,
-        currentStoryLoading: false
+        currentStoryLoading: false,
+        error: errorMessage
       }))
       throw error
     }
   },
 
   async loadSingleStory(storyId: string, userId: string) {
-    storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
+    storiesStore.update(state => ({ ...state, currentStoryLoading: true, error: null }))
     
     try {
       console.log('Loading story:', storyId, 'for user:', userId)
@@ -127,21 +162,10 @@ export const storiesService = {
         .single()
 
       if (storyError) {
-        console.error('Story access error:', storyError)
-        storiesStore.update(state => ({
-          ...state,
-          currentStory: null,
-          currentStoryLoading: false
-        }))
-        throw new Error(`You don't have access to this story: ${storyError.message}`)
+        throw handleSupabaseError(storyError, 'Loading authenticated story')
       }
 
       if (!storyData) {
-        storiesStore.update(state => ({
-          ...state,
-          currentStory: null,
-          currentStoryLoading: false
-        }))
         throw new Error('Story not found or access denied')
       }
 
@@ -175,7 +199,8 @@ export const storiesService = {
         ...state,
         currentStory: storyData,
         currentCollaborators: transformedCollaborators,
-        currentStoryLoading: false
+        currentStoryLoading: false,
+        error: null
       }))
 
       console.log('Story loaded successfully:', storyData)
@@ -183,11 +208,13 @@ export const storiesService = {
       console.log('Collaborators loaded:', transformedCollaborators.length)
       return storyData
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load story'
       console.error('Error in loadSingleStory:', error)
       storiesStore.update(state => ({
         ...state,
         currentStory: null,
-        currentStoryLoading: false
+        currentStoryLoading: false,
+        error: errorMessage
       }))
       throw error
     }
@@ -218,8 +245,7 @@ export const storiesService = {
         .single()
 
       if (error) {
-        console.error('Story creation error:', error)
-        throw new Error(`Failed to create story: ${error.message}`)
+        throw handleSupabaseError(error, 'Creating story')
       }
 
       console.log('Story created successfully:', data)
@@ -293,218 +319,262 @@ export const storiesService = {
   },
 
   async updateStory(id: string, updates: Database['public']['Tables']['stories']['Update']) {
-    const { data, error } = await supabase
-      .from('stories')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Updating story')
 
-    storiesStore.update(state => ({
-      ...state,
-      stories: state.stories.map(story => 
-        story.id === id ? data : story
-      ),
-      currentStory: state.currentStory?.id === id ? data : state.currentStory
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        stories: state.stories.map(story => 
+          story.id === id ? data : story
+        ),
+        currentStory: state.currentStory?.id === id ? data : state.currentStory
+      }))
 
-    return data
+      return data
+    } catch (error) {
+      console.error('Error updating story:', error)
+      throw error
+    }
   },
 
   async deleteStory(id: string) {
-    const { error } = await supabase
-      .from('stories')
-      .delete()
-      .eq('id', id)
+    try {
+      const { error } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', id)
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Deleting story')
 
-    storiesStore.update(state => ({
-      ...state,
-      stories: state.stories.filter(story => story.id !== id),
-      currentStory: state.currentStory?.id === id ? null : state.currentStory
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        stories: state.stories.filter(story => story.id !== id),
+        currentStory: state.currentStory?.id === id ? null : state.currentStory
+      }))
+    } catch (error) {
+      console.error('Error deleting story:', error)
+      throw error
+    }
   },
 
   async loadStoryPages(storyId: string) {
-    console.log('Loading story pages for:', storyId)
-    
-    const { data: pages, error } = await supabase
-      .from('story_pages')
-      .select('*')
-      .eq('story_id', storyId)
-      .order('page_number')
+    try {
+      console.log('Loading story pages for:', storyId)
+      
+      const { data: pages, error } = await supabase
+        .from('story_pages')
+        .select('*')
+        .eq('story_id', storyId)
+        .order('page_number')
 
-    if (error) {
+      if (error) {
+        throw handleSupabaseError(error, 'Loading story pages')
+      }
+
+      console.log('Loaded', pages?.length || 0, 'pages for story', storyId)
+
+      storiesStore.update(state => ({
+        ...state,
+        currentPages: pages || []
+      }))
+
+      return pages || []
+    } catch (error) {
       console.error('Error loading story pages:', error)
       throw error
     }
-
-    console.log('Loaded', pages?.length || 0, 'pages for story', storyId)
-
-    storiesStore.update(state => ({
-      ...state,
-      currentPages: pages || []
-    }))
-
-    return pages || []
   },
 
   async createPage(page: Database['public']['Tables']['story_pages']['Insert']) {
-    const { data, error } = await supabase
-      .from('story_pages')
-      .insert(page)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('story_pages')
+        .insert(page)
+        .select()
+        .single()
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Creating page')
 
-    storiesStore.update(state => ({
-      ...state,
-      currentPages: [...state.currentPages, data].sort((a, b) => a.page_number - b.page_number)
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        currentPages: [...state.currentPages, data].sort((a, b) => a.page_number - b.page_number)
+      }))
 
-    return data
+      return data
+    } catch (error) {
+      console.error('Error creating page:', error)
+      throw error
+    }
   },
 
   async updatePage(id: string, updates: Database['public']['Tables']['story_pages']['Update']) {
-    const { data, error } = await supabase
-      .from('story_pages')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('story_pages')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Updating page')
 
-    storiesStore.update(state => ({
-      ...state,
-      currentPages: state.currentPages.map(page => 
-        page.id === id ? data : page
-      )
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        currentPages: state.currentPages.map(page => 
+          page.id === id ? data : page
+        )
+      }))
 
-    return data
+      return data
+    } catch (error) {
+      console.error('Error updating page:', error)
+      throw error
+    }
   },
 
   async deletePage(id: string) {
-    const { error } = await supabase
-      .from('story_pages')
-      .delete()
-      .eq('id', id)
+    try {
+      const { error } = await supabase
+        .from('story_pages')
+        .delete()
+        .eq('id', id)
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Deleting page')
 
-    storiesStore.update(state => ({
-      ...state,
-      currentPages: state.currentPages.filter(page => page.id !== id)
-    }))
+      storiesStore.update(state => ({
+        ...state,
+        currentPages: state.currentPages.filter(page => page.id !== id)
+      }))
+    } catch (error) {
+      console.error('Error deleting page:', error)
+      throw error
+    }
   },
 
   async inviteCollaborator(storyId: string, email: string, permissionLevel: 'editor' | 'viewer' = 'editor') {
-    // First, find the user by email
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single()
+    try {
+      // First, find the user by email
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single()
 
-    if (userError || !user) {
-      throw new Error('User not found with that email address')
+      if (userError || !user) {
+        throw new Error('User not found with that email address')
+      }
+
+      // Add collaborator
+      const { data, error } = await supabase
+        .from('story_collaborators')
+        .insert({
+          story_id: storyId,
+          user_id: user.id,
+          permission_level: permissionLevel,
+          invited_by: (await supabase.auth.getUser()).data.user?.id,
+          accepted_at: new Date().toISOString() // Auto-accept for now
+        })
+        .select(`
+          *,
+          user:users!story_collaborators_user_id_fkey(
+            id,
+            email,
+            full_name,
+            avatar_url
+          )
+        `)
+        .single()
+
+      if (error) throw handleSupabaseError(error, 'Inviting collaborator')
+
+      // Transform the data to match expected structure
+      const transformedData = {
+        ...data,
+        users: data.user
+      }
+
+      // Update store
+      storiesStore.update(state => ({
+        ...state,
+        currentCollaborators: [...state.currentCollaborators, transformedData]
+      }))
+
+      return transformedData
+    } catch (error) {
+      console.error('Error inviting collaborator:', error)
+      throw error
     }
-
-    // Add collaborator
-    const { data, error } = await supabase
-      .from('story_collaborators')
-      .insert({
-        story_id: storyId,
-        user_id: user.id,
-        permission_level: permissionLevel,
-        invited_by: (await supabase.auth.getUser()).data.user?.id,
-        accepted_at: new Date().toISOString() // Auto-accept for now
-      })
-      .select(`
-        *,
-        user:users!story_collaborators_user_id_fkey(
-          id,
-          email,
-          full_name,
-          avatar_url
-        )
-      `)
-      .single()
-
-    if (error) throw error
-
-    // Transform the data to match expected structure
-    const transformedData = {
-      ...data,
-      users: data.user
-    }
-
-    // Update store
-    storiesStore.update(state => ({
-      ...state,
-      currentCollaborators: [...state.currentCollaborators, transformedData]
-    }))
-
-    return transformedData
   },
 
   async removeCollaborator(storyId: string, userId: string) {
-    const { error } = await supabase
-      .from('story_collaborators')
-      .delete()
-      .eq('story_id', storyId)
-      .eq('user_id', userId)
+    try {
+      const { error } = await supabase
+        .from('story_collaborators')
+        .delete()
+        .eq('story_id', storyId)
+        .eq('user_id', userId)
 
-    if (error) throw error
+      if (error) throw handleSupabaseError(error, 'Removing collaborator')
 
-    // Update store
-    storiesStore.update(state => ({
-      ...state,
-      currentCollaborators: state.currentCollaborators.filter(
-        collab => collab.user_id !== userId
-      )
-    }))
+      // Update store
+      storiesStore.update(state => ({
+        ...state,
+        currentCollaborators: state.currentCollaborators.filter(
+          collab => collab.user_id !== userId
+        )
+      }))
+    } catch (error) {
+      console.error('Error removing collaborator:', error)
+      throw error
+    }
   },
 
   async updateCollaboratorPermission(storyId: string, userId: string, permissionLevel: 'owner' | 'editor' | 'viewer') {
-    const { data, error } = await supabase
-      .from('story_collaborators')
-      .update({ permission_level: permissionLevel })
-      .eq('story_id', storyId)
-      .eq('user_id', userId)
-      .select(`
-        *,
-        user:users!story_collaborators_user_id_fkey(
-          id,
-          email,
-          full_name,
-          avatar_url
+    try {
+      const { data, error } = await supabase
+        .from('story_collaborators')
+        .update({ permission_level: permissionLevel })
+        .eq('story_id', storyId)
+        .eq('user_id', userId)
+        .select(`
+          *,
+          user:users!story_collaborators_user_id_fkey(
+            id,
+            email,
+            full_name,
+            avatar_url
+          )
+        `)
+        .single()
+
+      if (error) throw handleSupabaseError(error, 'Updating collaborator permission')
+
+      // Transform the data to match expected structure
+      const transformedData = {
+        ...data,
+        users: data.user
+      }
+
+      // Update store
+      storiesStore.update(state => ({
+        ...state,
+        currentCollaborators: state.currentCollaborators.map(collab =>
+          collab.user_id === userId ? transformedData : collab
         )
-      `)
-      .single()
+      }))
 
-    if (error) throw error
-
-    // Transform the data to match expected structure
-    const transformedData = {
-      ...data,
-      users: data.user
+      return transformedData
+    } catch (error) {
+      console.error('Error updating collaborator permission:', error)
+      throw error
     }
-
-    // Update store
-    storiesStore.update(state => ({
-      ...state,
-      currentCollaborators: state.currentCollaborators.map(collab =>
-        collab.user_id === userId ? transformedData : collab
-      )
-    }))
-
-    return transformedData
   },
 
   getUserPermissionLevel(userId: string): 'owner' | 'editor' | 'viewer' | null {
@@ -525,7 +595,15 @@ export const storiesService = {
       ...state,
       currentStory: story,
       currentStoryLoading: false,
-      currentCollaborators: story ? state.currentCollaborators : []
+      currentCollaborators: story ? state.currentCollaborators : [],
+      error: null
+    }))
+  },
+
+  clearError() {
+    storiesStore.update(state => ({
+      ...state,
+      error: null
     }))
   }
 }
