@@ -43,7 +43,7 @@
       
       <div class="flex items-center gap-8">
         <a href="#" class="text-white font-medium">Home</a>
-        <a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a>
+        <!--a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a-->
         <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
       </div>
       
@@ -274,15 +274,15 @@
           </ul>
         </div>
 
-        <div class="self-start">
-          <h4 class="font-medium mb-4 text-white">Resources</h4>
-          <ul class="space-y-3 text-white">
+        <!--div class="self-start"-->
+          <!--h4 class="font-medium mb-4 text-white">Resources</h4-->
+          <!--ul class="space-y-3 text-white"-->
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li-->
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li-->
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li>
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li-->
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li-->
-          </ul>
-        </div>
+          <!--/ul-->
+      <!--/div-->
 
         <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Company</h4>
