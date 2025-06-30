@@ -379,15 +379,6 @@
   // Canvas dimensions
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
-  
-  // Get highlighted text for narration
-  function getHighlightedText(text: string, highlightedWord: string | null): string {
-    if (!highlightedWord || !text) return text
-    
-    // Simple word highlighting - this could be improved for more complex cases
-    const regex = new RegExp(`\\b${highlightedWord}\\b`, 'gi')
-    return text.replace(regex, `<span class="word-highlight">$&</span>`)
-  }
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-soft-buttercream via-soft-buttercream to-periwinkle-blue/10 flex flex-col">
@@ -643,8 +634,23 @@
                         line-height: 1.4;
                       "
                     >
-                      {#if element.id === activeNarrationElementId && currentWord}
-                        {@html getHighlightedText(element.properties?.text || '', currentWord)}
+                      {#if element.id === activeNarrationElementId && element.properties?.narrationData}
+                        <!-- Split text into words and highlight the current word -->
+                        {#each element.properties.text.split(/(\s+)/) as part, i}
+                          {#if part.trim()}
+                            <span class={currentWord && part.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''} 
+                                  style={currentWord && part.toLowerCase().includes(currentWord.toLowerCase()) ? 
+                                    `color: ${element.properties.color || '#000000'}; 
+                                     background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
+                                     box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
+                                       `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
+                                    : ''}>
+                              {part}
+                            </span>
+                          {:else}
+                            {part}
+                          {/if}
+                        {/each}
                       {:else}
                         {element.properties?.text || ''}
                       {/if}
@@ -775,14 +781,11 @@
   }
   
   .word-highlight {
-    background-color: hsl(var(--golden-apricot) / 0.3);
-    color: inherit;
+    display: inline-block;
     font-weight: bold;
     transform: scale(1.05);
-    display: inline-block;
     border-radius: 4px;
     padding: 0 2px;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 0 5px hsl(var(--golden-apricot) / 0.5);
   }
 </style>
