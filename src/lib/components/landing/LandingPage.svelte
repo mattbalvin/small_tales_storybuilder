@@ -253,24 +253,14 @@
             alt="Small Tales Logo" 
             class="h-20"
           />
+          <div>
+            <p class="text-white">
+              Interactive storytelling platform for creators, educators, and storytellers.
+            </p>
+          </div>          
         </div>
-        
-        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">
-          <img 
-            src="/white_circle_360x360.png" 
-            alt="Powered by Bolt.new" 
-            class="h-24"
-          />
-        </a>
-      </div>
-      
-      <div class="grid md:grid-cols-4 gap-8">
-        <div>
-          <p class="text-white">
-            Interactive storytelling platform for creators, educators, and storytellers.
-          </p>
-        </div>
-        
+
+        <div class="grid md:grid-cols-4 gap-8">
         <div>
           <h4 class="font-medium mb-4 text-white">Product</h4>
           <ul class="space-y-3 text-white">
@@ -300,6 +290,16 @@
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
           </ul>
         </div>
+        </div>
+
+        
+        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">
+          <img 
+            src="/white_circle_360x360.png" 
+            alt="Powered by Bolt.new" 
+            class="h-24"
+          />
+        </a>
       </div>
       
       <div class="border-t border-white/20 mt-8 pt-8 text-center text-white">
