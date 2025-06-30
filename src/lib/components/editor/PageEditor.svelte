@@ -1126,9 +1126,9 @@
               {/if}
             {:else}
               <!-- Hidden element placeholder -->
-              <div class="w-full h-full border-2 border-dashed border-periwinkle-blue/30 bg-periwinkle-blue/5 flex items-center justify-center rounded-xl">
+              <!--div class="w-full h-full border-2 border-dashed border-periwinkle-blue/30 bg-periwinkle-blue/5 flex items-center justify-center rounded-xl">
                 <span class="text-sm text-periwinkle-blue">Hidden</span>
-              </div>
+              </div-->
             {/if}
 
             <!-- Resize handles (only show when selected and not readonly) -->
