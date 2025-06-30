@@ -57,7 +57,7 @@
           </Button>
         {:else}
           <Button on:click={navigateToAuth} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6">
-            Read Now
+            Create Your Own Story
           </Button>
         {/if}
       </div>
