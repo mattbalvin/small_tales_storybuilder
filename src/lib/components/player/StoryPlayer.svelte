@@ -346,22 +346,48 @@
     }
   }
 
-  // Split text into words and spaces for interactive word clicking
-  function splitTextForInteraction(text: string): { type: 'word' | 'space'; content: string }[] {
-    if (!text) return []
+  // Process text for interactive word clicking without adding extra spaces
+  function processTextForInteraction(text: string) {
+    if (!text) return [];
     
-    const parts: { type: 'word' | 'space'; content: string }[] = []
-    const matches = text.split(/(\s+)/)
+    // This regex matches words and spaces, preserving punctuation with words
+    const parts = [];
+    let currentWord = '';
+    let currentSpace = '';
     
-    matches.forEach(part => {
-      if (part.trim()) {
-        parts.push({ type: 'word', content: part })
-      } else if (part) {
-        parts.push({ type: 'space', content: part })
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      
+      if (/\s/.test(char)) {
+        // If we have a word in progress, add it
+        if (currentWord) {
+          parts.push({ type: 'word', content: currentWord });
+          currentWord = '';
+        }
+        
+        // Add to current space
+        currentSpace += char;
+      } else {
+        // If we have a space in progress, add it
+        if (currentSpace) {
+          parts.push({ type: 'space', content: currentSpace });
+          currentSpace = '';
+        }
+        
+        // Add to current word
+        currentWord += char;
       }
-    })
+    }
     
-    return parts
+    // Add any remaining word or space
+    if (currentWord) {
+      parts.push({ type: 'word', content: currentWord });
+    }
+    if (currentSpace) {
+      parts.push({ type: 'space', content: currentSpace });
+    }
+    
+    return parts;
   }
 
   // Get display elements for current orientation
@@ -645,33 +671,29 @@
                     >
                       {#if element.properties?.narrationData}
                         <!-- Interactive text with clickable words -->
-                        <span class="text-content">
-                          {#each splitTextForInteraction(element.properties.text) as part}
-                            {#if part.type === 'word'}
-                              <!-- Clickable word with optional highlight -->
-                              <span 
-                                class="interactive-word {currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
-                                style={currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 
-                                  `color: ${element.properties.color || '#000000'}; 
-                                   background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
-                                   box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
-                                     `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
-                                  : ''}
-                                on:click={() => handleWordClick(part.content, element)}
-                                role="button"
-                                tabindex="0"
-                              >
-                                {part.content}
-                              </span>
-                            {:else}
-                              <!-- Non-interactive space -->
-                              <span class="text-space">{part.content}</span>
-                            {/if}
-                          {/each}
-                        </span>
+                        {#each processTextForInteraction(element.properties.text) as part}
+                          {#if part.type === 'word'}
+                            <!-- Clickable word with optional highlight -->
+                            <span 
+                              class="interactive-word {currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
+                              style={currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 
+                                `color: ${element.properties.color || '#000000'}; 
+                                 background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
+                                 box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
+                                   `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
+                                : ''}
+                              on:click={() => handleWordClick(part.content, element)}
+                              role="button"
+                              tabindex="0"
+                            >{part.content}</span>
+                          {:else}
+                            <!-- Non-interactive space -->
+                            <span class="text-space">{part.content}</span>
+                          {/if}
+                        {/each}
                       {:else}
                         <!-- Regular non-interactive text -->
-                        <span class="text-content">{element.properties?.text || ''}</span>
+                        {element.properties?.text || ''}
                       {/if}
                     </div>
                   {:else if element.type === 'image'}
@@ -831,13 +853,6 @@
   
   .interactive-word:active {
     opacity: 0.8;
-  }
-  
-  .text-content {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    display: inline;
   }
   
   .text-space {
