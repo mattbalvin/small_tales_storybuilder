@@ -81,7 +81,7 @@
               class="accent-element"
             >
               <User class="w-4 h-4 mr-2" />
-              Account
+              {$authStore.profile?.full_name || $authStore.user.email.split('@')[0] || 'Account'}
             </Button>
             
             <button 
