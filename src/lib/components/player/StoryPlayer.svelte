@@ -324,9 +324,12 @@
   function handleWordClick(word: string, element: any) {
     if (!element || !element.properties?.narrationData) return
     
+    // Clean the word to remove punctuation for lookup
+    const cleanWord = word.replace(/[^\w\s']/g, '').toLowerCase()
+    
     // If we already have a narration player, use it
     if (currentNarrationPlayer && activeNarrationElementId === element.id) {
-      currentNarrationPlayer.playWord(word)
+      currentNarrationPlayer.playWord(cleanWord)
     } else {
       // Otherwise create a new one
       stopAudio()
@@ -336,7 +339,7 @@
         currentNarrationPlayer = new NarrationPlayer(narrationData)
         activeNarrationElementId = element.id
         
-        currentNarrationPlayer.playWord(word)
+        currentNarrationPlayer.playWord(cleanWord)
       } catch (error) {
         console.error('Failed to play word:', error)
       }
@@ -651,8 +654,8 @@
                             {#if part.type === 'word'}
                               <!-- Clickable word with optional highlight -->
                               <span 
-                                class="interactive-word {currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
-                                style={currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 
+                                class="interactive-word {currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
+                                style={currentWord && part.content.replace(/[^\w\s']/g, '').toLowerCase().includes(currentWord.toLowerCase()) ? 
                                   `color: ${element.properties.color || '#000000'}; 
                                    background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
                                    box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
