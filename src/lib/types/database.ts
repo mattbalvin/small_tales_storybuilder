@@ -10,6 +10,10 @@ export interface Database {
           role: 'admin' | 'author' | 'reader'
           created_at: string
           updated_at: string
+          credit_balance: number
+          subscription_tier: 'free' | 'creator' | 'creator_pro'
+          subscription_expires_at: string | null
+          last_credits_reset_at: string | null
         }
         Insert: {
           id?: string
@@ -19,6 +23,10 @@ export interface Database {
           role?: 'admin' | 'author' | 'reader'
           created_at?: string
           updated_at?: string
+          credit_balance?: number
+          subscription_tier?: 'free' | 'creator' | 'creator_pro'
+          subscription_expires_at?: string | null
+          last_credits_reset_at?: string | null
         }
         Update: {
           id?: string
@@ -28,6 +36,10 @@ export interface Database {
           role?: 'admin' | 'author' | 'reader'
           created_at?: string
           updated_at?: string
+          credit_balance?: number
+          subscription_tier?: 'free' | 'creator' | 'creator_pro'
+          subscription_expires_at?: string | null
+          last_credits_reset_at?: string | null
         }
       }
       stories: {
@@ -313,12 +325,60 @@ export interface Database {
           created_at?: string
         }
       }
+      credit_transactions: {
+        Row: {
+          id: string
+          user_id: string
+          amount: number
+          description: string
+          transaction_type: 'purchase' | 'subscription' | 'usage' | 'bonus' | 'refund'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          amount: number
+          description: string
+          transaction_type: 'purchase' | 'subscription' | 'usage' | 'bonus' | 'refund'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          amount?: number
+          description?: string
+          transaction_type?: 'purchase' | 'subscription' | 'usage' | 'bonus' | 'refund'
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      use_credits: {
+        Args: {
+          user_id: string
+          amount: number
+        }
+        Returns: boolean
+      }
+      add_credits: {
+        Args: {
+          user_id: string
+          amount: number
+        }
+        Returns: boolean
+      }
+      record_credit_transaction: {
+        Args: {
+          user_id: string
+          amount: number
+          description: string
+          transaction_type: 'purchase' | 'subscription' | 'usage' | 'bonus' | 'refund'
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
