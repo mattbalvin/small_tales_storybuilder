@@ -289,12 +289,6 @@
           </div>
         </div>
 
-        <div>
-          <p class="text-white">
-            Interactive storytelling platform for creators, educators, and storytellers.
-          </p>
-        </div>          
-        
         <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">
           <img 
             src="/white_circle_360x360.png" 
@@ -303,6 +297,13 @@
           />
         </a>
       </div>
+
+        <div>
+          <p class="text-white">
+            Interactive storytelling platform for creators, educators, and storytellers.
+          </p>
+        </div>          
+        
       
       <div class="border-t border-white/20 mt-8 pt-8 text-center text-white">
         <p>&copy; 2025 Small Tales. All rights reserved.</p>
