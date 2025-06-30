@@ -638,7 +638,7 @@
                   
                   <!-- Page actions (show on hover) -->
                   {#if canEdit() && currentPageIndex === index}
-                    <div class="mt-1 flex gap-1">
+                    <div class="mt-1 ml-auto flex gap-1">
                       <Button 
                         variant="ghost" 
                         size="sm" 
@@ -654,7 +654,7 @@
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        class="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                        class="h-5 w-5 ml-auto p-0 text-destructive hover:text-destructive"
                         on:click={(event) => { 
                           event.stopPropagation(); 
                           deletePage(index); 
