@@ -574,7 +574,7 @@
 
   <div class="flex-1 flex">
     <!-- Sidebar -->
-    <aside class="w-64 border-r border-periwinkle-blue/20 bg-soft-buttercream p-4 flex flex-col">
+    <aside class="w-48 border-r border-periwinkle-blue/20 bg-soft-buttercream p-4 flex flex-col">
       <div class="space-y-4 flex-1">
         <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
         <div class="flex items-center justify-between">

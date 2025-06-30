@@ -1189,7 +1189,7 @@
 
   <!-- Sidebar with Element Toolbar -->
   {#if !readonly}
-    <div class="w-120">
+    <div class="w-80">
       <ElementToolbar 
         {selectedElementId}
         selectedElement={selectedElement}
