@@ -8,7 +8,7 @@
   import UserCreditHistory from '$lib/components/dashboard/UserCreditHistory.svelte'
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { LogIn, BookOpen, Zap, CreditCard, Calendar, CheckCircle, AlertCircle, User, Settings, Home, Loader2 } from 'lucide-svelte'
+  import { LogIn, BookOpen, Zap, Calendar, CheckCircle, AlertCircle, User, Settings, Home, Loader2 } from 'lucide-svelte'
 
   let changingSubscription = false
   let subscriptionChangeSuccess = false
@@ -107,7 +107,9 @@
 
   function formatDate(dateString: string | null): string {
     if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString()
+    
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
   }
 
   function getRemainingDays(dateString: string | null): number {
@@ -539,27 +541,6 @@
             
             <!-- Credit History -->
             <UserCreditHistory limit={10} showViewAll={false} />
-            
-            <!-- Payment Methods (placeholder) -->
-            <Card class="overflow-hidden">
-              <div class="p-4 border-b border-periwinkle-blue/20">
-                <h3 class="font-semibold text-coral-sunset">Payment Methods</h3>
-              </div>
-              <div class="p-4">
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="w-10 h-10 bg-periwinkle-blue/10 rounded-lg flex items-center justify-center">
-                    <CreditCard class="w-5 h-5 text-periwinkle-blue" />
-                  </div>
-                  <div class="text-center flex-1">
-                    <p class="text-dusty-teal">No payment methods added yet</p>
-                  </div>
-                </div>
-                
-                <Button variant="outline" class="w-full accent-element">
-                  Add Payment Method
-                </Button>
-              </div>
-            </Card>
           </div>
         </div>
       </div>
