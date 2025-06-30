@@ -572,7 +572,7 @@
     </div>
   </header>
 
-  <div class="flex-1 flex min-w-0">
+  <div class="flex-1 flex min-w-60">
     <!-- Sidebar -->
     <aside class="w-16 border-r border-periwinkle-blue/20 bg-soft-buttercream p-2 flex flex-col">
       <div class="space-y-2 flex-1 overflow-y-auto">
