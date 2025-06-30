@@ -172,7 +172,7 @@
           </div>
           <h3 class="text-xl font-semibold mb-4 text-coral-sunset">Media Library</h3>
           <p class="text-dusty-teal">
-            Centralized asset management with tagging, search, and organization. Upload images, audio, and video files.
+            Centralized asset management with tagging, search, and organization. Upload your own image and audio assets or use our integrated generative AI features to create the perfect art for your story.
           </p>
         </Card>
 
