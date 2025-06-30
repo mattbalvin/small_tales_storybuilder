@@ -65,7 +65,7 @@ export const storiesService = {
         .select('*')
         .eq('id', storyId)
         .eq('status', 'published')
-        .single()
+        .maybeSingle()
 
       if (storyError) {
         console.error('Public story access error:', storyError)
