@@ -461,7 +461,7 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
     const startTime = Math.round(alignment.character_start_times_seconds[i] * 1000.0 || 0);
     const endTime = Math.round(alignment.character_end_times_seconds[i] * 1000.0 || 0);
     
-    console.log(`Processing character: "${char}", startTime: ${startTime}, endTime: ${endTime}, charIndex: ${charIndex}`);
+    console.log(`Processing character: "${char}", startTime: ${startTime}, endTime: ${endTime}, charIndex: ${i}`);
     
     if (/\s/.test(char) || charIndex === alignment.characters.length - 1) {
       // End of word or end of text
@@ -472,8 +472,7 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
           const timestamp = {
             word: cleanWord,
             start_time: wordStartTime,
-            end_time: endTime,
-            confidence: charData.confidence || 1.0
+            end_time: endTime
           };
           
           console.log(`Adding word timestamp: ${JSON.stringify(timestamp)}`);
