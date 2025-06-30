@@ -472,7 +472,8 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
           const timestamp = {
             word: cleanWord,
             start_time: wordStartTime,
-            end_time: endTime
+            end_time: endTime,
+            confidence: 1.0
           };
           
           console.log(`Adding word timestamp: ${JSON.stringify(timestamp)}`);
