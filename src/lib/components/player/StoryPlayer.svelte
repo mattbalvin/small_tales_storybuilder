@@ -41,6 +41,62 @@
   $: canGoNext = currentPageIndex < pages.length - 1
   $: canGoPrevious = currentPageIndex > 0
 
+  function detectOrientation() {
+    // Default to landscape if no story or pages available
+    if (!story || !pages || pages.length === 0) {
+      orientation = 'landscape'
+      return
+    }
+
+    // Use story's orientation setting if available
+    if (story.orientation) {
+      orientation = story.orientation
+      return
+    }
+
+    // Analyze first page content to determine best orientation
+    const firstPage = pages[0]
+    if (firstPage?.content) {
+      // Check if page has both landscape and portrait layouts
+      if (firstPage.content.landscape && firstPage.content.portrait) {
+        // Default to landscape if both are available
+        orientation = 'landscape'
+      } else if (firstPage.content.landscape) {
+        orientation = 'landscape'
+      } else if (firstPage.content.portrait) {
+        orientation = 'portrait'
+      } else {
+        // Fallback to landscape
+        orientation = 'landscape'
+      }
+    } else {
+      // Default fallback
+      orientation = 'landscape'
+    }
+  }
+
+  function stopAudio() {
+    if (audioElement) {
+      audioElement.pause()
+      audioElement = null
+    }
+    if (currentNarrationPlayer) {
+      currentNarrationPlayer.stop()
+      currentNarrationPlayer = null
+    }
+    currentAudio = null
+    highlightedWordIndex = -1
+    activeNarrationElementId = null
+    currentWord = null
+  }
+
+  function startAutoReading() {
+    if (currentPage && autoRead) {
+      isAutoReading = true
+      // Implementation for auto-reading would go here
+    }
+  }
+
   onMount(async () => {
     if (isPreviewMode) {
       // In preview mode, we already have the story loaded
