@@ -261,21 +261,23 @@
 
   function handlePageDragOver(event: DragEvent, pageIndex: number) {
     if (!canEdit() || !isDraggingPage || draggedPageIndex === null || draggedPageIndex === pageIndex) {
-      event.preventDefault()
       return
     }
 
+    // Always call preventDefault to allow the drop
     event.preventDefault()
+    
+    // Set dropEffect to 'move' to show the correct cursor
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move'
+    }
+    
     dragOverPageIndex = pageIndex
     
     // Determine if we're dropping above or below the midpoint
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const midY = rect.top + rect.height / 2
     dragOverPosition = event.clientY < midY ? 'above' : 'below'
-
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move'
-    }
   }
 
   function handlePageDragLeave(event: DragEvent) {
@@ -292,7 +294,6 @@
 
   async function handlePageDrop(event: DragEvent, targetPageIndex: number) {
     if (!canEdit() || draggedPageIndex === null || draggedPageIndex === targetPageIndex) {
-      event.preventDefault()
       return
     }
 
@@ -555,14 +556,14 @@
       </Button>
       
       {#if canManage()}
-        <!--Button 
+        <Button 
           variant="outline" 
           size="sm"
           on:click={() => showCollaborators = !showCollaborators}
         >
           <Users class="w-4 h-4 mr-2" />
           Collaborators
-      </Button-->
+        </Button>
       {/if}
       
       <Button variant="outline" size="sm">
@@ -627,7 +628,7 @@
               >
                 <!-- Drop indicator above -->
                 {#if dragOverPageIndex === index && dragOverPosition === 'above'}
-                  <div class="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
+                  <div class="absolute -top-1 left-0 right-0 h-1 bg-golden-apricot rounded-full"></div>
                 {/if}
 
                 <div class="flex flex-row items-center">
@@ -668,7 +669,7 @@
 
                 <!-- Drop indicator below -->
                 {#if dragOverPageIndex === index && dragOverPosition === 'below'}
-                  <div class="absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
+                  <div class="absolute -bottom-1 left-0 right-0 h-1 bg-golden-apricot rounded-full"></div>
                 {/if}
               </button>
             {/each}

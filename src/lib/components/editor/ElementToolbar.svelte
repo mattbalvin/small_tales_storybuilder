@@ -180,7 +180,10 @@
   }
 
   function handleDragOver(event: DragEvent) {
+    // Always call preventDefault to allow the drop
     event.preventDefault()
+    
+    // Set dropEffect to 'move' to show the correct cursor
     if (event.dataTransfer) {
       event.dataTransfer.dropEffect = 'move'
     }
