@@ -275,16 +275,23 @@ async function generateFullNarration(
 
   const result = await response.json();
   
+  console.log('ElevenLabs API result alignment data:', JSON.stringify(result.alignment, null, 2));
+
   // Convert base64 audio to data URL
   const audioUrl = `data:audio/mpeg;base64,${result.audio_base64}`;
   
   // Process alignment data to create word timestamps
   const wordTimestamps: WordTimestamp[] = [];
   if (result.alignment && result.alignment.characters) {
-    wordTimestamps.push(...processAlignmentData(result.alignment, text));
+    const processedTimestamps = processAlignmentData(result.alignment, text);
+    console.log('Processed alignment data result:', JSON.stringify(processedTimestamps, null, 2));
+    wordTimestamps.push(...processedTimestamps);
   } else {
     // Fallback: estimate word timings based on average speaking rate
-    wordTimestamps.push(...estimateWordTimings(text, result.audio_duration_ms || 5000));
+    console.log('Falling back to estimating word timings.');
+    const estimatedTimestamps = estimateWordTimings(text, result.audio_duration_ms || 5000);
+    console.log('Estimated word timings result:', JSON.stringify(estimatedTimestamps, null, 2));
+    wordTimestamps.push(...estimatedTimestamps);
   }
 
   return {
