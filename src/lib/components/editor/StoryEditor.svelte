@@ -632,7 +632,7 @@
                   <div class="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
                 {/if}
 
-                <div class="flex flex-col items-center">
+                <div class="flex flex-row items-center">
                   <!-- Page number -->
                   <div class="text-xs font-medium text-coral-sunset">Page {index + 1}</div>
                   
