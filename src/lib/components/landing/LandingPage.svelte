@@ -85,7 +85,7 @@
         <!-- Main Illustration -->
         <div class="w-full max-w-5xl mx-auto mb-8">
           <img 
-            src="/a-vibrant-landing-page-for-small-tales-a_5wFyNmIVR82c80rZxEoFmQ_CI97eOdZRCmcn--7ue-shA.png" 
+            src="/transparent-a-vibrant-landing-page-for-small-tales-a_5wFyNmIVR82c80rZxEoFmQ_CI97eOdZRCmcn--7ue-shA-topaz-sharpen-denoise-upscale-2x-topaz-upscale-2x.png" 
             alt="Cute animal characters reading books around a campfire"
             class="w-full h-auto rounded-2xl"
           />
