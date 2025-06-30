@@ -32,22 +32,11 @@
   <header class="border-b border-periwinkle-blue/20 bg-coral-sunset/90 backdrop-blur-sm sticky top-0 z-50">
     <div class="container flex items-center justify-between py-4">
       <div class="flex items-center gap-3">
-        <div class="flex items-center">
-          <span class="text-3xl font-bold">
-            <span class="text-dusty-teal">S</span>
-            <span class="text-golden-apricot">m</span>
-            <span class="text-periwinkle-blue">a</span>
-            <span class="text-white">l</span>
-            <span class="text-dusty-teal">l</span>
-          </span>
-          <span class="text-3xl font-bold ml-2">
-            <span class="text-periwinkle-blue">T</span>
-            <span class="text-white">a</span>
-            <span class="text-golden-apricot">l</span>
-            <span class="text-dusty-teal">e</span>
-            <span class="text-periwinkle-blue">s</span>
-          </span>
-        </div>
+        <img 
+          src="/a-whimsical-logo-illustration-showcasing_nftkY3UMRsCSJrVHAQ-EQQ_Uf0dCZsOS2aeggOLhBgikg-transparent.png" 
+          alt="Small Tales Logo" 
+          class="h-12"
+        />
       </div>
       
       <nav class="hidden md:flex items-center gap-8">
@@ -257,23 +246,12 @@
     <div class="container">
       <div class="grid md:grid-cols-4 gap-8">
         <div>
-          <div class="flex items-center gap-3 mb-6">
-            <div class="flex items-center">
-              <span class="text-2xl font-bold">
-                <span class="text-dusty-teal">S</span>
-                <span class="text-golden-apricot">m</span>
-                <span class="text-periwinkle-blue">a</span>
-                <span class="text-coral-sunset">l</span>
-                <span class="text-dusty-teal">l</span>
-              </span>
-              <span class="text-2xl font-bold ml-1">
-                <span class="text-periwinkle-blue">T</span>
-                <span class="text-coral-sunset">a</span>
-                <span class="text-golden-apricot">l</span>
-                <span class="text-dusty-teal">e</span>
-                <span class="text-periwinkle-blue">s</span>
-              </span>
-            </div>
+          <div class="flex items-center mb-6">
+            <img 
+              src="/a-whimsical-logo-illustration-showcasing_nftkY3UMRsCSJrVHAQ-EQQ_Uf0dCZsOS2aeggOLhBgikg-transparent.png" 
+              alt="Small Tales Logo" 
+              class="h-10"
+            />
           </div>
           <p class="text-white">
             Interactive storytelling platform for creators, educators, and storytellers.
