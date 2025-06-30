@@ -688,11 +688,11 @@
       {#if canEdit()}
         <div class="pt-2 border-t space-y-1">
           <Button variant="outline" size="sm" class="w-full h-7 text-xs p-0" on:click={addNewPage}>
-            <Plus class="w-3 h-3" />Add Page
+            <Plus class="w-3 h-3" /> Add Page
           </Button>
           {#if currentPage}
             <Button variant="outline" size="sm" class="w-full h-7 text-xs p-0" on:click={() => duplicatePage(currentPageIndex)}>
-              <Copy class="w-3 h-3" />Duplicate Page
+              <Copy class="w-3 h-3" /> Duplicate Page
             </Button>
             <Button 
               variant="outline" 
@@ -700,7 +700,7 @@
               class="w-full h-7 text-xs p-0 text-destructive hover:text-destructive" 
               on:click={() => deletePage(currentPageIndex)}
             >
-              <Trash2 class="w-3 h-3" />Delete Page
+              <Trash2 class="w-3 h-3" /> Delete Page
             </Button>
           {/if}
         </div>
