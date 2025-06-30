@@ -53,6 +53,59 @@ export const storiesService = {
     }))
   },
 
+  async loadPublicStoryData(storyId: string) {
+    storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
+    
+    try {
+      console.log('Loading public story data:', storyId)
+      
+      // Load story metadata for public access (only published stories)
+      const { data: storyData, error: storyError } = await supabase
+        .from('stories')
+        .select('*')
+        .eq('id', storyId)
+        .eq('status', 'published')
+        .single()
+
+      if (storyError) {
+        console.error('Public story access error:', storyError)
+        storiesStore.update(state => ({
+          ...state,
+          currentStory: null,
+          currentStoryLoading: false
+        }))
+        throw new Error(`Story not found or not publicly available: ${storyError.message}`)
+      }
+
+      if (!storyData) {
+        storiesStore.update(state => ({
+          ...state,
+          currentStory: null,
+          currentStoryLoading: false
+        }))
+        throw new Error('Story not found or not published')
+      }
+
+      storiesStore.update(state => ({
+        ...state,
+        currentStory: storyData,
+        currentCollaborators: [], // No collaborators for public access
+        currentStoryLoading: false
+      }))
+
+      console.log('Public story loaded successfully:', storyData)
+      return storyData
+    } catch (error) {
+      console.error('Error in loadPublicStoryData:', error)
+      storiesStore.update(state => ({
+        ...state,
+        currentStory: null,
+        currentStoryLoading: false
+      }))
+      throw error
+    }
+  },
+
   async loadSingleStory(storyId: string, userId: string) {
     storiesStore.update(state => ({ ...state, currentStoryLoading: true }))
     

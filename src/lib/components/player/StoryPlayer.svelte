@@ -55,8 +55,11 @@
       }
     } else if (storyId) {
       try {
-        // First try to load story pages directly (public access)
-        await loadPublicStory(storyId)
+        // First try to load story data for public access
+        await storiesService.loadPublicStoryData(storyId)
+        
+        // Load story pages
+        await storiesService.loadStoryPages(storyId)
         
         // If user is authenticated, try to load full story details for better experience
         if ($authStore.user) {
