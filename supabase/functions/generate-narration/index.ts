@@ -441,11 +441,16 @@ function extractUniqueWords(text: string): string[] {
 }
 
 function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
+  console.log('Starting processAlignmentData with alignment:', JSON.stringify(alignment));
+  
   const timestamps: WordTimestamp[] = [];
   
   if (!alignment.characters || !Array.isArray(alignment.characters)) {
+    console.log('No characters array in alignment data, falling back to estimated timings');
     return estimateWordTimings(text, alignment.duration_ms || 5000);
   }
+  
+  console.log(`Processing ${alignment.characters.length} characters from alignment data`);
   
   let currentWord = '';
   let wordStartTime = 0;
@@ -456,31 +461,43 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
     const startTime = Math.round(charData.start_time_ms || 0);
     const endTime = Math.round(charData.end_time_ms || 0);
     
+    console.log(`Processing character: "${char}", startTime: ${startTime}, endTime: ${endTime}, charIndex: ${charIndex}`);
+    
     if (/\s/.test(char) || charIndex === alignment.characters.length - 1) {
       // End of word or end of text
       if (currentWord.trim().length > 0) {
         // Clean the word similar to how we extract unique words
         const cleanWord = currentWord.trim().replace(/^[^a-zA-Z']+|[^a-zA-Z']+$/g, '');
         if (cleanWord.length > 0) {
-          timestamps.push({
+          const timestamp = {
             word: cleanWord,
             start_time: wordStartTime,
             end_time: endTime,
             confidence: charData.confidence || 1.0
-          });
+          };
+          
+          console.log(`Adding word timestamp: ${JSON.stringify(timestamp)}`);
+          timestamps.push(timestamp);
+        } else {
+          console.log(`Skipping empty word after cleaning: "${currentWord}"`);
         }
+      } else {
+        console.log('Skipping empty word');
       }
       currentWord = '';
       wordStartTime = endTime;
     } else {
       if (currentWord === '') {
         wordStartTime = startTime;
+        console.log(`Starting new word at time ${wordStartTime}`);
       }
       currentWord += char;
+      console.log(`Building word: "${currentWord}"`);
     }
     charIndex++;
   }
   
+  console.log(`Finished processing alignment data. Generated ${timestamps.length} word timestamps`);
   return timestamps;
 }
 
