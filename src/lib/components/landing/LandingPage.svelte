@@ -255,11 +255,6 @@
               class="h-20"
             />
           </div>
-          <div>
-            <p class="text-white">
-              Interactive storytelling platform for creators, educators, and storytellers.
-            </p>
-          </div>          
         </div>
 
         <div class="grid md:grid-cols-3 gap-8">
@@ -294,6 +289,11 @@
           </div>
         </div>
 
+        <div>
+          <p class="text-white">
+            Interactive storytelling platform for creators, educators, and storytellers.
+          </p>
+        </div>          
         
         <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">
           <img 
