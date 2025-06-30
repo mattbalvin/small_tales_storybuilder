@@ -8,9 +8,9 @@
       variant: {
         default: 'bg-coral-sunset text-white hover:bg-coral-sunset shadow-md hover:shadow-lg',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive shadow-md hover:shadow-lg',
-        outline: 'border border-periwinkle-blue/30 bg-background hover:bg-periwinkle-blue/10 hover:text-periwinkle-blue shadow-sm hover:shadow-md',
+        outline: 'border border-golden-apricot bg-golden-apricot/10 text-golden-apricot hover:bg-golden-apricot/10 shadow-sm hover:shadow-md',
         secondary: 'bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg',
-        ghost: 'hover:bg-periwinkle-blue/10 hover:text-periwinkle-blue',
+        ghost: 'hover:bg-golden-apricot/10 hover:text-golden-apricot',
         link: 'text-coral-sunset underline-offset-4 hover:underline'
       },
       size: {

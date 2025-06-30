@@ -225,26 +225,26 @@
   }
 </script>
 
-<div class="w-full h-full flex flex-col bg-card border-l">
+<div class="w-full h-full flex flex-col bg-soft-buttercream border-l border-periwinkle-blue/20">
   <!-- Header -->
-  <div class="p-4 border-b">
-    <h2 class="text-lg font-semibold">Elements</h2>
-    <p class="text-sm text-muted-foreground">Add and manage page elements</p>
+  <div class="p-4 border-b border-periwinkle-blue/20">
+    <h2 class="text-lg font-semibold text-coral-sunset">Elements</h2>
+    <p class="text-sm text-dusty-teal">Add and manage page elements</p>
   </div>
 
   <!-- Add Elements -->
-  <div class="p-4 border-b">
-    <div class="grid grid-cols-3 gap-2">
-      <Button variant="outline" size="sm" on:click={() => addElement('text')} class="flex flex-col gap-1 h-auto py-3">
-        <Type class="w-4 h-4" />
+  <div class="p-4 border-b border-periwinkle-blue/20">
+    <div class="grid grid-cols-3 gap-3">
+      <Button variant="secondary" size="sm" on:click={() => addElement('text')} class="flex flex-col gap-1 h-auto py-3">
+        <Type class="w-5 h-5" />
         <span class="text-xs">Text</span>
       </Button>
-      <Button variant="outline" size="sm" on:click={() => addElement('image')} class="flex flex-col gap-1 h-auto py-3">
-        <Image class="w-4 h-4" />
+      <Button variant="secondary" size="sm" on:click={() => addElement('image')} class="flex flex-col gap-1 h-auto py-3">
+        <Image class="w-5 h-5" />
         <span class="text-xs">Image</span>
       </Button>
-      <Button variant="outline" size="sm" on:click={() => addElement('audio')} class="flex flex-col gap-1 h-auto py-3">
-        <Volume2 class="w-4 h-4" />
+      <Button variant="secondary" size="sm" on:click={() => addElement('audio')} class="flex flex-col gap-1 h-auto py-3">
+        <Volume2 class="w-5 h-5" />
         <span class="text-xs">Audio</span>
       </Button>
     </div>
@@ -253,35 +253,35 @@
   <!-- Element Lists and Properties -->
   <div class="flex-1 overflow-y-auto">
     <!-- Visual Elements List -->
-    <div class="p-4 border-b">
-      <h3 class="text-sm font-medium mb-3">Visual Elements ({orientation})</h3>
+    <div class="p-4 border-b border-periwinkle-blue/20">
+      <h3 class="text-sm font-medium mb-3 text-dusty-teal">Visual Elements ({orientation})</h3>
       
       {#if sortedElements.length === 0}
-        <p class="text-xs text-muted-foreground text-center py-4">
+        <p class="text-sm text-periwinkle-blue text-center py-4">
           No visual elements on this page
         </p>
       {:else}
         <div class="space-y-2">
           {#each sortedElements as element, index (element.id)}
             <div
-              class="flex items-center gap-2 p-2 rounded border {selectedElementId === element.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}"
+              class="flex items-center gap-2 p-3 rounded-lg border {selectedElementId === element.id ? 'bg-golden-apricot/10 border-golden-apricot' : 'bg-periwinkle-blue/5 border-periwinkle-blue/20'}"
               draggable="true"
               on:dragstart={(e) => handleDragStart(e, index)}
               on:dragover={handleDragOver}
               on:drop={(e) => handleDrop(e, index)}
             >
-              <GripVertical class="w-4 h-4 text-muted-foreground cursor-grab flex-shrink-0" />
+              <GripVertical class="w-5 h-5 text-dusty-teal cursor-grab flex-shrink-0" />
               
               <button
                 class="flex-1 flex items-center gap-2 text-left min-w-0"
                 on:click={() => selectElement(element.id)}
               >
                 {#if element.type === 'text'}
-                  <Type class="w-3 h-3 flex-shrink-0" />
+                  <Type class="w-4 h-4 flex-shrink-0 text-coral-sunset" />
                 {:else if element.type === 'image'}
-                  <Image class="w-3 h-3 flex-shrink-0" />
+                  <Image class="w-4 h-4 flex-shrink-0 text-coral-sunset" />
                 {/if}
-                <span class="text-xs truncate min-w-0">
+                <span class="text-sm truncate min-w-0 {selectedElementId === element.id ? 'text-golden-apricot font-medium' : 'text-dusty-teal'}">
                   {getElementDisplayText(element)}
                 </span>
               </button>
@@ -295,9 +295,9 @@
                   title={element.hidden ? 'Show element' : 'Hide element'}
                 >
                   {#if element.hidden}
-                    <EyeOff class="w-3 h-3" />
+                    <EyeOff class="w-4 h-4 text-periwinkle-blue" />
                   {:else}
-                    <Eye class="w-3 h-3" />
+                    <Eye class="w-4 h-4 text-periwinkle-blue" />
                   {/if}
                 </Button>
 
@@ -308,7 +308,7 @@
                   on:click={() => moveElementBack(element.id)}
                   title="Move back"
                 >
-                  <ArrowDown class="w-3 h-3" />
+                  <ArrowDown class="w-4 h-4 text-periwinkle-blue" />
                 </Button>
 
                 <Button
@@ -318,7 +318,7 @@
                   on:click={() => moveElementForward(element.id)}
                   title="Move forward"
                 >
-                  <ArrowUp class="w-3 h-3" />
+                  <ArrowUp class="w-4 h-4 text-periwinkle-blue" />
                 </Button>
 
                 <Button
@@ -328,7 +328,7 @@
                   on:click={() => deleteElement(element.id)}
                   title="Delete element"
                 >
-                  <Trash2 class="w-3 h-3" />
+                  <Trash2 class="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -338,23 +338,23 @@
     </div>
 
     <!-- Audio Elements List -->
-    <div class="p-4 border-b">
-      <h3 class="text-sm font-medium mb-3">Audio Elements</h3>
+    <div class="p-4 border-b border-periwinkle-blue/20">
+      <h3 class="text-sm font-medium mb-3 text-dusty-teal">Audio Elements</h3>
       
       {#if audioElements.length === 0}
-        <p class="text-xs text-muted-foreground text-center py-4">
+        <p class="text-sm text-periwinkle-blue text-center py-4">
           No audio elements on this page
         </p>
       {:else}
         <div class="space-y-2">
           {#each audioElements as audioElement (audioElement.id)}
-            <div class="flex items-center gap-2 p-2 rounded border {selectedAudioElementId === audioElement.id ? 'bg-primary/10 border-primary' : 'bg-muted/30'}">
+            <div class="flex items-center gap-2 p-3 rounded-lg border {selectedAudioElementId === audioElement.id ? 'bg-golden-apricot/10 border-golden-apricot' : 'bg-periwinkle-blue/5 border-periwinkle-blue/20'}">
               <button
                 class="flex-1 flex items-center gap-2 text-left min-w-0"
                 on:click={() => selectAudioElement(audioElement.id)}
               >
-                <Volume2 class="w-3 h-3 flex-shrink-0" />
-                <span class="text-xs truncate min-w-0">
+                <Volume2 class="w-4 h-4 flex-shrink-0 text-coral-sunset" />
+                <span class="text-sm truncate min-w-0 {selectedAudioElementId === audioElement.id ? 'text-golden-apricot font-medium' : 'text-dusty-teal'}">
                   {audioElement.properties?.src ? 'Audio Element' : 'No audio source'}
                 </span>
               </button>
@@ -365,7 +365,7 @@
                 on:click={() => deleteAudioElement(audioElement.id)}
                 title="Delete audio element"
               >
-                <Trash2 class="w-3 h-3" />
+                <Trash2 class="w-4 h-4" />
               </Button>
             </div>
           {/each}
@@ -375,8 +375,8 @@
 
     <!-- Element Properties (shown when any element is selected) -->
     {#if selectedElement || selectedAudioElement}
-      <div class="p-4 border-b">
-        <h3 class="text-sm font-medium mb-3">
+      <div class="p-4 border-b border-periwinkle-blue/20">
+        <h3 class="text-sm font-medium mb-3 text-coral-sunset">
           {selectedElement?.type === 'text' ? 'Text' : 
            selectedElement?.type === 'image' ? 'Image' : 
            selectedElement?.type === 'audio' ? 'Audio' :
@@ -388,9 +388,9 @@
           <div class="space-y-3">
             <!-- Text Content -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Text</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Text</label>
               <textarea
-                class="w-full px-2 py-1 text-xs border rounded resize-none"
+                class="w-full px-3 py-2 text-sm border border-golden-apricot/30 rounded-lg resize-none bg-white focus:border-golden-apricot focus:ring-1 focus:ring-golden-apricot"
                 rows="3"
                 value={textProperties.text || ''}
                 on:input={(e) => e.target && updateElementProperty('text', e.target.value)}
@@ -399,8 +399,8 @@
             </div>
 
             <!-- Narration Settings -->
-            <div class="space-y-2 p-3 bg-muted/30 rounded-lg">
-              <h4 class="text-xs font-medium">Narration</h4>
+            <div class="space-y-2 p-3 bg-periwinkle-blue/5 rounded-lg border border-periwinkle-blue/20">
+              <h4 class="text-xs font-medium text-periwinkle-blue">Narration</h4>
               
               <!-- In Main Narration Checkbox -->
               <div class="flex items-center gap-2">
@@ -409,15 +409,15 @@
                   id="inMainNarration"
                   checked={textProperties.inMainNarration || false}
                   on:change={(e) => e.target && updateElementProperty('inMainNarration', e.target.checked)}
-                  class="rounded"
+                  class="rounded accent-golden-apricot w-4 h-4"
                 />
-                <label for="inMainNarration" class="text-xs font-medium">In main narration</label>
+                <label for="inMainNarration" class="text-xs font-medium text-dusty-teal">In main narration</label>
               </div>
 
               <!-- Sequence Number -->
               {#if textProperties.inMainNarration}
                 <div>
-                  <label class="text-xs font-medium mb-1 block">Sequence</label>
+                  <label class="text-xs font-medium mb-1 block text-dusty-teal">Sequence</label>
                   <Input
                     type="number"
                     min="1"
@@ -432,7 +432,7 @@
               <!-- Generate Narration Button -->
               <div class="flex gap-2">
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm" 
                   on:click={openNarrationGeneration}
                   class="flex-1"
@@ -457,7 +457,7 @@
 
               <!-- Narration Status -->
               {#if textProperties.narrationData}
-                <div class="text-xs text-muted-foreground">
+                <div class="text-xs text-periwinkle-blue">
                   ✓ Narration generated ({Math.round(textProperties.narrationData.fullAudio.duration / 1000)}s)
                 </div>
               {/if}
@@ -465,7 +465,7 @@
 
             <!-- Font Size -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Font Size</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Font Size</label>
               <Input
                 type="number"
                 min="8"
@@ -478,7 +478,7 @@
 
             <!-- Line Height -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Line Height</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Line Height</label>
               <Input
                 type="number"
                 min="0.5"
@@ -492,7 +492,7 @@
 
             <!-- Text Color -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Text Color</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Text Color</label>
               <div class="flex gap-2">
                 <Input
                   type="color"
@@ -512,7 +512,7 @@
 
             <!-- Background Color -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Background</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Background</label>
               <div class="space-y-2">
                 <div class="flex gap-2">
                   <Input
@@ -550,9 +550,9 @@
           <div class="space-y-3">
             <!-- Select Image Button -->
             <div>
-              <label class="text-xs font-medium mb-2 block">Image</label>
+              <label class="text-xs font-medium mb-2 block text-dusty-teal">Image</label>
               <Button 
-                variant="outline" 
+                variant="secondary" 
                 size="sm" 
                 on:click={() => openMediaSelector('image')}
                 class="w-full justify-start"
@@ -561,7 +561,7 @@
                 {imageProperties.src ? 'Change Image' : 'Select Image'}
               </Button>
               {#if imageProperties.src}
-                <p class="text-xs text-muted-foreground mt-1 truncate">
+                <p class="text-xs text-periwinkle-blue mt-1 truncate">
                   Current: {imageProperties.src.split('/').pop() || 'Image selected'}
                 </p>
               {/if}
@@ -569,7 +569,7 @@
 
             <!-- Opacity -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Opacity: {imageProperties.opacity || 100}%</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Opacity: {imageProperties.opacity || 100}%</label>
               <input
                 type="range"
                 min="0"
@@ -582,7 +582,7 @@
 
             <!-- Scale -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Scale: {imageProperties.scale || 100}%</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Scale: {imageProperties.scale || 100}%</label>
               <input
                 type="range"
                 min="10"
@@ -600,7 +600,7 @@
           <div class="space-y-3">
             <!-- Audio Source -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Audio Source</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Audio Source</label>
               <div class="flex gap-2">
                 <Input
                   type="text"
@@ -609,10 +609,10 @@
                   class="flex-1 text-xs h-8"
                   placeholder="Audio URL or select from library"
                 />
-                <Button variant="outline" size="sm" on:click={() => openMediaSelector('audio')}>
+                <Button variant="secondary" size="sm" on:click={() => openMediaSelector('audio')}>
                   <Volume2 class="w-3 h-3" />
                 </Button>
-                <Button variant="outline" size="sm" on:click={openAudioGeneration}>
+                <Button variant="secondary" size="sm" on:click={openAudioGeneration}>
                   <Wand2 class="w-3 h-3" />
                 </Button>
               </div>
@@ -620,7 +620,7 @@
 
             <!-- Volume -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Volume: {selectedElement.properties?.volume || 100}%</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Volume: {selectedElement.properties?.volume || 100}%</label>
               <input
                 type="range"
                 min="0"
@@ -637,9 +637,9 @@
                 type="checkbox"
                 checked={selectedElement.properties?.autoplay || false}
                 on:change={(e) => e.target && updateElementProperty('autoplay', e.target.checked)}
-                class="rounded"
+                class="rounded accent-golden-apricot w-4 h-4"
               />
-              <label class="text-xs font-medium">Autoplay</label>
+              <label class="text-xs font-medium text-dusty-teal">Autoplay</label>
             </div>
           </div>
         {/if}
@@ -649,7 +649,7 @@
           <div class="space-y-3">
             <!-- Audio Source -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Audio Source</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Audio Source</label>
               <div class="flex gap-2">
                 <Input
                   type="text"
@@ -658,10 +658,10 @@
                   class="flex-1 text-xs h-8"
                   placeholder="Audio URL or select from library"
                 />
-                <Button variant="outline" size="sm" on:click={() => openMediaSelector('audio')}>
+                <Button variant="secondary" size="sm" on:click={() => openMediaSelector('audio')}>
                   <Volume2 class="w-3 h-3" />
                 </Button>
-                <Button variant="outline" size="sm" on:click={openAudioGeneration}>
+                <Button variant="secondary" size="sm" on:click={openAudioGeneration}>
                   <Wand2 class="w-3 h-3" />
                 </Button>
               </div>
@@ -669,7 +669,7 @@
 
             <!-- Volume -->
             <div>
-              <label class="text-xs font-medium mb-1 block">Volume: {selectedAudioElement.properties?.volume || 100}%</label>
+              <label class="text-xs font-medium mb-1 block text-dusty-teal">Volume: {selectedAudioElement.properties?.volume || 100}%</label>
               <input
                 type="range"
                 min="0"
@@ -687,9 +687,9 @@
                   type="checkbox"
                   checked={selectedAudioElement.properties?.isIdleLoop || false}
                   on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'isIdleLoop', e.target.checked)}
-                  class="rounded"
+                  class="rounded accent-golden-apricot w-4 h-4"
                 />
-                <label class="text-xs font-medium">Idle Loop</label>
+                <label class="text-xs font-medium text-dusty-teal">Idle Loop</label>
               </div>
             </div>
 
@@ -697,7 +697,7 @@
             {#if selectedAudioElement.properties?.isIdleLoop}
               <!-- Action Volume for idle loops -->
               <div>
-                <label class="text-xs font-medium mb-1 block">Action Volume: {selectedAudioElement.properties?.actionVolume || 50}%</label>
+                <label class="text-xs font-medium mb-1 block text-dusty-teal">Action Volume: {selectedAudioElement.properties?.actionVolume || 50}%</label>
                 <input
                   type="range"
                   min="0"
@@ -710,11 +710,11 @@
             {:else}
               <!-- Playback Mode for non-idle audio -->
               <div>
-                <label class="text-xs font-medium mb-1 block">Playback Mode</label>
+                <label class="text-xs font-medium mb-1 block text-dusty-teal">Playback Mode</label>
                 <select
                   value={selectedAudioElement.properties?.playbackMode || 'random'}
                   on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'playbackMode', e.target.value)}
-                  class="w-full text-xs h-8 border rounded px-2"
+                  class="w-full text-sm h-9 border border-golden-apricot/30 rounded-lg px-3 bg-white"
                 >
                   <option value="random">Random</option>
                   <option value="trigger">Trigger</option>
@@ -725,7 +725,7 @@
                 <!-- Random delay settings -->
                 <div class="grid grid-cols-2 gap-2">
                   <div>
-                    <label class="text-xs font-medium mb-1 block">Min Delay (s)</label>
+                    <label class="text-xs font-medium mb-1 block text-dusty-teal">Min Delay (s)</label>
                     <Input
                       type="number"
                       min="0"
@@ -735,7 +735,7 @@
                     />
                   </div>
                   <div>
-                    <label class="text-xs font-medium mb-1 block">Max Delay (s)</label>
+                    <label class="text-xs font-medium mb-1 block text-dusty-teal">Max Delay (s)</label>
                     <Input
                       type="number"
                       min="0"
@@ -748,11 +748,11 @@
               {:else if selectedAudioElement.properties?.playbackMode === 'trigger'}
                 <!-- Trigger name -->
                 <div>
-                  <label class="text-xs font-medium mb-1 block">Trigger Name</label>
+                  <label class="text-xs font-medium mb-1 block text-dusty-teal">Trigger Name</label>
                   <select
                     value={selectedAudioElement.properties?.triggerName || ''}
                     on:change={(e) => e.target && updateAudioElement(selectedAudioElement.id, 'triggerName', e.target.value)}
-                    class="w-full text-xs h-8 border rounded px-2"
+                    class="w-full text-sm h-9 border border-golden-apricot/30 rounded-lg px-3 bg-white"
                   >
                     <option value="">Select trigger...</option>
                     {#each triggers as trigger}
@@ -767,11 +767,11 @@
 
         <!-- Position and Size (for visual elements only) -->
         {#if selectedElement && selectedElement.type !== 'audio'}
-          <div class="mt-4 pt-4 border-t">
-            <h4 class="text-xs font-medium mb-3">Position & Size ({orientation})</h4>
-            <div class="grid grid-cols-2 gap-2">
+          <div class="mt-4 pt-4 border-t border-periwinkle-blue/20">
+            <h4 class="text-xs font-medium mb-3 text-coral-sunset">Position & Size ({orientation})</h4>
+            <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs text-muted-foreground mb-1 block">X</label>
+                <label class="text-xs text-dusty-teal mb-1 block">X</label>
                 <Input
                   type="number"
                   value={selectedElement.x || 0}
@@ -780,7 +780,7 @@
                 />
               </div>
               <div>
-                <label class="text-xs text-muted-foreground mb-1 block">Y</label>
+                <label class="text-xs text-dusty-teal mb-1 block">Y</label>
                 <Input
                   type="number"
                   value={selectedElement.y || 0}
@@ -789,7 +789,7 @@
                 />
               </div>
               <div>
-                <label class="text-xs text-muted-foreground mb-1 block">Width</label>
+                <label class="text-xs text-dusty-teal mb-1 block">Width</label>
                 <Input
                   type="number"
                   min="10"
@@ -799,7 +799,7 @@
                 />
               </div>
               <div>
-                <label class="text-xs text-muted-foreground mb-1 block">Height</label>
+                <label class="text-xs text-dusty-teal mb-1 block">Height</label>
                 <Input
                   type="number"
                   min="10"
@@ -813,7 +813,7 @@
         {/if}
 
         <!-- Actions -->
-        <div class="mt-4 pt-4 border-t">
+        <div class="mt-4 pt-4 border-t border-periwinkle-blue/20">
           <div class="flex gap-2">
             {#if selectedElement}
               <Button variant="destructive" size="sm" on:click={deleteSelectedElement} class="flex-1">
@@ -836,7 +836,7 @@
 <!-- Media Selector Modal -->
 {#if showMediaSelector}
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="w-full max-w-4xl h-[80vh] bg-background rounded-lg overflow-hidden">
+    <div class="w-full max-w-4xl h-[80vh] bg-soft-buttercream rounded-2xl overflow-hidden shadow-xl">
       <MediaSelector
         type={mediaSelectorType}
         selectedUrl={(selectedElement?.properties?.src || selectedAudioElement?.properties?.src) || ''}
@@ -865,8 +865,9 @@
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    background: hsl(var(--muted));
-    border-radius: 2px;
+    height: 6px;
+    background: hsl(var(--periwinkle-blue) / 0.3);
+    border-radius: 3px;
     outline: none;
   }
 
@@ -875,17 +876,23 @@
     appearance: none;
     width: 16px;
     height: 16px;
-    background: hsl(var(--primary));
+    background: hsl(var(--golden-apricot));
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
-    background: hsl(var(--primary));
+    background: hsl(var(--golden-apricot));
     border-radius: 50%;
     cursor: pointer;
     border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  input[type="checkbox"] {
+    accent-color: hsl(var(--golden-apricot));
   }
 </style>

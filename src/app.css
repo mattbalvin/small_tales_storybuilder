@@ -239,6 +239,7 @@
 /* Accent element styles */
 .accent-element {
   @apply bg-dusty-teal/10 border-dusty-teal/30 text-dusty-teal;
+  @apply hover:bg-dusty-teal/20;
 }
 
 /* Loading animation with new colors */
