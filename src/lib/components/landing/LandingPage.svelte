@@ -267,18 +267,18 @@
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li>
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li-->
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li-->
           </ul>
         </div>
 
         <div>
           <h4 class="font-medium mb-4 text-white">Resources</h4>
           <ul class="space-y-3 text-white">
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li>
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li-->
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li-->
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li>
+            <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li-->
           </ul>
         </div>
 
