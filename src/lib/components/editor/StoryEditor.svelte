@@ -572,45 +572,44 @@
     </div>
   </header>
 
-  <div class="flex-1 flex">
+  <div class="flex-1 flex min-w-0">
     <!-- Sidebar -->
-    <aside class="w-80 border-r border-periwinkle-blue/20 bg-soft-buttercream p-4 flex flex-col">
-      <div class="space-y-4 flex-1">
+    <aside class="w-16 border-r border-periwinkle-blue/20 bg-soft-buttercream p-2 flex flex-col">
+      <div class="space-y-2 flex-1 overflow-y-auto">
         <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
-        <div class="flex items-center justify-between">
-          <h2 class="font-medium text-coral-sunset">Pages</h2>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-medium text-coral-sunset">Pages</h2>
           {#if canEdit()}
             <Button 
               size="sm" 
               on:click={addNewPage} 
               title="Add new page"
-              class="h-8 w-8 p-0"
+              class="h-6 w-6 p-0"
             >
-              <Plus class="w-4 h-4" />
+              <Plus class="w-3 h-3" />
             </Button>
           {/if}
         </div>
 
         <!-- Show message when no pages exist -->
         {#if pages.length === 0}
-          <Card class="p-4 text-center">
-            <p class="text-sm text-muted-foreground mb-3">No pages yet</p>
+          <Card class="p-2 text-center">
+            <p class="text-xs text-muted-foreground mb-2">No pages</p>
             {#if canEdit()}
-              <Button size="sm" on:click={addNewPage} class="w-full">
-                <Plus class="w-4 h-4 mr-2" />
-                Add First Page
+              <Button size="sm" on:click={addNewPage} class="w-full h-6 text-xs p-0">
+                <Plus class="w-3 h-3" />
               </Button>
             {:else}
-              <p class="text-xs text-muted-foreground">This story has no pages</p>
+              <p class="text-xs text-muted-foreground">No pages</p>
             {/if}
           </Card>
         {:else}
           <!-- Pages List with Drag and Drop -->
-          <div class="space-y-2 flex-1 overflow-y-auto">
+          <div class="space-y-1 flex-1 overflow-y-auto">
             {#each pages as page, index (page.id)}
               <!-- Use a button instead of Card for better click handling -->
               <button
-                class="w-full p-3 text-left rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
+                class="w-full p-1 text-center rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
                 draggable={canEdit()}
                 on:click={(event) => {
                   // Only handle click if we haven't started dragging
@@ -632,55 +631,40 @@
                   <div class="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full"></div>
                 {/if}
 
-                <div class="flex items-center gap-2">
-                  <!-- Drag Handle -->
-                  {#if canEdit()}
-                    <div class="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      <GripVertical class="w-6 h-6" />
+                <div class="flex flex-col items-center">
+                  <!-- Page number -->
+                  <div class="text-xs font-medium text-coral-sunset">{index + 1}</div>
+                  
+                  <!-- Page actions (show on hover) -->
+                  {#if canEdit() && currentPageIndex === index}
+                    <div class="mt-1 flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        class="h-5 w-5 p-0"
+                        on:click={(event) => { 
+                          event.stopPropagation(); 
+                          duplicatePage(index); 
+                        }}
+                        title="Duplicate page"
+                      >
+                        <Copy class="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        class="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                        on:click={(event) => { 
+                          event.stopPropagation(); 
+                          deletePage(index); 
+                        }}
+                        title="Delete page"
+                      >
+                        <Trash2 class="w-3 h-3" />
+                      </Button>
                     </div>
                   {/if}
-
-                  <!-- Page Content -->
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium text-coral-sunset">Page {index + 1}</div>
-                    <div class="text-xs text-muted-foreground">
-                      {(page.content?.elements?.length || 0)} visual elements
-                      {#if page.content?.audioElements?.length}
-                        • {page.content.audioElements.length} audio elements
-                      {/if}
-                    </div>
-                  </div>
                 </div>
-                
-                <!-- Page actions (show on hover) -->
-                {#if canEdit()}
-                  <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      class="h-8 w-8 p-0"
-                      on:click={(event) => { 
-                        event.stopPropagation(); 
-                        duplicatePage(index); 
-                      }}
-                      title="Duplicate page"
-                    >
-                      <Copy class="w-3 h-3" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      class="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                      on:click={(event) => { 
-                        event.stopPropagation(); 
-                        deletePage(index); 
-                      }}
-                      title="Delete page"
-                    >
-                      <Trash2 class="w-3 h-3" />
-                    </Button>
-                  </div>
-                {/if}
 
                 <!-- Drop indicator below -->
                 {#if dragOverPageIndex === index && dragOverPosition === 'below'}
@@ -692,8 +676,8 @@
 
           <!-- Drag and drop instructions -->
           {#if canEdit() && pages.length > 1}
-            <div class="text-xs text-muted-foreground text-center py-2 border-t">
-              Drag pages to reorder them
+            <div class="text-xs text-muted-foreground text-center py-1 border-t">
+              Drag to reorder
             </div>
           {/if}
         {/if}
@@ -701,24 +685,21 @@
 
       <!-- Page management actions at bottom - ALWAYS VISIBLE -->
       {#if canEdit()}
-        <div class="pt-4 border-t space-y-2">
-          <Button variant="outline" size="sm" class="w-full" on:click={addNewPage}>
-            <Plus class="w-4 h-4 mr-2" />
-            Add Page
+        <div class="pt-2 border-t space-y-1">
+          <Button variant="outline" size="sm" class="w-full h-7 text-xs p-0" on:click={addNewPage}>
+            <Plus class="w-3 h-3" />
           </Button>
           {#if currentPage}
-            <Button variant="outline" size="sm" class="w-full" on:click={() => duplicatePage(currentPageIndex)}>
-              <Copy class="w-4 h-4 mr-2" />
-              Duplicate Current
+            <Button variant="outline" size="sm" class="w-full h-7 text-xs p-0" on:click={() => duplicatePage(currentPageIndex)}>
+              <Copy class="w-3 h-3" />
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
-              class="w-full text-destructive hover:text-destructive" 
+              class="w-full h-7 text-xs p-0 text-destructive hover:text-destructive" 
               on:click={() => deletePage(currentPageIndex)}
             >
-              <Trash2 class="w-4 h-4 mr-2" />
-              Delete Current
+              <Trash2 class="w-3 h-3" />
             </Button>
           {/if}
         </div>
