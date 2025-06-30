@@ -29,7 +29,7 @@
 
 <div class="min-h-screen bg-soft-buttercream">
   <!-- Header -->
-  <header class="border-b border-periwinkle-blue/20 bg-soft-buttercream/80 backdrop-blur-sm sticky top-0 z-50">
+  <header class="border-b border-periwinkle-blue/20 bg-coral-sunset/90 backdrop-blur-sm sticky top-0 z-50">
     <div class="container flex items-center justify-between py-4">
       <div class="flex items-center gap-3">
         <div class="flex items-center">
@@ -37,12 +37,12 @@
             <span class="text-dusty-teal">S</span>
             <span class="text-golden-apricot">m</span>
             <span class="text-periwinkle-blue">a</span>
-            <span class="text-coral-sunset">l</span>
+            <span class="text-white">l</span>
             <span class="text-dusty-teal">l</span>
           </span>
           <span class="text-3xl font-bold ml-2">
             <span class="text-periwinkle-blue">T</span>
-            <span class="text-coral-sunset">a</span>
+            <span class="text-white">a</span>
             <span class="text-golden-apricot">l</span>
             <span class="text-dusty-teal">e</span>
             <span class="text-periwinkle-blue">s</span>
@@ -51,24 +51,21 @@
       </div>
       
       <nav class="hidden md:flex items-center gap-8">
-        <a href="#" class="text-coral-sunset font-medium">Home</a>
-        <a href="#" class="text-dusty-teal hover:text-coral-sunset transition-colors">Stories</a>
-        <a href="#" class="text-dusty-teal hover:text-coral-sunset transition-colors">Characters</a>
-        <a href="#" class="text-dusty-teal hover:text-coral-sunset transition-colors">About Us</a>
+        <a href="#" class="text-white font-medium">Home</a>
+        <a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a>
+        <a href="#" class="text-white hover:text-golden-apricot transition-colors">Characters</a>
+        <a href="#" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
       </nav>
       
       <div class="flex items-center gap-4">
         {#if $authStore.user}
-          <Button variant="ghost" on:click={navigateToDashboard}>
+          <Button variant="ghost" on:click={navigateToDashboard} class="text-white hover:text-white">
             Dashboard
           </Button>
           <Button on:click={navigateToDashboard} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6">
             Go to Dashboard
           </Button>
         {:else}
-          <Button variant="ghost" on:click={navigateToAuth}>
-            Sign In
-          </Button>
           <Button on:click={navigateToAuth} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6">
             Read Now
           </Button>
@@ -83,10 +80,19 @@
     <div class="absolute inset-0 bg-soft-buttercream -z-10"></div>
     
     <!-- Hero Content -->
-    <div class="container mx-auto px-4 pt-8 pb-16 md:pt-0">
-      <div class="flex flex-col md:flex-row items-center">
-        <!-- Left Side Text -->
-        <div class="md:w-1/2 mb-8 md:mb-0 z-10">
+    <div class="container mx-auto px-4 pt-8 pb-16 md:pt-12">
+      <div class="flex flex-col items-center">
+        <!-- Main Illustration -->
+        <div class="w-full max-w-5xl mx-auto mb-8">
+          <img 
+            src="/a-vibrant-landing-page-for-small-tales-a_5wFyNmIVR82c80rZxEoFmQ_CI97eOdZRCmcn--7ue-shA.png" 
+            alt="Cute animal characters reading books around a campfire"
+            class="w-full h-auto rounded-2xl"
+          />
+        </div>
+        
+        <!-- Heading and Tagline -->
+        <div class="text-center max-w-4xl">
           <h1 class="text-5xl md:text-6xl font-bold mb-6">
             <span class="text-coral-sunset block">Big Adventures</span>
             <span class="text-golden-apricot block">in Small Stories</span>
@@ -94,53 +100,28 @@
           <p class="text-xl text-dusty-teal mb-8">
             Exciting interactive stories for early readers
           </p>
-          <div class="flex flex-col sm:flex-row gap-4">
-            {#if $authStore.user}
-              <Button size="lg" class="bg-coral-sunset text-white hover:bg-coral-sunset shadow-md hover:shadow-lg rounded-full px-8 py-4" on:click={navigateToDashboard}>
-                <BookOpen class="w-5 h-5 mr-2" />
-                Go to Dashboard
-              </Button>
-            {:else}
-              <Button size="lg" class="bg-coral-sunset text-white hover:bg-coral-sunset shadow-md hover:shadow-lg rounded-full px-8 py-4" on:click={navigateToAuth}>
-                <BookOpen class="w-5 h-5 mr-2" />
-                Start Reading
-              </Button>
-            {/if}
-          </div>
-        </div>
-        
-        <!-- Right Side Image -->
-        <div class="md:w-1/2 relative">
-          <div class="relative">
-            <!-- Main Illustration -->
-            <img 
-              src="https://images.pexels.com/photos/8391140/pexels-photo-8391140.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" 
-              alt="Cute animal characters reading books around a campfire"
-              class="w-full h-auto rounded-2xl opacity-0"
-            />
-            
-            <!-- Story Cards -->
-            <div class="absolute bottom-0 right-0 transform translate-y-1/4 flex -space-x-4 rotate-12">
-              <div class="w-32 h-44 bg-periwinkle-blue rounded-xl shadow-lg flex flex-col items-center justify-center transform -rotate-6 border-4 border-white">
-                <span class="text-white font-bold text-sm">The Lost</span>
-                <span class="text-white font-bold text-sm">Kitten</span>
-                <div class="mt-2 w-12 h-12 bg-golden-apricot rounded-full flex items-center justify-center">
-                  <span class="text-white text-2xl">😺</span>
-                </div>
+          
+          <!-- Story Cards -->
+          <div class="flex justify-center gap-4 mt-8">
+            <div class="w-32 h-44 bg-periwinkle-blue rounded-xl shadow-lg flex flex-col items-center justify-center transform -rotate-6 border-4 border-white">
+              <span class="text-white font-bold text-sm">The Lost</span>
+              <span class="text-white font-bold text-sm">Kitten</span>
+              <div class="mt-2 w-12 h-12 bg-golden-apricot rounded-full flex items-center justify-center">
+                <span class="text-white text-2xl">😺</span>
               </div>
-              <div class="w-32 h-44 bg-dusty-teal rounded-xl shadow-lg flex flex-col items-center justify-center border-4 border-white">
-                <span class="text-white font-bold text-sm">The Brave</span>
-                <span class="text-white font-bold text-sm">Little Bear</span>
-                <div class="mt-2 w-12 h-12 bg-soft-buttercream rounded-full flex items-center justify-center">
-                  <span class="text-2xl">🐻</span>
-                </div>
+            </div>
+            <div class="w-32 h-44 bg-dusty-teal rounded-xl shadow-lg flex flex-col items-center justify-center border-4 border-white">
+              <span class="text-white font-bold text-sm">The Brave</span>
+              <span class="text-white font-bold text-sm">Little Bear</span>
+              <div class="mt-2 w-12 h-12 bg-soft-buttercream rounded-full flex items-center justify-center">
+                <span class="text-2xl">🐻</span>
               </div>
-              <div class="w-32 h-44 bg-periwinkle-blue/80 rounded-xl shadow-lg flex flex-col items-center justify-center transform rotate-6 border-4 border-white">
-                <span class="text-white font-bold text-sm">The Magical</span>
-                <span class="text-white font-bold text-sm">Treehouse</span>
-                <div class="mt-2 w-12 h-12 bg-coral-sunset rounded-full flex items-center justify-center">
-                  <span class="text-white text-2xl">🌳</span>
-                </div>
+            </div>
+            <div class="w-32 h-44 bg-periwinkle-blue/80 rounded-xl shadow-lg flex flex-col items-center justify-center transform rotate-6 border-4 border-white">
+              <span class="text-white font-bold text-sm">The Magical</span>
+              <span class="text-white font-bold text-sm">Treehouse</span>
+              <div class="mt-2 w-12 h-12 bg-coral-sunset rounded-full flex items-center justify-center">
+                <span class="text-white text-2xl">🌳</span>
               </div>
             </div>
           </div>
@@ -150,11 +131,6 @@
     
     <!-- Decorative Wave -->
     <div class="absolute bottom-0 left-0 right-0 h-16 md:h-24 bg-white rounded-t-[50%] -z-5"></div>
-    
-    <!-- Decorative Elements -->
-    <div class="absolute top-20 left-10 w-8 h-8 text-golden-apricot opacity-50">✨</div>
-    <div class="absolute top-40 right-20 w-8 h-8 text-coral-sunset opacity-50">✨</div>
-    <div class="absolute bottom-40 left-1/4 w-8 h-8 text-periwinkle-blue opacity-50">✨</div>
   </section>
 
   <!-- Features Grid -->
