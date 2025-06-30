@@ -63,6 +63,9 @@ export default {
         '16/9': '16 / 9',
         '9/16': '9 / 16',
       },
+      width: {
+        '120': '30rem', // 480px
+      }
     },
   },
   plugins: [require("@tailwindcss/typography")],

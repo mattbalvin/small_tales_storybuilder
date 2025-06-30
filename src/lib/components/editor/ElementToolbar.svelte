@@ -14,8 +14,6 @@
     Trash2, 
     Eye, 
     EyeOff, 
-    ArrowUp, 
-    ArrowDown,
     GripVertical,
     Palette,
     Settings,
@@ -77,14 +75,6 @@
 
   function toggleElementVisibility(elementId: string) {
     dispatch('toggle-visibility', { elementId })
-  }
-
-  function moveElementBack(elementId: string) {
-    dispatch('move-back', { elementId })
-  }
-
-  function moveElementForward(elementId: string) {
-    dispatch('move-forward', { elementId })
   }
 
   function deleteElement(elementId: string) {
@@ -299,26 +289,6 @@
                   {:else}
                     <Eye class="w-4 h-4 text-periwinkle-blue" />
                   {/if}
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  on:click={() => moveElementBack(element.id)}
-                  title="Move back"
-                >
-                  <ArrowDown class="w-4 h-4 text-periwinkle-blue" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  on:click={() => moveElementForward(element.id)}
-                  title="Move forward"
-                >
-                  <ArrowUp class="w-4 h-4 text-periwinkle-blue" />
                 </Button>
 
                 <Button
