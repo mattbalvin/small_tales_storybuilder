@@ -445,9 +445,9 @@
   })
 </script>
 
-<div class="h-screen flex flex-col bg-background">
+<div class="h-screen flex flex-col bg-white">
   <!-- Header -->
-  <header class="border-b bg-card px-4 py-3 flex items-center justify-between">
+  <header class="border-b border-periwinkle-blue/20 bg-soft-buttercream px-4 py-3 flex items-center justify-between">
     <!-- Left side - Home Icon and Story Info -->
     <div class="flex items-center gap-4">
       <!-- Home Icon -->
@@ -481,7 +481,7 @@
           </div>
         {:else}
           <div class="flex items-center gap-2 group">
-            <h1 class="text-lg font-semibold">{story?.title || 'Untitled Story'}</h1>
+            <h1 class="text-lg font-semibold text-coral-sunset">{story?.title || 'Untitled Story'}</h1>
             {#if canEdit()}
               <Button 
                 variant="ghost" 
@@ -574,11 +574,11 @@
 
   <div class="flex-1 flex">
     <!-- Sidebar -->
-    <aside class="w-64 border-r bg-card p-4 flex flex-col">
+    <aside class="w-64 border-r border-periwinkle-blue/20 bg-soft-buttercream p-4 flex flex-col">
       <div class="space-y-4 flex-1">
         <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
         <div class="flex items-center justify-between">
-          <h2 class="font-medium">Pages</h2>
+          <h2 class="font-medium text-coral-sunset">Pages</h2>
           {#if canEdit()}
             <Button 
               size="sm" 
@@ -642,7 +642,7 @@
 
                   <!-- Page Content -->
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium">Page {index + 1}</div>
+                    <div class="text-sm font-medium text-coral-sunset">Page {index + 1}</div>
                     <div class="text-xs text-muted-foreground">
                       {(page.content?.elements?.length || 0)} visual elements
                       {#if page.content?.audioElements?.length}
@@ -726,7 +726,7 @@
     </aside>
 
     <!-- Main Editor -->
-    <main class="flex-1 flex">
+    <main class="flex-1 flex bg-white">
       <div class="flex-1 p-4">
         {#if currentPage}
           <PageEditor 
@@ -745,15 +745,15 @@
         {:else if pages.length === 0}
           <div class="h-full flex items-center justify-center">
             <Card class="p-8 text-center max-w-md">
-              <h2 class="text-xl font-medium mb-2">No pages yet</h2>
-              <p class="text-muted-foreground mb-4">
+              <h2 class="text-xl font-medium mb-2 text-coral-sunset">No pages yet</h2>
+              <p class="text-dusty-teal mb-4">
                 {canEdit() 
                   ? 'Create your first page to start building your story'
                   : 'This story doesn\'t have any pages yet'
                 }
               </p>
               {#if canEdit()}
-                <Button on:click={addNewPage} class="w-full" size="lg">
+                <Button on:click={addNewPage} class="w-full" size="lg" variant="secondary">
                   <Plus class="w-4 h-4 mr-2" />
                   Add First Page
                 </Button>
@@ -763,11 +763,11 @@
         {:else}
           <div class="h-full flex items-center justify-center">
             <Card class="p-8 text-center">
-              <h2 class="text-xl font-medium mb-2">Page not found</h2>
-              <p class="text-muted-foreground mb-4">
+              <h2 class="text-xl font-medium mb-2 text-coral-sunset">Page not found</h2>
+              <p class="text-dusty-teal mb-4">
                 The selected page doesn't exist. Current index: {currentPageIndex}, Pages: {pages.length}
               </p>
-              <Button on:click={() => goToPage(0)} class="w-full">
+              <Button on:click={() => goToPage(0)} class="w-full" variant="secondary">
                 Go to First Page
               </Button>
             </Card>
@@ -777,7 +777,7 @@
 
       <!-- Collaborators Panel -->
       {#if showCollaborators && canManage()}
-        <aside class="w-80 border-l bg-card p-4">
+        <aside class="w-80 border-l border-periwinkle-blue/20 bg-soft-buttercream p-4">
           <CollaboratorManager 
             {storyId}
             on:collaborator-added={() => {

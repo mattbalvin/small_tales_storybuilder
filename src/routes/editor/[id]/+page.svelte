@@ -89,7 +89,7 @@
 </svelte:head>
 
 {#if $authStore.loading || currentStoryLoading}
-  <div class="h-screen flex items-center justify-center">
+  <div class="h-screen flex items-center justify-center bg-white">
     <div class="text-center">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
       <p class="text-muted-foreground">
@@ -102,7 +102,7 @@
   </div>
 {:else if !$authStore.user}
   <!-- Not authenticated - redirect handled by reactive statement -->
-  <div class="h-screen flex items-center justify-center p-4">
+  <div class="h-screen flex items-center justify-center p-4 bg-white">
     <Card class="w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <Edit class="w-8 h-8 text-primary" />
@@ -126,7 +126,7 @@
   <StoryEditor {storyId} />
 {:else if loadError}
   <!-- Show specific error message -->
-  <div class="h-screen flex items-center justify-center p-4">
+  <div class="h-screen flex items-center justify-center p-4 bg-white">
     <Card class="w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <AlertCircle class="w-8 h-8 text-destructive" />
@@ -154,7 +154,7 @@
   </div>
 {:else}
   <!-- Story not found or failed to load -->
-  <div class="h-screen flex items-center justify-center p-4">
+  <div class="h-screen flex items-center justify-center p-4 bg-white">
     <Card class="w-full max-w-md p-8 text-center">
       <div class="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <Edit class="w-8 h-8 text-destructive" />

@@ -224,7 +224,7 @@
   })
 </script>
 
-<div class="p-6 bg-soft-buttercream min-h-screen">
+<div class="p-6 bg-white min-h-screen">
   <div class="flex items-center justify-between mb-8">
     <div>
       <h1 class="text-3xl font-bold text-coral-sunset">Media Library</h1>

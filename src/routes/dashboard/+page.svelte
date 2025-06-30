@@ -48,11 +48,11 @@
   <title>Dashboard - Small Tales Story Builder</title>
 </svelte:head>
 
-<div class="min-h-screen bg-background">
-  <header class="border-b bg-card">
+<div class="min-h-screen bg-white">
+  <header class="border-b border-periwinkle-blue/20 bg-soft-buttercream">
     <div class="container flex items-center justify-between py-4">
       <div class="flex items-center gap-4">
-        <button on:click={navigateToLanding} class="text-xl font-bold text-primary hover:opacity-80">
+        <button on:click={navigateToLanding} class="text-xl font-bold text-coral-sunset hover:opacity-80">
           Small Tales
         </button>
         {#if $authStore.user}

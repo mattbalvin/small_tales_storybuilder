@@ -8,12 +8,12 @@
     /* Color Palette:
        #E2684F - Coral Sunset (primary/featured items)
        #F0B464 - Golden Apricot (buttons/interactable elements)
-       #FEF5E1 - Soft Buttercream (general background)
+       #FEF5E1 - Soft Buttercream (card background)
        #809FCE - Periwinkle Blue (tags/highlights)
        #558A80 - Dusty Teal (accent items)
     */
     
-    --background: 28 100% 94%; /* #FEF5E1 - Soft Buttercream */
+    --background: 0 0% 100%; /* Pure white */
     --foreground: 210 40% 10%;
     --card: 28 100% 94%; /* #FEF5E1 - Soft Buttercream */
     --card-foreground: 210 40% 10%;
