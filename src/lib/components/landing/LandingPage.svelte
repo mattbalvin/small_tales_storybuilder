@@ -251,8 +251,13 @@
           <img 
             src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
             alt="Small Tales Logo" 
-            class="h-20"
+            class="h-20 w-48"
           />
+          <div class="w-64">
+            <p class="text-white">
+              Interactive storytelling platform for creators, educators, and storytellers.
+            </p>
+          </div>                   
         </div>
 
         <!--div class="grid md:grid-cols-3 gap-8"-->
@@ -296,13 +301,6 @@
         </a>
       </div>
 
-        <div class="w-48">
-          <p class="text-white">
-            Interactive storytelling platform for creators, educators, and storytellers.
-          </p>
-        </div>          
-        
-      
       <div class="border-t border-white/20 mt-8 pt-8 text-center text-white">
         <p>&copy; 2025 Small Tales. All rights reserved.</p>
       </div>
