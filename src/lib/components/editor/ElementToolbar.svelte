@@ -270,7 +270,7 @@
               on:dragover={handleDragOver}
               on:drop={(e) => handleDrop(e, index)}
             >
-              <GripVertical class="w-3 h-3 text-muted-foreground cursor-grab flex-shrink-0" />
+              <GripVertical class="w-4 h-4 text-muted-foreground cursor-grab flex-shrink-0" />
               
               <button
                 class="flex-1 flex items-center gap-2 text-left min-w-0"
@@ -290,7 +290,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="h-6 w-6 p-0"
+                  class="h-8 w-8 p-0"
                   on:click={() => toggleElementVisibility(element.id)}
                   title={element.hidden ? 'Show element' : 'Hide element'}
                 >
@@ -304,7 +304,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="h-6 w-6 p-0"
+                  class="h-8 w-8 p-0"
                   on:click={() => moveElementBack(element.id)}
                   title="Move back"
                 >
@@ -314,7 +314,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="h-6 w-6 p-0"
+                  class="h-8 w-8 p-0"
                   on:click={() => moveElementForward(element.id)}
                   title="Move forward"
                 >
@@ -324,7 +324,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                  class="h-8 w-8 p-0 text-destructive hover:text-destructive"
                   on:click={() => deleteElement(element.id)}
                   title="Delete element"
                 >
@@ -361,7 +361,7 @@
               <Button
                 variant="ghost"
                 size="sm"
-                class="h-6 w-6 p-0 text-destructive hover:text-destructive flex-shrink-0"
+                class="h-8 w-8 p-0 text-destructive hover:text-destructive flex-shrink-0"
                 on:click={() => deleteAudioElement(audioElement.id)}
                 title="Delete audio element"
               >
@@ -873,16 +873,16 @@
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     background: hsl(var(--primary));
     border-radius: 50%;
     cursor: pointer;
   }
 
   input[type="range"]::-moz-range-thumb {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     background: hsl(var(--primary));
     border-radius: 50%;
     cursor: pointer;

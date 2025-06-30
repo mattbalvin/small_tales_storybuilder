@@ -1128,29 +1128,29 @@
             <!-- Resize handles (only show when selected and not readonly) -->
             {#if selectedElementId === element.id && !readonly && !isAltPressed}
               <div 
-                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
-                style="left: -6px; top: -6px; z-index: 20;"
+                class="resize-handle absolute w-5 h-5 bg-primary border border-white rounded-full cursor-nw-resize hover:scale-125 transition-transform" 
+                style="left: -10px; top: -10px; z-index: 20;"
                 data-handle="nw"
                 role="button"
                 tabindex="0"
               ></div>
               <div 
-                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
-                style="right: -6px; top: -6px; z-index: 20;"
+                class="resize-handle absolute w-5 h-5 bg-primary border border-white rounded-full cursor-ne-resize hover:scale-125 transition-transform" 
+                style="right: -10px; top: -10px; z-index: 20;"
                 data-handle="ne"
                 role="button"
                 tabindex="0"
               ></div>
               <div 
-                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
-                style="left: -6px; bottom: -6px; z-index: 20;"
+                class="resize-handle absolute w-5 h-5 bg-primary border border-white rounded-full cursor-sw-resize hover:scale-125 transition-transform" 
+                style="left: -10px; bottom: -10px; z-index: 20;"
                 data-handle="sw"
                 role="button"
                 tabindex="0"
               ></div>
               <div 
-                class="resize-handle absolute w-3 h-3 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
-                style="right: -6px; bottom: -6px; z-index: 20;"
+                class="resize-handle absolute w-5 h-5 bg-primary border border-white rounded-full cursor-se-resize hover:scale-125 transition-transform" 
+                style="right: -10px; bottom: -10px; z-index: 20;"
                 data-handle="se"
                 role="button"
                 tabindex="0"

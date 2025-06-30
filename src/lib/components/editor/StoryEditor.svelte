@@ -636,7 +636,7 @@
                   <!-- Drag Handle -->
                   {#if canEdit()}
                     <div class="flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      <GripVertical class="w-4 h-4" />
+                      <GripVertical class="w-6 h-6" />
                     </div>
                   {/if}
 
@@ -658,7 +658,7 @@
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      class="h-6 w-6 p-0"
+                      class="h-8 w-8 p-0"
                       on:click={(event) => { 
                         event.stopPropagation(); 
                         duplicatePage(index); 
@@ -670,7 +670,7 @@
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      class="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                      class="h-8 w-8 p-0 text-destructive hover:text-destructive"
                       on:click={(event) => { 
                         event.stopPropagation(); 
                         deletePage(index); 

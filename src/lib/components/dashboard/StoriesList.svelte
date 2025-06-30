@@ -244,10 +244,10 @@
 
   function getStatusColor(status: string) {
     switch (status) {
-      case 'published': return 'text-green-600 bg-green-100'
-      case 'draft': return 'text-yellow-600 bg-yellow-100'
-      case 'archived': return 'text-gray-600 bg-gray-100'
-      default: return 'text-gray-600 bg-gray-100'
+      case 'published': return 'text-accent bg-accent/10'
+      case 'draft': return 'text-secondary bg-secondary/10'
+      case 'archived': return 'text-muted-foreground bg-muted/10'
+      default: return 'text-muted-foreground bg-muted/10'
     }
   }
 
@@ -280,10 +280,10 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {#each Array(6) as _}
         <Card class="overflow-hidden animate-pulse">
-          <div class="aspect-video bg-gray-200"></div>
+          <div class="aspect-video bg-muted"></div>
           <div class="p-4">
-            <div class="h-4 bg-gray-200 rounded mb-2"></div>
-            <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+            <div class="h-4 bg-muted rounded mb-2"></div>
+            <div class="h-3 bg-muted rounded w-2/3"></div>
           </div>
         </Card>
       {/each}

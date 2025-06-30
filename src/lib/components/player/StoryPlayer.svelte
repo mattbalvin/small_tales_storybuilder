@@ -617,7 +617,7 @@
                 <div class="flex gap-1 max-w-full overflow-x-auto">
                   {#each pages as page, index}
                     <button
-                      class="w-3 h-3 rounded-full transition-colors {index === currentPageIndex ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20'}"
+                      class="w-5 h-5 rounded-full transition-colors {index === currentPageIndex ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20'}"
                       on:click={() => goToPage(index)}
                       title="Go to page {index + 1}"
                     ></button>

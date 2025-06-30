@@ -339,7 +339,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       {#each Array(12) as _}
         <Card class="aspect-square animate-pulse">
-          <div class="w-full h-full bg-gray-200 rounded"></div>
+          <div class="w-full h-full bg-muted rounded"></div>
         </Card>
       {/each}
     </div>
@@ -369,7 +369,7 @@
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       {#each filteredAssets as asset}
         <Card class="group relative overflow-hidden hover:shadow-lg transition-shadow">
-          <div class="aspect-square bg-gray-100 flex items-center justify-center relative">
+          <div class="aspect-square bg-muted flex items-center justify-center relative">
             {#if asset.type === 'image'}
               <img 
                 src={asset.url} 
