@@ -568,7 +568,8 @@
 
           <!-- Play Buttons -->
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" on:click={startReading} class="text-lg px-8 py-6">
+            <Button size="lg" on:click={startRe
+            }ading} class="text-lg px-8 py-6">
               <Play class="w-5 h-5 mr-2" />
               Play Story
             </Button>
