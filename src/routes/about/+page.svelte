@@ -1,6 +1,7 @@
 <script lang="ts">
   import Button from '$lib/components/ui/button.svelte'
   import { Home } from 'lucide-svelte'
+  import { BookOpen, ArrowRight } from 'lucide-svelte'
 </script>
 
 <svelte:head>
