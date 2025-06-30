@@ -44,6 +44,12 @@ export default {
           DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground) / <alpha-value>)",
         },
+        // Custom colors from CSS variables
+        "coral-sunset": "hsl(var(--coral-sunset) / <alpha-value>)",
+        "golden-apricot": "hsl(var(--golden-apricot) / <alpha-value>)",
+        "soft-buttercream": "hsl(var(--soft-buttercream) / <alpha-value>)",
+        "periwinkle-blue": "hsl(var(--periwinkle-blue) / <alpha-value>)",
+        "dusty-teal": "hsl(var(--dusty-teal) / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",
