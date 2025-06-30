@@ -492,7 +492,7 @@
           <Button 
             variant="outline" 
             on:click={() => removeCoverImage(showCoverSelector)} 
-            class="w-full"
+            class="w-full accent-element"
           >
             <X class="w-4 h-4 mr-2" />
             Remove Cover Image
