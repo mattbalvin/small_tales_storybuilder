@@ -457,7 +457,7 @@ function processAlignmentData(alignment: any, text: string): WordTimestamp[] {
   let charIndex = 0;
   
   for (const charData of alignment.characters) {
-    const char = charData.character;
+    const char = charData;
     const startTime = Math.round(charData.start_time_ms || 0);
     const endTime = Math.round(charData.end_time_ms || 0);
     
