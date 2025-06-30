@@ -634,6 +634,7 @@
 
                 <div class="flex flex-row items-center">
                   <!-- Page number -->
+                  <GripVertical class="w-5 h-5 text-dusty-teal cursor-grab flex-shrink-0" />
                   <div class="text-xs font-medium text-coral-sunset">Page {index + 1}</div>
                   
                   <!-- Page actions (show on hover) -->
