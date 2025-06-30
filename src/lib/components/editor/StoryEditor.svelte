@@ -698,9 +698,9 @@
               variant="outline" 
               size="sm" 
               class="w-full h-7 text-xs p-0 text-destructive hover:text-destructive" 
-              on:click={() => deletePage(currentPageIndex)}Delete PageZ
+              on:click={() => deletePage(currentPageIndex)}
             >
-              <Trash2 class="w-3 h-3" />
+              <Trash2 class="w-3 h-3" />Delete Page
             </Button>
           {/if}
         </div>
