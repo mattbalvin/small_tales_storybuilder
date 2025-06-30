@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onDestroy } from 'svelte'
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
   import MediaSelector from './MediaSelector.svelte'
   import AudioGenerationModal from './AudioGenerationModal.svelte'
   import NarrationGenerationModal from './NarrationGenerationModal.svelte'
+  import { NarrationPlayer } from '$lib/services/narrationGeneration'
   import { 
     Type, 
     Image, 
@@ -17,7 +18,9 @@
     GripVertical,
     Palette,
     Settings,
-    Wand2
+    Wand2,
+    Play,
+    Pause
   } from 'lucide-svelte'
 
   const dispatch = createEventDispatcher()
@@ -40,9 +43,31 @@
   let selectedAudioElementId: string | null = null
   $: selectedAudioElement = selectedAudioElementId ? audioElements.find(el => el.id === selectedAudioElementId) : null
 
+  // Narration playback state
+  let activeNarrationPlayer: NarrationPlayer | null = null
+  let playingNarrationElementId: string | null = null
+  let currentWord: string | null = null
+
   // Reactive statements for element properties
   $: textProperties = selectedElement?.type === 'text' ? selectedElement.properties : null
   $: imageProperties = selectedElement?.type === 'image' ? selectedElement.properties : null
+
+  // Clean up narration player when component is destroyed
+  onDestroy(() => {
+    if (activeNarrationPlayer) {
+      activeNarrationPlayer.destroy()
+      activeNarrationPlayer = null
+      playingNarrationElementId = null
+    }
+  })
+
+  // Clean up narration player when selected element changes
+  $: if (selectedElementId && activeNarrationPlayer && playingNarrationElementId && selectedElementId !== playingNarrationElementId) {
+    activeNarrationPlayer.destroy()
+    activeNarrationPlayer = null
+    playingNarrationElementId = null
+    currentWord = null
+  }
 
   function addElement(type: 'text' | 'image' | 'audio') {
     dispatch('add', { type })
@@ -210,11 +235,68 @@
     if (element.type === 'text') {
       const text = element.properties?.text || 'Text Element'
       // Truncate long text to prevent overflow
-      return text.length > 20 ? text.substring(0, 20) + '...' : text
+      const displayText = text.length > 20 ? text.substring(0, 20) + '...' : text
+      // Add indicator if narration is available
+      return element.properties?.narrationData ? `${displayText} 🔊` : displayText
     } else if (element.type === 'image') {
       return 'Image'
     }
     return 'Element'
+  }
+
+  // Toggle narration playback for a text element
+  function toggleNarrationPlayback(element: any) {
+    if (!element || element.type !== 'text' || !element.properties?.narrationData) return
+
+    // If we're already playing this element's narration, stop it
+    if (playingNarrationElementId === element.id && activeNarrationPlayer) {
+      activeNarrationPlayer.stop()
+      activeNarrationPlayer = null
+      playingNarrationElementId = null
+      currentWord = null
+      return
+    }
+
+    // Stop any currently playing narration
+    if (activeNarrationPlayer) {
+      activeNarrationPlayer.destroy()
+      activeNarrationPlayer = null
+      playingNarrationElementId = null
+      currentWord = null
+    }
+
+    // Create a new narration player
+    try {
+      const narrationData = element.properties.narrationData
+      activeNarrationPlayer = new NarrationPlayer(narrationData)
+      
+      // Set up event handlers
+      activeNarrationPlayer.onWordHighlight = (word, index) => {
+        if (word && typeof word === 'object' && word.word) {
+          currentWord = word.word
+        } else if (typeof word === 'string') {
+          currentWord = word
+        } else {
+          console.warn('Invalid word data received:', word)
+          currentWord = null
+        }
+      }
+      
+      activeNarrationPlayer.onPlaybackEnd = () => {
+        playingNarrationElementId = null
+        activeNarrationPlayer = null
+        currentWord = null
+      }
+      
+      // Start playback
+      activeNarrationPlayer.playFull()
+      playingNarrationElementId = element.id
+    } catch (error) {
+      console.error('Failed to play narration:', error)
+      activeNarrationPlayer = null
+      playingNarrationElementId = null
+      currentWord = null
+    }
   }
 </script>
 
@@ -280,6 +362,23 @@
               </button>
 
               <div class="flex items-center gap-1 flex-shrink-0">
+                <!-- Play narration button for text elements with narration -->
+                {#if element.type === 'text' && element.properties?.narrationData}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 w-8 p-0"
+                    on:click={() => toggleNarrationPlayback(element)}
+                    title={playingNarrationElementId === element.id ? 'Stop narration' : 'Play narration'}
+                  >
+                    {#if playingNarrationElementId === element.id}
+                      <Pause class="w-4 h-4 text-golden-apricot" />
+                    {:else}
+                      <Play class="w-4 h-4 text-golden-apricot" />
+                    {/if}
+                  </Button>
+                {/if}
+
                 <Button
                   variant="ghost"
                   size="sm"
@@ -345,6 +444,33 @@
         </div>
       {/if}
     </div>
+
+    <!-- Currently Playing Narration Info -->
+    {#if playingNarrationElementId && currentWord}
+      <div class="p-4 border-b border-periwinkle-blue/20 bg-golden-apricot/10">
+        <h3 class="text-sm font-medium mb-2 text-golden-apricot">Currently Playing</h3>
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-dusty-teal">
+            Current word: <span class="font-medium text-coral-sunset">{currentWord}</span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            class="h-8 w-8 p-0"
+            on:click={() => {
+              if (activeNarrationPlayer) {
+                activeNarrationPlayer.stop();
+                activeNarrationPlayer = null;
+                playingNarrationElementId = null;
+                currentWord = null;
+              }
+            }}
+          >
+            <Pause class="w-4 h-4 text-golden-apricot" />
+          </Button>
+        </div>
+      </div>
+    {/if}
 
     <!-- Element Properties (shown when any element is selected) -->
     {#if selectedElement || selectedAudioElement}
@@ -433,6 +559,30 @@
                 <div class="text-xs text-periwinkle-blue">
                   ✓ Narration generated ({Math.round(textProperties.narrationData.fullAudio.duration / 1000)}s)
                 </div>
+                
+                <!-- Play/Pause Narration Button -->
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  on:click={() => toggleNarrationPlayback(selectedElement)}
+                  class="w-full accent-element"
+                >
+                  {#if playingNarrationElementId === selectedElement.id}
+                    <Pause class="w-3 h-3 mr-1" />
+                    Stop Narration
+                  {:else}
+                    <Play class="w-3 h-3 mr-1" />
+                    Play Narration
+                  {/if}
+                </Button>
+                
+                <!-- Current Word Display -->
+                {#if playingNarrationElementId === selectedElement.id && currentWord}
+                  <div class="text-xs bg-golden-apricot/10 p-2 rounded text-center">
+                    <span class="text-dusty-teal">Current word:</span>
+                    <span class="font-medium text-golden-apricot ml-1">{currentWord}</span>
+                  </div>
+                {/if}
               {/if}
             </div>
 
