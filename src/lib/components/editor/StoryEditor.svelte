@@ -578,7 +578,7 @@
     <aside class="w-16 border-r border-periwinkle-blue/20 bg-soft-buttercream p-2 flex flex-col  min-w-60">
       <div class="space-y-2 flex-1 overflow-y-auto">
         <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
-        <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center justify-between mb-4">
           <h2 class="text-xs font-medium text-coral-sunset">Pages</h2>
           {#if canEdit()}
             <Button 
