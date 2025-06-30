@@ -94,7 +94,7 @@
         <div class="text-center max-w-4xl">
           <h1 class="text-5xl md:text-6xl font-bold mb-6">
             <span class="text-coral-sunset block">Big Adventures</span>
-            <span class="text-golden-apricot block">in Small Stories</span>
+            <span class="text-golden-apricot block">in Small Tales</span>
           </h1>
           <p class="text-xl text-dusty-teal mb-8">
             Exciting interactive stories for early readers
