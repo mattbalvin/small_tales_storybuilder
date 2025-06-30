@@ -18,12 +18,18 @@ export const authStore = writable<AuthState>(initialState)
 
 export const authService = {
   async initialize() {
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (session?.user) {
-      await this.loadUserProfile(session.user)
-    } else {
-      authStore.update(state => ({ ...state, loading: false }))
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session?.user) {
+        await this.loadUserProfile(session.user)
+      } else {
+        authStore.update(state => ({ ...state, loading: false }))
+      }
+    } catch (error) {
+      console.error('Failed to get session:', error)
+      // Clear any invalid session data and set loading to false
+      authStore.set({ user: null, loading: false, profile: null })
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
