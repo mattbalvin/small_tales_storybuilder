@@ -11,6 +11,8 @@
   $: story = $storiesStore.currentStory
   $: pages = $storiesStore.currentPages
   $: loading = $storiesStore.currentStoryLoading
+  $: publicStoryError = null
+  $: isPublicStory = false
 
   let currentPageIndex = 0
   let isPlaying = false
@@ -19,8 +21,6 @@
   let showSettings = false
   let audioElement: HTMLAudioElement | null = null
   let currentAudio: string | null = null
-  let publicStoryError: string | null = null
-  let isPublicStory = false
 
   // Story settings
   let volume = 0.7
@@ -293,9 +293,9 @@
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10 flex flex-col">
+<div class="min-h-screen bg-gradient-to-br from-soft-buttercream via-soft-buttercream to-periwinkle-blue/10 flex flex-col">
   <!-- Header -->
-  <header class="bg-background/80 backdrop-blur-sm border-b p-4">
+  <header class="bg-soft-buttercream/90 backdrop-blur-sm border-b border-periwinkle-blue/20 p-4 shadow-sm">
     <div class="container flex items-center justify-between">
       <div class="flex items-center gap-4">
         <Button variant="ghost" size="sm" on:click={navigateHome}>
@@ -305,20 +305,20 @@
         
         {#if story}
           <div>
-            <h1 class="text-lg font-semibold">{story.title}</h1>
+            <h1 class="text-xl font-bold text-coral-sunset">{story.title}</h1>
             {#if story.description}
-              <p class="text-sm text-muted-foreground">{story.description}</p>
+              <p class="text-sm text-dusty-teal">{story.description}</p>
             {/if}
             {#if isPublicStory}
-              <p class="text-xs text-muted-foreground">Shared Story</p>
+              <p class="text-xs text-periwinkle-blue">Shared Story</p>
             {/if}
           </div>
         {/if}
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-3">
         <!-- Orientation Toggle -->
-        <Button variant="outline" size="sm" on:click={toggleOrientation}>
+        <Button variant="outline" size="sm" on:click={toggleOrientation} class="accent-element">
           {orientation === 'landscape' ? '16:9' : '9:16'}
         </Button>
 
@@ -327,14 +327,14 @@
           variant="outline" 
           size="sm" 
           on:click={() => showSettings = !showSettings}
-          class={showSettings ? 'bg-primary/10' : ''}
+          class={showSettings ? 'bg-periwinkle-blue/10 border-periwinkle-blue' : 'accent-element'}
         >
           <Settings class="w-4 h-4" />
         </Button>
 
         <!-- Sign in prompt for public viewers -->
         {#if isPublicStory && !$authStore.user}
-          <Button variant="outline" size="sm" on:click={() => window.location.hash = '#/auth'}>
+          <Button variant="secondary" size="sm" on:click={() => window.location.hash = '#/auth'}>
             Sign In
           </Button>
         {/if}
@@ -344,11 +344,11 @@
 
   <!-- Settings Panel -->
   {#if showSettings}
-    <div class="bg-background border-b p-4">
+    <div class="bg-soft-buttercream border-b border-periwinkle-blue/20 p-4 shadow-inner">
       <div class="container">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <label class="text-sm font-medium mb-2 block">Volume</label>
+            <label class="text-sm font-medium mb-2 block text-dusty-teal">Volume</label>
             <input
               type="range"
               min="0"
@@ -357,11 +357,11 @@
               bind:value={volume}
               class="w-full"
             />
-            <span class="text-xs text-muted-foreground">{Math.round(volume * 100)}%</span>
+            <span class="text-xs text-periwinkle-blue">{Math.round(volume * 100)}%</span>
           </div>
           
           <div>
-            <label class="text-sm font-medium mb-2 block">Reading Speed</label>
+            <label class="text-sm font-medium mb-2 block text-dusty-teal">Reading Speed</label>
             <input
               type="range"
               min="0.5"
@@ -370,17 +370,17 @@
               bind:value={readingSpeed}
               class="w-full"
             />
-            <span class="text-xs text-muted-foreground">{readingSpeed}x</span>
+            <span class="text-xs text-periwinkle-blue">{readingSpeed}x</span>
           </div>
           
           <div class="flex items-center gap-2">
-            <input type="checkbox" bind:checked={autoRead} id="autoRead" />
-            <label for="autoRead" class="text-sm font-medium">Auto-read</label>
+            <input type="checkbox" bind:checked={autoRead} id="autoRead" class="w-5 h-5 rounded-md accent-golden-apricot" />
+            <label for="autoRead" class="text-sm font-medium text-dusty-teal">Auto-read</label>
           </div>
           
           <div class="flex items-center gap-2">
-            <input type="checkbox" bind:checked={showText} id="showText" />
-            <label for="showText" class="text-sm font-medium">Show text</label>
+            <input type="checkbox" bind:checked={showText} id="showText" class="w-5 h-5 rounded-md accent-golden-apricot" />
+            <label for="showText" class="text-sm font-medium text-dusty-teal">Show text</label>
           </div>
         </div>
       </div>
@@ -393,16 +393,16 @@
       <!-- Loading State -->
       <div class="flex-1 flex items-center justify-center">
         <div class="text-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p class="text-muted-foreground">Loading story...</p>
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-coral-sunset mx-auto mb-4"></div>
+          <p class="text-dusty-teal">Loading story...</p>
         </div>
       </div>
     {:else if publicStoryError}
       <!-- Story Not Available -->
       <div class="flex-1 flex items-center justify-center p-4">
         <Card class="w-full max-w-md p-8 text-center">
-          <h2 class="text-xl font-semibold mb-2">Story Not Available</h2>
-          <p class="text-muted-foreground mb-6">
+          <h2 class="text-xl font-semibold mb-3 text-coral-sunset">Story Not Available</h2>
+          <p class="text-dusty-teal mb-6">
             {publicStoryError}
           </p>
           <div class="space-y-3">
@@ -411,7 +411,7 @@
               Go Home
             </Button>
             {#if !$authStore.user}
-              <Button variant="outline" on:click={() => window.location.hash = '#/auth'}>
+              <Button variant="secondary" on:click={() => window.location.hash = '#/auth'}>
                 Sign In
               </Button>
             {/if}
@@ -422,8 +422,8 @@
       <!-- Story Not Found -->
       <div class="flex-1 flex items-center justify-center p-4">
         <Card class="w-full max-w-md p-8 text-center">
-          <h2 class="text-xl font-semibold mb-2">Story Not Found</h2>
-          <p class="text-muted-foreground mb-6">
+          <h2 class="text-xl font-semibold mb-3 text-coral-sunset">Story Not Found</h2>
+          <p class="text-dusty-teal mb-6">
             The story you're looking for doesn't exist or is not available.
           </p>
           <Button on:click={navigateHome}>
@@ -438,7 +438,7 @@
         <Card class="w-full max-w-2xl p-8 text-center">
           <!-- Cover Image -->
           {#if story?.cover_image}
-            <div class="w-48 h-48 mx-auto mb-6 rounded-lg overflow-hidden shadow-lg">
+            <div class="w-56 h-56 mx-auto mb-6 rounded-2xl overflow-hidden shadow-xl">
               <img 
                 src={story.cover_image} 
                 alt={story.title}
@@ -446,26 +446,26 @@
               />
             </div>
           {:else}
-            <div class="w-48 h-48 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
-              <span class="text-4xl">📚</span>
+            <div class="w-56 h-56 mx-auto mb-6 bg-gradient-to-br from-coral-sunset/20 to-dusty-teal/20 rounded-2xl flex items-center justify-center shadow-xl">
+              <span class="text-5xl">📚</span>
             </div>
           {/if}
 
           <!-- Story Info -->
-          <h1 class="text-3xl font-bold mb-2">{story?.title || 'Story'}</h1>
+          <h1 class="text-3xl font-bold mb-3 text-coral-sunset">{story?.title || 'Story'}</h1>
           {#if story?.description}
-            <p class="text-muted-foreground mb-2">{story.description}</p>
+            <p class="text-dusty-teal mb-3">{story.description}</p>
           {/if}
           {#if story?.age_range}
-            <p class="text-sm text-muted-foreground mb-6">Ages {story.age_range}</p>
+            <p class="text-sm text-periwinkle-blue mb-6">Ages {story.age_range}</p>
           {/if}
           
-          <p class="text-muted-foreground mb-8">{pages.length} pages</p>
+          <p class="text-dusty-teal mb-8">{pages.length} pages</p>
 
           <!-- Public story notice -->
           {#if isPublicStory}
-            <div class="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
-              <p class="text-sm text-primary">
+            <div class="bg-periwinkle-blue/10 border border-periwinkle-blue/20 rounded-xl p-4 mb-6">
+              <p class="text-sm text-periwinkle-blue">
                 📖 This is a shared story. 
                 {#if !$authStore.user}
                   <a href="#/auth" class="underline hover:no-underline">Sign in</a> to create your own stories!
@@ -482,7 +482,7 @@
             </Button>
             
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="lg" 
               on:click={() => { autoRead = true; startReading(); }}
               class="text-lg px-8 py-6"
@@ -501,7 +501,7 @@
           <div class="relative max-w-full max-h-full">
             <!-- Canvas Container -->
             <div 
-              class="relative bg-white rounded-lg shadow-lg overflow-hidden"
+              class="relative bg-white rounded-2xl shadow-xl overflow-hidden"
               style="
                 width: {Math.min(canvasWidth * 0.8, window.innerWidth - 100)}px;
                 height: {Math.min(canvasHeight * 0.8, window.innerHeight - 200)}px;
@@ -538,7 +538,7 @@
                           ? `rgba(${parseInt(element.properties.backgroundColor.slice(1, 3), 16)}, ${parseInt(element.properties.backgroundColor.slice(3, 5), 16)}, ${parseInt(element.properties.backgroundColor.slice(5, 7), 16)}, ${(element.properties.backgroundAlpha || 0) / 100})`
                           : 'transparent'};
                         padding: 8px;
-                        border-radius: 4px;
+                        border-radius: 8px;
                         line-height: 1.4;
                       "
                     >
@@ -548,7 +548,7 @@
                     <img 
                       src={element.properties?.src} 
                       alt={element.properties?.alt || ''}
-                      class="w-full h-full object-cover rounded"
+                      class="w-full h-full object-cover rounded-lg"
                       style="opacity: {(element.properties?.opacity ?? 100) / 100};"
                     />
                   {/if}
@@ -556,7 +556,7 @@
               {/each}
 
               <!-- Page Number -->
-              <div class="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+              <div class="absolute bottom-4 right-4 bg-periwinkle-blue/70 text-white px-3 py-1 rounded-full text-sm">
                 {currentPageIndex + 1} / {pages.length}
               </div>
             </div>
@@ -564,7 +564,7 @@
         </div>
 
         <!-- Controls -->
-        <div class="bg-background/80 backdrop-blur-sm border-t p-4">
+        <div class="bg-soft-buttercream/90 backdrop-blur-sm border-t border-periwinkle-blue/20 p-4 shadow-lg">
           <div class="container">
             <div class="flex items-center justify-between">
               <!-- Previous Button -->
@@ -572,24 +572,25 @@
                 variant="outline" 
                 on:click={previousPage}
                 disabled={!canGoPrevious}
+                class="accent-element"
               >
                 <ArrowLeft class="w-4 h-4 mr-2" />
                 Previous
               </Button>
 
               <!-- Center Controls -->
-              <div class="flex items-center gap-2">
-                <Button variant="outline" size="sm" on:click={restartStory}>
+              <div class="flex items-center gap-3">
+                <Button variant="outline" size="sm" on:click={restartStory} class="accent-element">
                   <RotateCcw class="w-4 h-4" />
                 </Button>
                 
                 {#if isAutoReading}
-                  <Button variant="outline" on:click={() => isAutoReading = false}>
+                  <Button variant="outline" on:click={() => isAutoReading = false} class="accent-element">
                     <Pause class="w-4 h-4 mr-2" />
                     Pause
                   </Button>
                 {:else}
-                  <Button on:click={() => { isAutoReading = true; playPageAudio(); }}>
+                  <Button variant="secondary" on:click={() => { isAutoReading = true; playPageAudio(); }}>
                     <Play class="w-4 h-4 mr-2" />
                     Continue
                   </Button>
@@ -605,6 +606,7 @@
                 variant="outline" 
                 on:click={nextPage}
                 disabled={!canGoNext}
+                class="accent-element"
               >
                 Next
                 <ArrowRight class="w-4 h-4 ml-2" />
@@ -613,11 +615,11 @@
 
             <!-- Page Navigation -->
             {#if pages.length > 1}
-              <div class="flex justify-center mt-4">
-                <div class="flex gap-1 max-w-full overflow-x-auto">
+              <div class="flex justify-center mt-6">
+                <div class="flex gap-2 max-w-full overflow-x-auto">
                   {#each pages as page, index}
                     <button
-                      class="w-5 h-5 rounded-full transition-colors {index === currentPageIndex ? 'bg-primary' : 'bg-muted hover:bg-muted-foreground/20'}"
+                      class="w-5 h-5 rounded-full transition-colors {index === currentPageIndex ? 'bg-coral-sunset' : 'bg-periwinkle-blue/30 hover:bg-periwinkle-blue/50'}"
                       on:click={() => goToPage(index)}
                       title="Go to page {index + 1}"
                     ></button>
@@ -636,28 +638,34 @@
   input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    height: 4px;
-    background: hsl(var(--muted));
-    border-radius: 2px;
+    height: 6px;
+    background: hsl(var(--periwinkle-blue) / 0.3);
+    border-radius: 3px;
     outline: none;
   }
 
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
-    background: hsl(var(--primary));
+    width: 18px;
+    height: 18px;
+    background: hsl(var(--golden-apricot));
     border-radius: 50%;
     cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: hsl(var(--primary));
+    width: 18px;
+    height: 18px;
+    background: hsl(var(--golden-apricot));
     border-radius: 50%;
     cursor: pointer;
     border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  input[type="checkbox"] {
+    accent-color: hsl(var(--golden-apricot));
   }
 </style>

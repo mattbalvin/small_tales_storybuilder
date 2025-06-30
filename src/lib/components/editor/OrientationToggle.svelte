@@ -6,10 +6,10 @@
   export let showSafetyZones: boolean
 </script>
 
-<div class="flex items-center gap-2">
-  <div class="flex rounded-md border">
+<div class="flex items-center gap-3">
+  <div class="flex rounded-xl border border-periwinkle-blue/30 shadow-sm">
     <Button
-      variant={orientation === 'landscape' ? 'default' : 'ghost'}
+      variant={orientation === 'landscape' ? 'secondary' : 'ghost'}
       size="sm"
       class="rounded-r-none"
       on:click={() => orientation = 'landscape'}
@@ -18,7 +18,7 @@
       16:9
     </Button>
     <Button
-      variant={orientation === 'portrait' ? 'default' : 'ghost'}
+      variant={orientation === 'portrait' ? 'secondary' : 'ghost'}
       size="sm"
       class="rounded-l-none border-l"
       on:click={() => orientation = 'portrait'}
@@ -29,9 +29,10 @@
   </div>
 
   <Button
-    variant={showSafetyZones ? 'default' : 'outline'}
+    variant={showSafetyZones ? 'secondary' : 'outline'}
     size="sm"
     on:click={() => showSafetyZones = !showSafetyZones}
+    class="accent-element"
   >
     {#if showSafetyZones}
       <Eye class="w-4 h-4 mr-1" />

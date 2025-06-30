@@ -5,26 +5,41 @@
 
 @layer base {
   :root {
-    --background: 28 100% 94%;
+    /* Color Palette:
+       #E2684F - Coral Sunset (primary/featured items)
+       #F0B464 - Golden Apricot (buttons/interactable elements)
+       #FEF5E1 - Soft Buttercream (general background)
+       #809FCE - Periwinkle Blue (tags/highlights)
+       #558A80 - Dusty Teal (accent items)
+    */
+    
+    --background: 28 100% 94%; /* #FEF5E1 - Soft Buttercream */
     --foreground: 210 40% 10%;
-    --card: 28 100% 94%;
+    --card: 28 100% 94%; /* #FEF5E1 - Soft Buttercream */
     --card-foreground: 210 40% 10%;
-    --popover: 28 100% 94%;
+    --popover: 28 100% 94%; /* #FEF5E1 - Soft Buttercream */
     --popover-foreground: 210 40% 10%;
-    --primary: 8 70% 60%;
+    --primary: 8 70% 60%; /* #E2684F - Coral Sunset */
     --primary-foreground: 0 0% 100%;
-    --secondary: 36 80% 66%;
+    --secondary: 36 80% 66%; /* #F0B464 - Golden Apricot */
     --secondary-foreground: 210 40% 10%;
-    --muted: 28 100% 90%;
+    --muted: 28 50% 88%; /* Lighter version of background */
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 220 40% 78%;
+    --accent: 220 40% 78%; /* #809FCE - Periwinkle Blue */
     --accent-foreground: 210 40% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 20% 85%;
+    --border: 220 20% 85%; /* Muted Periwinkle */
     --input: 220 20% 85%;
-    --ring: 8 70% 60%;
+    --ring: 8 70% 60%; /* #E2684F - Coral Sunset */
     --radius: 0.75rem;
+    
+    /* Custom color variables for specific use cases */
+    --coral-sunset: 8 70% 60%; /* #E2684F */
+    --golden-apricot: 36 80% 66%; /* #F0B464 */
+    --soft-buttercream: 28 100% 94%; /* #FEF5E1 */
+    --periwinkle-blue: 220 40% 78%; /* #809FCE */
+    --dusty-teal: 174 25% 43%; /* #558A80 */
   }
 
   .dark {
@@ -59,10 +74,55 @@
   }
 }
 
+/* Custom color utility classes */
+@layer utilities {
+  .bg-coral-sunset {
+    background-color: hsl(var(--coral-sunset));
+  }
+  .bg-golden-apricot {
+    background-color: hsl(var(--golden-apricot));
+  }
+  .bg-soft-buttercream {
+    background-color: hsl(var(--soft-buttercream));
+  }
+  .bg-periwinkle-blue {
+    background-color: hsl(var(--periwinkle-blue));
+  }
+  .bg-dusty-teal {
+    background-color: hsl(var(--dusty-teal));
+  }
+  
+  .text-coral-sunset {
+    color: hsl(var(--coral-sunset));
+  }
+  .text-golden-apricot {
+    color: hsl(var(--golden-apricot));
+  }
+  .text-periwinkle-blue {
+    color: hsl(var(--periwinkle-blue));
+  }
+  .text-dusty-teal {
+    color: hsl(var(--dusty-teal));
+  }
+  
+  .border-coral-sunset {
+    border-color: hsl(var(--coral-sunset));
+  }
+  .border-golden-apricot {
+    border-color: hsl(var(--golden-apricot));
+  }
+  .border-periwinkle-blue {
+    border-color: hsl(var(--periwinkle-blue));
+  }
+  .border-dusty-teal {
+    border-color: hsl(var(--dusty-teal));
+  }
+}
+
 /* Custom animations for story elements */
 @keyframes highlight-word {
   0% { background-color: transparent; }
-  50% { background-color: hsl(var(--primary) / 0.2); }
+  50% { background-color: hsl(var(--periwinkle-blue) / 0.3); }
   100% { background-color: transparent; }
 }
 
@@ -82,7 +142,7 @@
   left: 10%;
   right: 10%;
   bottom: 10%;
-  border: 2px dashed hsl(var(--accent) / 0.5);
+  border: 2px dashed hsl(var(--periwinkle-blue) / 0.6);
   pointer-events: none;
   z-index: 10;
 }
@@ -98,7 +158,7 @@
   left: 15%;
   right: 15%;
   bottom: 5%;
-  border: 2px dashed hsl(var(--accent) / 0.5);
+  border: 2px dashed hsl(var(--periwinkle-blue) / 0.6);
   pointer-events: none;
   z-index: 10;
 }
@@ -109,9 +169,88 @@
 }
 
 .drop-zone {
-  @apply border-2 border-dashed border-primary bg-primary/5;
+  @apply border-2 border-dashed border-periwinkle-blue bg-periwinkle-blue/10;
 }
 
 .drop-zone.active {
-  @apply border-primary bg-primary/10;
+  @apply border-periwinkle-blue bg-periwinkle-blue/20;
+}
+
+/* Child-friendly touch targets */
+.touch-friendly {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Enhanced button styles for children */
+.btn-child-friendly {
+  @apply rounded-xl shadow-lg transition-all duration-200 ease-in-out;
+  @apply hover:scale-105 hover:shadow-xl;
+  @apply active:scale-95;
+}
+
+/* Card styles with soft shadows */
+.card-child-friendly {
+  @apply rounded-2xl shadow-lg;
+  box-shadow: 0 4px 20px hsl(var(--periwinkle-blue) / 0.15);
+}
+
+.card-child-friendly:hover {
+  box-shadow: 0 8px 30px hsl(var(--periwinkle-blue) / 0.25);
+}
+
+/* Status indicators with new colors */
+.status-published {
+  @apply bg-dusty-teal/10 text-dusty-teal border-dusty-teal/20;
+}
+
+.status-draft {
+  @apply bg-golden-apricot/10 text-golden-apricot border-golden-apricot/20;
+}
+
+.status-archived {
+  @apply bg-muted/50 text-muted-foreground border-muted;
+}
+
+/* Tag styles */
+.tag-style {
+  @apply bg-periwinkle-blue/10 text-periwinkle-blue border-periwinkle-blue/20;
+  @apply px-3 py-1 rounded-full text-sm font-medium;
+}
+
+/* Featured item styles */
+.featured-item {
+  @apply bg-coral-sunset/10 border-coral-sunset/30;
+  @apply shadow-lg;
+}
+
+.featured-item:hover {
+  @apply bg-coral-sunset/15 border-coral-sunset/40;
+}
+
+/* Interactive element styles */
+.interactive-element {
+  @apply bg-golden-apricot text-white;
+  @apply hover:bg-golden-apricot/90;
+  @apply shadow-md hover:shadow-lg;
+  @apply transition-all duration-200;
+}
+
+/* Accent element styles */
+.accent-element {
+  @apply bg-dusty-teal/10 border-dusty-teal/30 text-dusty-teal;
+}
+
+/* Loading animation with new colors */
+@keyframes pulse-child-friendly {
+  0%, 100% {
+    background-color: hsl(var(--periwinkle-blue) / 0.1);
+  }
+  50% {
+    background-color: hsl(var(--periwinkle-blue) / 0.2);
+  }
+}
+
+.animate-pulse-child {
+  animation: pulse-child-friendly 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

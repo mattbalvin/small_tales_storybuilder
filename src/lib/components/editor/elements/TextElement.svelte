@@ -131,19 +131,19 @@
     background-color: ${backgroundColor};
     width: 100%;
     height: 100%;
-    padding: 8px;
+    padding: 12px;
     border: none;
     outline: none;
     resize: none;
     line-height: ${element.properties?.lineHeight || 1.3};
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: ${readonly ? 'default' : (isEditing ? 'text' : 'pointer')};
     user-select: ${readonly ? 'none' : (isEditing ? 'text' : 'none')};
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
     ${readonly ? 'pointer-events: none;' : ''}
-    ${isEditing ? 'box-shadow: 0 0 0 2px hsl(var(--primary) / 0.5);' : ''}
+    ${isEditing ? 'box-shadow: 0 0 0 3px #F0B464;' : ''}
   `
 
   // Handle clicks to start editing or position cursor
@@ -214,11 +214,11 @@
   }
   
   .text-element:not(.editing):hover {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 0 2px #F0B464;
   }
   
   .text-element.editing {
-    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.5) !important;
+    box-shadow: 0 0 0 3px #F0B464 !important;
   }
   
   /* Ensure text is selectable when editing */

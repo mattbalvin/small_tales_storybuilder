@@ -224,22 +224,22 @@
   })
 </script>
 
-<div class="p-6">
-  <div class="flex items-center justify-between mb-6">
+<div class="p-6 bg-soft-buttercream min-h-screen">
+  <div class="flex items-center justify-between mb-8">
     <div>
-      <h1 class="text-2xl font-bold">Media Library</h1>
-      <p class="text-muted-foreground">Manage your images, audio, and video assets</p>
+      <h1 class="text-3xl font-bold text-coral-sunset">Media Library</h1>
+      <p class="text-dusty-teal">Manage your images, audio, and video assets</p>
     </div>
-    <div class="flex items-center gap-2">
-      <Button variant="outline" on:click={triggerFileUpload} disabled={uploading}>
+    <div class="flex items-center gap-3">
+      <Button variant="secondary" on:click={triggerFileUpload} disabled={uploading}>
         <Upload class="w-4 h-4 mr-2" />
         {uploading ? 'Uploading...' : 'Upload Files'}
       </Button>
-      <Button variant="outline" on:click={openImportUrl}>
+      <Button variant="outline" on:click={openImportUrl} class="accent-element">
         <Link class="w-4 h-4 mr-2" />
         Import URL
       </Button>
-      <Button variant="outline" on:click={openImageGeneration}>
+      <Button variant="outline" on:click={openImageGeneration} class="accent-element">
         <Wand2 class="w-4 h-4 mr-2" />
         Generate Images
       </Button>
@@ -247,19 +247,19 @@
   </div>
 
   <!-- Search and Filter -->
-  <div class="flex gap-4 mb-6">
+  <div class="flex gap-4 mb-8">
     <div class="flex-1 relative">
-      <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-periwinkle-blue" />
       <Input
         placeholder="Search files..."
         value={searchTerm}
         on:input={(e) => mediaService.setSearchTerm(e.target.value)}
-        class="pl-10"
+        class="pl-12 border-periwinkle-blue/30"
       />
     </div>
     
     <select 
-      class="rounded-md border border-input bg-background px-3 py-2 text-sm"
+      class="rounded-xl border border-periwinkle-blue/30 bg-background px-4 py-3 text-sm"
       value={filterType}
       on:change={(e) => mediaService.setFilterType(e.target.value)}
     >
@@ -285,7 +285,7 @@
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card class="w-full max-w-md p-6">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold">Import from URL</h3>
+          <h3 class="text-lg font-semibold text-coral-sunset">Import from URL</h3>
           <Button variant="ghost" size="sm" on:click={closeImportUrl}>
             <X class="w-4 h-4" />
           </Button>
@@ -293,7 +293,7 @@
 
         <div class="space-y-4">
           <div>
-            <label class="text-sm font-medium mb-2 block">Media URL</label>
+            <label class="text-sm font-medium mb-2 block text-dusty-teal">Media URL</label>
             <Input
               bind:value={importUrl}
               placeholder="https://example.com/image.jpg"
@@ -310,6 +310,7 @@
               Cancel
             </Button>
             <Button 
+              variant="secondary"
               class="flex-1" 
               on:click={handleImportUrl} 
               disabled={!importUrl.trim() || importing}
@@ -336,40 +337,40 @@
 
   <!-- Assets Grid -->
   {#if loading}
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
       {#each Array(12) as _}
-        <Card class="aspect-square animate-pulse">
-          <div class="w-full h-full bg-muted rounded"></div>
+        <Card class="aspect-square animate-pulse-child">
+          <div class="w-full h-full bg-periwinkle-blue/10 rounded-2xl"></div>
         </Card>
       {/each}
     </div>
   {:else if filteredAssets.length === 0}
     <Card class="p-12 text-center">
-      <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-        <Upload class="w-8 h-8 text-primary" />
+      <div class="w-20 h-20 bg-golden-apricot/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        <Upload class="w-10 h-10 text-golden-apricot" />
       </div>
-      <h2 class="text-xl font-semibold mb-2">No media files</h2>
-      <p class="text-muted-foreground mb-6">Upload images, audio, or video files to get started, or generate AI images</p>
-      <div class="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button on:click={triggerFileUpload}>
+      <h2 class="text-2xl font-semibold mb-3 text-coral-sunset">No media files</h2>
+      <p class="text-dusty-teal mb-8">Upload images, audio, or video files to get started, or generate AI images</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <Button on:click={triggerFileUpload} variant="secondary">
           <Upload class="w-4 h-4 mr-2" />
           Upload Your First File
         </Button>
-        <Button variant="outline" on:click={openImportUrl}>
+        <Button variant="outline" on:click={openImportUrl} class="accent-element">
           <Link class="w-4 h-4 mr-2" />
           Import from URL
         </Button>
-        <Button variant="outline" on:click={openImageGeneration}>
+        <Button variant="outline" on:click={openImageGeneration} class="accent-element">
           <Wand2 class="w-4 h-4 mr-2" />
           Generate AI Images
         </Button>
       </div>
     </Card>
   {:else}
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
       {#each filteredAssets as asset}
-        <Card class="group relative overflow-hidden hover:shadow-lg transition-shadow">
-          <div class="aspect-square bg-muted flex items-center justify-center relative">
+        <Card class="group relative overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105">
+          <div class="aspect-square bg-periwinkle-blue/10 flex items-center justify-center relative">
             {#if asset.type === 'image'}
               <img 
                 src={asset.url} 
@@ -379,13 +380,13 @@
               
               <!-- AI Generated Badge -->
               {#if asset.tags.includes('ai-generated')}
-                <div class="absolute top-2 left-2 bg-primary/90 text-primary-foreground px-2 py-1 rounded text-xs font-medium">
+                <div class="absolute top-2 left-2 bg-golden-apricot/90 text-white px-2 py-1 rounded-lg text-xs font-medium">
                   <Wand2 class="w-3 h-3 inline mr-1" />
                   AI
                 </div>
               {/if}
             {:else}
-              <svelte:component this={getFileIcon(asset.type)} class="w-8 h-8 text-muted-foreground" />
+              <svelte:component this={getFileIcon(asset.type)} class="w-10 h-10 text-periwinkle-blue" />
             {/if}
           </div>
           
@@ -396,38 +397,38 @@
                 Copy URL
               </Button>
               <Button variant="destructive" size="sm" on:click={() => mediaService.deleteAsset(asset.id)}>
-                <Trash2 class="w-3 h-3" />
+                <Trash2 class="w-4 h-4" />
               </Button>
             </div>
           </div>
 
           <!-- Info -->
-          <div class="p-2">
+          <div class="p-3">
             <!-- Filename -->
-            <div class="mb-1">
+            <div class="mb-2">
               {#if editingFilename === asset.id}
                 <div class="flex items-center gap-1">
                   <Input
                     bind:value={editingFilenameValue}
-                    class="text-xs h-6 flex-1"
+                    class="text-xs h-7 flex-1"
                     on:keydown={(e) => handleFilenameKeydown(e, asset.id, asset.filename)}
                     on:blur={() => saveAssetFilename(asset.id, asset.filename)}
                     autofocus
                   />
-                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={() => saveAssetFilename(asset.id, asset.filename)}>
+                  <Button variant="ghost" size="sm" class="h-7 w-7 p-0" on:click={() => saveAssetFilename(asset.id, asset.filename)}>
                     <Check class="w-3 h-3" />
                   </Button>
-                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={cancelEditingFilename}>
+                  <Button variant="ghost" size="sm" class="h-7 w-7 p-0" on:click={cancelEditingFilename}>
                     <X class="w-3 h-3" />
                   </Button>
                 </div>
               {:else}
                 <div class="flex items-center justify-between group/filename">
-                  <p class="text-xs font-medium truncate flex-1">{asset.filename}</p>
+                  <p class="text-sm font-medium truncate flex-1 text-coral-sunset">{asset.filename}</p>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    class="h-6 w-6 p-0 opacity-0 group-hover/filename:opacity-100 transition-opacity"
+                    class="h-7 w-7 p-0 opacity-0 group-hover/filename:opacity-100 transition-opacity"
                     on:click={() => startEditingFilename(asset)}
                     title="Rename file"
                   >
@@ -437,7 +438,7 @@
               {/if}
             </div>
             
-            <p class="text-xs text-muted-foreground mb-2">{formatFileSize(asset.size)}</p>
+            <p class="text-xs text-muted-foreground mb-3">{formatFileSize(asset.size)}</p>
             
             <!-- Tags -->
             <div>
@@ -446,24 +447,24 @@
                   <Input
                     bind:value={editingTags}
                     placeholder="tag1, tag2, tag3"
-                    class="text-xs h-6 flex-1"
+                    class="text-xs h-7 flex-1"
                     on:keydown={(e) => handleTagKeydown(e, asset.id)}
                     on:blur={() => saveAssetTags(asset.id)}
                     autofocus
                   />
-                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={() => saveAssetTags(asset.id)}>
+                  <Button variant="ghost" size="sm" class="h-7 w-7 p-0" on:click={() => saveAssetTags(asset.id)}>
                     <Check class="w-3 h-3" />
                   </Button>
-                  <Button variant="ghost" size="sm" class="h-6 w-6 p-0" on:click={cancelEditingTags}>
+                  <Button variant="ghost" size="sm" class="h-7 w-7 p-0" on:click={cancelEditingTags}>
                     <X class="w-3 h-3" />
                   </Button>
                 </div>
               {:else}
                 <div class="flex items-center justify-between group/tags">
-                  <div class="flex flex-wrap gap-1 flex-1 min-h-[20px]">
+                  <div class="flex flex-wrap gap-1 flex-1 min-h-[24px]">
                     {#each asset.tags.slice(0, 2) as tag}
                       <button
-                        class="text-xs bg-muted px-1 rounded hover:bg-destructive/20 hover:text-destructive transition-colors group/tag"
+                        class="tag-style hover:bg-periwinkle-blue/20 hover:text-periwinkle-blue transition-colors group/tag"
                         on:click={() => removeTag(asset.id, tag)}
                         title="Click to remove tag"
                       >
@@ -478,7 +479,7 @@
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    class="h-6 w-6 p-0 opacity-0 group-hover/tags:opacity-100 transition-opacity"
+                    class="h-7 w-7 p-0 opacity-0 group-hover/tags:opacity-100 transition-opacity"
                     on:click={() => startEditingTags(asset)}
                     title="Edit tags"
                   >

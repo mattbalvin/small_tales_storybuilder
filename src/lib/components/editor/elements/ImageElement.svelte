@@ -17,6 +17,8 @@
     transform: scale(${scale});
     transition: opacity 0.2s ease, transform 0.2s ease;
     transform-origin: center center;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   `
 
   // Track the last processed URL to avoid infinite loops
@@ -74,7 +76,7 @@
   }
 </script>
 
-<div class="w-full h-full flex items-center justify-center bg-gray-100 rounded border-2 border-dashed border-gray-300 overflow-hidden">
+<div class="w-full h-full flex items-center justify-center bg-periwinkle-blue/10 rounded-xl border-2 border-dashed border-periwinkle-blue/30 overflow-hidden">
   {#if src}
     <img 
       {src} 
@@ -92,8 +94,8 @@
       }}
     />
   {:else}
-    <div class="text-center text-gray-500">
-      <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="text-center text-periwinkle-blue">
+      <svg class="w-10 h-10 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
       <p class="text-sm">No image selected</p>
@@ -101,10 +103,10 @@
   {/if}
   
   {#if isProcessing}
-    <div class="absolute inset-0 bg-black/50 flex items-center justify-center rounded">
+    <div class="absolute inset-0 bg-black/50 flex items-center justify-center rounded-xl">
       <div class="text-white text-center">
-        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mb-2"></div>
-        <p class="text-xs">Importing image...</p>
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-3"></div>
+        <p class="text-sm">Importing image...</p>
       </div>
     </div>
   {/if}

@@ -5,6 +5,6 @@
   export { className as class }
 </script>
 
-<div class={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)} {...$$restProps}>
+<div class={cn('rounded-2xl border bg-card text-card-foreground shadow-lg card-child-friendly', className)} {...$$restProps}>
   <slot />
 </div>
