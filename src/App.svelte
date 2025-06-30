@@ -13,6 +13,7 @@
   import Privacy from './routes/privacy/+page.svelte'
   import About from './routes/about/+page.svelte'
   import Terms from './routes/terms/+page.svelte'
+  import Pricing from './routes/pricing/+page.svelte'
   //import Analytics from './routes/analytics/+page.svelte'
 
   const routes = {
@@ -25,6 +26,7 @@
     '/privacy': Privacy,
     '/about': About,
     '/terms': Terms,
+    '/pricing': Pricing,
     //'/analytics': Analytics
   }
 

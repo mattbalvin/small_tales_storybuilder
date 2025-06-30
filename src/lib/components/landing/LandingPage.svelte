@@ -43,7 +43,7 @@
       
       <div class="flex items-center gap-8">
         <a href="#" class="text-white font-medium">Home</a>
-        <!--a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a-->
+        <a href="#/pricing" class="text-white hover:text-golden-apricot transition-colors">Pricing</a>
         <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
       </div>
       
@@ -268,7 +268,7 @@
           <h4 class="font-medium mb-4 text-white">Product</h4>
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
+            <li><a href="#/pricing" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li-->
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li-->
           </ul>
