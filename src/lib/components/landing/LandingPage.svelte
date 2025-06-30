@@ -13,6 +13,12 @@
     window.location.hash = '#/dashboard'
   }
 
+  function navigateTo(path: string) {
+    window.location.hash = path
+    // Ensure we scroll to the top when navigating
+    window.scrollTo(0, 0)
+  }
+
   // Redirect authenticated users to dashboard
   onMount(() => {
     const unsubscribe = authStore.subscribe(($authStore) => {
@@ -43,8 +49,8 @@
       
       <div class="flex items-center gap-8">
         <a href="#" class="text-white font-medium">Home</a>
-        <a href="#/pricing" class="text-white hover:text-golden-apricot transition-colors">Pricing</a>
-        <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
+        <button on:click={() => navigateTo('/pricing')} class="text-white hover:text-golden-apricot transition-colors">Pricing</button>
+        <button on:click={() => navigateTo('/about')} class="text-white hover:text-golden-apricot transition-colors">About Us</button>
       </div>
       
       <div class="flex items-center gap-4">
@@ -268,7 +274,7 @@
           <h4 class="font-medium mb-4 text-white">Product</h4>
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
-            <li><a href="#/pricing" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
+            <li><button on:click={() => navigateTo('/pricing')} class="hover:text-golden-apricot transition-colors">Pricing</button></li>
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li-->
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li-->
           </ul>
@@ -287,10 +293,10 @@
         <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Company</h4>
           <ul class="space-y-3 text-white">
-            <li><a href="#/about" class="hover:text-golden-apricot transition-colors">About</a></li>
+            <li><button on:click={() => navigateTo('/about')} class="hover:text-golden-apricot transition-colors">About</button></li>
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li-->
-            <li><a href="#/privacy" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
-            <li><a href="#/terms" class="hover:text-golden-apricot transition-colors">Terms</a></li>
+            <li><button on:click={() => navigateTo('/privacy')} class="hover:text-golden-apricot transition-colors">Privacy</button></li>
+            <li><button on:click={() => navigateTo('/terms')} class="hover:text-golden-apricot transition-colors">Terms</button></li>
           </ul>
         </div>
 
