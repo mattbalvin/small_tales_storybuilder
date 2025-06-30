@@ -631,7 +631,7 @@
                 >
                   {#if element.type === 'text' && showText}
                     <div
-                      class="w-full h-full overflow-hidden"
+                      class="w-full h-full overflow-hidden text-player"
                       style="
                         font-size: {(element.properties?.fontSize || 16) * 0.8}px;
                         color: {element.properties?.color || '#000000'};
@@ -641,10 +641,6 @@
                         padding: 8px;
                         border-radius: 8px;
                         line-height: {element.properties?.lineHeight || 1.4};
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        overflow-wrap: break-word;
-                        text-align: left;
                       "
                     >
                       {#if element.properties?.narrationData}
@@ -803,20 +799,29 @@
     accent-color: hsl(var(--golden-apricot));
   }
   
+  /* Text player styles */
+  .text-player {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
   .word-highlight {
     display: inline;
     font-weight: bold;
     transform: scale(1.05);
-    border-radius: 4px;
-    padding: 0 2px;
+    border-radius: 2px;
+    padding: 0;
+    margin: 0;
     transition: all 0.2s ease-in-out;
   }
   
   .interactive-word {
     display: inline;
     cursor: pointer;
-    border-radius: 4px;
-    padding: 0 2px;
+    border-radius: 2px;
+    padding: 0;
+    margin: 0;
     transition: all 0.15s ease-in-out;
   }
   
@@ -832,10 +837,13 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    display: inline;
   }
   
   .text-space {
     display: inline;
     white-space: pre-wrap;
+    margin: 0;
+    padding: 0;
   }
 </style>
