@@ -257,7 +257,7 @@
           </div>
         </div>
 
-        <div class="grid md:grid-cols-3 gap-8">
+        <!--div class="grid md:grid-cols-3 gap-8"-->
           <div>
             <h4 class="font-medium mb-4 text-white">Product</h4>
             <ul class="space-y-3 text-white">
@@ -287,7 +287,7 @@
               <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
             </ul>
           </div>
-        </div>
+        <!--/div-->
 
         <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer">
           <img 
