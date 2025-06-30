@@ -586,3 +586,4 @@
   input[type="checkbox"] {
     accent-color: hsl(var(--golden-apricot));
   }
+</style>
