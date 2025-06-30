@@ -726,8 +726,8 @@
     </aside>
 
     <!-- Main Editor -->
-    <main class="flex-1 flex bg-white">
-      <div class="flex-1 p-4">
+    <main class="flex-1 flex min-w-0">
+      <div class="flex-1 p-4 min-w-0">
         {#if currentPage}
           <PageEditor 
             page={currentPage} 
