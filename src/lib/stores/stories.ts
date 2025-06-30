@@ -59,12 +59,11 @@ export const storiesService = {
     try {
       console.log('Loading public story data:', storyId)
       
-      // Load story metadata for public access (only published stories)
+      // Load story metadata - let RLS handle access control
       const { data: storyData, error: storyError } = await supabase
         .from('stories')
         .select('*')
         .eq('id', storyId)
-        .eq('status', 'published')
         .maybeSingle()
 
       if (storyError) {
@@ -74,7 +73,7 @@ export const storiesService = {
           currentStory: null,
           currentStoryLoading: false
         }))
-        throw new Error(`Story not found or not publicly available: ${storyError.message}`)
+        throw new Error(`Story not found or not accessible: ${storyError.message}`)
       }
 
       if (!storyData) {
@@ -83,7 +82,7 @@ export const storiesService = {
           currentStory: null,
           currentStoryLoading: false
         }))
-        throw new Error('Story not found or not published')
+        throw new Error('Story not found')
       }
 
       storiesStore.update(state => ({
