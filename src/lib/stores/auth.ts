@@ -28,6 +28,8 @@ export const authService = {
       }
     } catch (error) {
       console.error('Failed to get session:', error)
+      // Clear any invalid session data by signing out
+      await supabase.auth.signOut()
       // Clear any invalid session data and set loading to false
       authStore.set({ user: null, loading: false, profile: null })
     }
