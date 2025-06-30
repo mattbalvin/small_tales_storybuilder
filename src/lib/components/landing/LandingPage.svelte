@@ -237,7 +237,7 @@
               <ArrowRight class="w-5 h-5 ml-2" />
             </Button>
           {/if}
-          <Button variant="outline" size="lg" class="text-lg px-8 py-6">
+          <Button variant="outline" size="lg" class="text-lg px-8 py-6 bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full">
             Learn More
           </Button>
         </div>
