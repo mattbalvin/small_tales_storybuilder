@@ -628,7 +628,7 @@
                 >
                   {#if element.type === 'text' && showText}
                     <div
-                      class="w-full h-full flex items-center justify-center text-center"
+                      class="w-full h-full overflow-hidden"
                       style="
                         font-size: {(element.properties?.fontSize || 16) * 0.8}px;
                         color: {element.properties?.color || '#000000'};
@@ -637,36 +637,42 @@
                           : 'transparent'};
                         padding: 8px;
                         border-radius: 8px;
-                        line-height: 1.4;
+                        line-height: {element.properties?.lineHeight || 1.4};
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                        overflow-wrap: break-word;
+                        text-align: left;
                       "
                     >
                       {#if element.properties?.narrationData}
                         <!-- Interactive text with clickable words -->
-                        {#each splitTextForInteraction(element.properties.text) as part}
-                          {#if part.type === 'word'}
-                            <!-- Clickable word with optional highlight -->
-                            <span 
-                              class="interactive-word {currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
-                              style={currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 
-                                `color: ${element.properties.color || '#000000'}; 
-                                 background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
-                                 box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
-                                   `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
-                                : ''}
-                              on:click={() => handleWordClick(part.content, element)}
-                              role="button"
-                              tabindex="0"
-                            >
-                              {part.content}
-                            </span>
-                          {:else}
-                            <!-- Non-interactive space -->
-                            <span>{part.content}</span>
-                          {/if}
-                        {/each}
+                        <span class="text-content">
+                          {#each splitTextForInteraction(element.properties.text) as part}
+                            {#if part.type === 'word'}
+                              <!-- Clickable word with optional highlight -->
+                              <span 
+                                class="interactive-word {currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
+                                style={currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 
+                                  `color: ${element.properties.color || '#000000'}; 
+                                   background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
+                                   box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
+                                     `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
+                                  : ''}
+                                on:click={() => handleWordClick(part.content, element)}
+                                role="button"
+                                tabindex="0"
+                              >
+                                {part.content}
+                              </span>
+                            {:else}
+                              <!-- Non-interactive space -->
+                              <span class="text-space">{part.content}</span>
+                            {/if}
+                          {/each}
+                        </span>
                       {:else}
                         <!-- Regular non-interactive text -->
-                        {element.properties?.text || ''}
+                        <span class="text-content">{element.properties?.text || ''}</span>
                       {/if}
                     </div>
                   {:else if element.type === 'image'}
@@ -716,7 +722,7 @@
                   </Button>
                 {:else}
                   <Button variant="secondary" on:click={() => { isAutoReading = true; playPageAudio(); }}>
-                    <Play class="w-4 h-4 mr-2" />
+                    <Volume2 class="w-4 h-4 mr-2" />
                     Read Aloud
                   </Button>
                 {/if}
@@ -795,7 +801,7 @@
   }
   
   .word-highlight {
-    display: inline-block;
+    display: inline;
     font-weight: bold;
     transform: scale(1.05);
     border-radius: 4px;
@@ -804,7 +810,7 @@
   }
   
   .interactive-word {
-    display: inline-block;
+    display: inline;
     cursor: pointer;
     border-radius: 4px;
     padding: 0 2px;
@@ -813,10 +819,20 @@
   
   .interactive-word:hover {
     background-color: hsl(var(--golden-apricot) / 0.2);
-    transform: scale(1.05);
   }
   
   .interactive-word:active {
-    transform: scale(0.98);
+    opacity: 0.8;
+  }
+  
+  .text-content {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .text-space {
+    display: inline;
+    white-space: pre-wrap;
   }
 </style>
