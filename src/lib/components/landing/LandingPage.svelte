@@ -262,7 +262,7 @@
           </div>                   
         </div>
 
-        <div>
+        <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Product</h4>
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
@@ -272,7 +272,7 @@
           </ul>
         </div>
 
-        <div>
+        <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Resources</h4>
           <ul class="space-y-3 text-white">
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li-->
@@ -282,7 +282,7 @@
           </ul>
         </div>
 
-        <div>
+        <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Company</h4>
           <ul class="space-y-3 text-white">
             <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
