@@ -634,7 +634,7 @@
 
                 <div class="flex flex-col items-center">
                   <!-- Page number -->
-                  <div class="text-xs font-medium text-coral-sunset">{index + 1}</div>
+                  <div class="text-xs font-medium text-coral-sunset">Page {index + 1}</div>
                   
                   <!-- Page actions (show on hover) -->
                   {#if canEdit() && currentPageIndex === index}
