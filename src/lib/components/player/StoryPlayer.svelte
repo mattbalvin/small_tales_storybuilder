@@ -147,6 +147,7 @@
 
   function nextPage() {
     if (canGoNext) {
+      stopAudio() // Stop current audio before changing page
       currentPageIndex++
       if (isAutoReading) {
         playPageAudio()
@@ -159,6 +160,7 @@
 
   function previousPage() {
     if (canGoPrevious) {
+      stopAudio() // Stop current audio before changing page
       currentPageIndex--
       if (isAutoReading) {
         playPageAudio()
@@ -168,6 +170,7 @@
 
   function goToPage(index: number) {
     if (index >= 0 && index < pages.length) {
+      stopAudio() // Stop current audio before changing page
       currentPageIndex = index
       if (isAutoReading) {
         playPageAudio()
@@ -205,15 +208,8 @@
 
       if (narrationAudio?.properties?.src) {
         playAudio(narrationAudio.properties.src)
-      } else {
-        // No audio, auto-advance after reading time
-        const readingTime = estimateReadingTime()
-        setTimeout(() => {
-          if (isAutoReading) {
-            nextPage()
-          }
-        }, readingTime)
       }
+      // No auto-advance - removed the auto-advance timer
     }
   }
 
@@ -240,21 +236,11 @@
       }
       
       currentNarrationPlayer.onPlaybackEnd = () => {
-        // When narration ends, move to next element or page
+        // When narration ends, clear the state but don't auto-advance
         activeNarrationElementId = null
         currentNarrationPlayer = null
         currentWord = null
         highlightedWordIndex = -1
-        
-        // Check if there are more narration elements to play
-        if (isAutoReading) {
-          // Auto-advance to next page after a short delay
-          setTimeout(() => {
-            if (isAutoReading) {
-              nextPage()
-            }
-          }, 1000)
-        }
       }
       
       // Start playback
@@ -264,16 +250,6 @@
       activeNarrationElementId = null
       currentNarrationPlayer = null
       currentWord = null
-      
-      // Fallback to auto-advance
-      if (isAutoReading) {
-        const readingTime = estimateReadingTime()
-        setTimeout(() => {
-          if (isAutoReading) {
-            nextPage()
-          }
-        }, readingTime)
-      }
     }
   }
 
@@ -285,21 +261,10 @@
     audioElement.volume = volume
     audioElement.playbackRate = readingSpeed
     
-    audioElement.addEventListener('ended', () => {
-      if (isAutoReading) {
-        nextPage()
-      }
-    })
+    // Removed auto-advance on audio end
     
     audioElement.addEventListener('error', () => {
       console.error('Failed to play audio:', src)
-      // Auto-advance after estimated reading time if audio fails
-      const readingTime = estimateReadingTime()
-      setTimeout(() => {
-        if (isAutoReading) {
-          nextPage()
-        }
-      }, readingTime)
     })
     
     audioElement.play().catch(error => {
@@ -353,6 +318,47 @@
 
   function navigateHome() {
     window.location.hash = '#/'
+  }
+
+  // Function to handle word click for individual word playback
+  function handleWordClick(word: string, element: any) {
+    if (!element || !element.properties?.narrationData) return
+    
+    // If we already have a narration player, use it
+    if (currentNarrationPlayer && activeNarrationElementId === element.id) {
+      currentNarrationPlayer.playWord(word)
+    } else {
+      // Otherwise create a new one
+      stopAudio()
+      
+      try {
+        const narrationData = element.properties.narrationData
+        currentNarrationPlayer = new NarrationPlayer(narrationData)
+        activeNarrationElementId = element.id
+        
+        currentNarrationPlayer.playWord(word)
+      } catch (error) {
+        console.error('Failed to play word:', error)
+      }
+    }
+  }
+
+  // Split text into words and spaces for interactive word clicking
+  function splitTextForInteraction(text: string): { type: 'word' | 'space'; content: string }[] {
+    if (!text) return []
+    
+    const parts: { type: 'word' | 'space'; content: string }[] = []
+    const matches = text.split(/(\s+)/)
+    
+    matches.forEach(part => {
+      if (part.trim()) {
+        parts.push({ type: 'word', content: part })
+      } else if (part) {
+        parts.push({ type: 'space', content: part })
+      }
+    })
+    
+    return parts
   }
 
   // Get display elements for current orientation
@@ -568,8 +574,7 @@
 
           <!-- Play Buttons -->
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" on:click={startRe
-            }ading} class="text-lg px-8 py-6">
+            <Button size="lg" on:click={startReading} class="text-lg px-8 py-6">
               <Play class="w-5 h-5 mr-2" />
               Play Story
             </Button>
@@ -635,24 +640,32 @@
                         line-height: 1.4;
                       "
                     >
-                      {#if element.id === activeNarrationElementId && element.properties?.narrationData}
-                        <!-- Split text into words and highlight the current word -->
-                        {#each element.properties.text.split(/(\s+)/) as part, i}
-                          {#if part.trim()}
-                            <span class={currentWord && part.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''} 
-                                  style={currentWord && part.toLowerCase().includes(currentWord.toLowerCase()) ? 
-                                    `color: ${element.properties.color || '#000000'}; 
-                                     background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
-                                     box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
-                                       `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
-                                    : ''}>
-                              {part}
+                      {#if element.properties?.narrationData}
+                        <!-- Interactive text with clickable words -->
+                        {#each splitTextForInteraction(element.properties.text) as part}
+                          {#if part.type === 'word'}
+                            <!-- Clickable word with optional highlight -->
+                            <span 
+                              class="interactive-word {currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 'word-highlight' : ''}" 
+                              style={currentWord && part.content.toLowerCase().includes(currentWord.toLowerCase()) ? 
+                                `color: ${element.properties.color || '#000000'}; 
+                                 background-color: ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.3)'};
+                                 box-shadow: ${element.properties.narrationHighlightGlow !== false ? 
+                                   `0 0 5px ${element.properties.narrationHighlightColor || 'hsl(var(--golden-apricot) / 0.5)'}` : 'none'};` 
+                                : ''}
+                              on:click={() => handleWordClick(part.content, element)}
+                              role="button"
+                              tabindex="0"
+                            >
+                              {part.content}
                             </span>
                           {:else}
-                            {part}
+                            <!-- Non-interactive space -->
+                            <span>{part.content}</span>
                           {/if}
                         {/each}
                       {:else}
+                        <!-- Regular non-interactive text -->
                         {element.properties?.text || ''}
                       {/if}
                     </div>
@@ -704,7 +717,7 @@
                 {:else}
                   <Button variant="secondary" on:click={() => { isAutoReading = true; playPageAudio(); }}>
                     <Play class="w-4 h-4 mr-2" />
-                    Continue
+                    Read Aloud
                   </Button>
                 {/if}
                 
@@ -788,5 +801,22 @@
     border-radius: 4px;
     padding: 0 2px;
     transition: all 0.2s ease-in-out;
+  }
+  
+  .interactive-word {
+    display: inline-block;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 0 2px;
+    transition: all 0.15s ease-in-out;
+  }
+  
+  .interactive-word:hover {
+    background-color: hsl(var(--golden-apricot) / 0.2);
+    transform: scale(1.05);
+  }
+  
+  .interactive-word:active {
+    transform: scale(0.98);
   }
 </style>
