@@ -253,7 +253,7 @@
   </section>
 
   <!-- Footer -->
-  <footer class="border-t border-periwinkle-blue/20 bg-soft-buttercream py-12 px-4">
+  <footer class="bg-dusty-teal text-white py-12 px-4">
     <div class="container">
       <div class="grid md:grid-cols-4 gap-8">
         <div>
@@ -275,43 +275,43 @@
               </span>
             </div>
           </div>
-          <p class="text-dusty-teal">
+          <p class="text-white">
             Interactive storytelling platform for creators, educators, and storytellers.
           </p>
         </div>
         
         <div>
-          <h4 class="font-medium mb-4 text-coral-sunset">Product</h4>
-          <ul class="space-y-3 text-dusty-teal">
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Features</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Pricing</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Templates</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Examples</a></li>
+          <h4 class="font-medium mb-4 text-white">Product</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li>
           </ul>
         </div>
         
         <div>
-          <h4 class="font-medium mb-4 text-coral-sunset">Resources</h4>
-          <ul class="space-y-3 text-dusty-teal">
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Documentation</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Tutorials</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Blog</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Community</a></li>
+          <h4 class="font-medium mb-4 text-white">Resources</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li>
           </ul>
         </div>
         
         <div>
-          <h4 class="font-medium mb-4 text-coral-sunset">Company</h4>
-          <ul class="space-y-3 text-dusty-teal">
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">About</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Contact</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Privacy</a></li>
-            <li><a href="#" class="hover:text-coral-sunset transition-colors">Terms</a></li>
+          <h4 class="font-medium mb-4 text-white">Company</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
           </ul>
         </div>
       </div>
       
-      <div class="border-t border-periwinkle-blue/20 mt-8 pt-8 text-center text-dusty-teal">
+      <div class="border-t border-white/20 mt-8 pt-8 text-center text-white">
         <p>&copy; 2025 Small Tales. All rights reserved.</p>
       </div>
     </div>
