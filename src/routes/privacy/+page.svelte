@@ -121,14 +121,14 @@
           We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. You are advised to review this Privacy Policy periodically for any changes.
         </p>
 
-        <h2>Contact Us</h2>
+        <!--h2>Contact Us</h2>
         <p>
           If you have any questions about this Privacy Policy, please contact us at:
         </p>
         <p>
           Email: privacy@smalltales.com<br>
           Address: 123 Storybook Lane, Imagination City, IC 12345
-        </p>
+        </p-->
       </div>
     </div>
   </div>
