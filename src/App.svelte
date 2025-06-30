@@ -11,6 +11,7 @@
   import MediaLibrary from './routes/media/+page.svelte'
   import StoryPlay from './routes/play/[id]/+page.svelte'
   import Privacy from './routes/privacy/+page.svelte'
+  import About from './routes/about/+page.svelte'
   //import Analytics from './routes/analytics/+page.svelte'
 
   const routes = {
@@ -21,6 +22,7 @@
     '/media': MediaLibrary,
     '/play/:id': StoryPlay,
     '/privacy': Privacy,
+    '/about': About,
     //'/analytics': Analytics
   }
 

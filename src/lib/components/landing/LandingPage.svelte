@@ -44,19 +44,19 @@
       <div class="flex items-center gap-8">
         <a href="#" class="text-white font-medium">Home</a>
         <a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a>
-        <a href="#" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
+        <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
       </div>
       
       <div class="flex items-center gap-4">
         {#if $authStore.user}
-          <Button variant="ghost" on:click={navigateToDashboard} class="text-white hover:text-white">
+          <Button variant="ghost" on:click={navigateToDashboard} class="text-white hover:text-white hover:scale-105">
             Dashboard
           </Button>
-          <Button on:click={navigateToDashboard} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6">
+          <Button on:click={navigateToDashboard} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6 hover:scale-105">
             Go to Dashboard
           </Button>
         {:else}
-          <Button on:click={navigateToAuth} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6">
+          <Button on:click={navigateToAuth} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6 hover:scale-105">
             <BookOpen class="w-5 h-5 mr-2" />
             Create Your Own Story
             <ArrowRight class="w-5 h-5 ml-2" />
@@ -225,19 +225,19 @@
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           {#if $authStore.user}
-            <Button size="lg" class="text-lg px-8 py-6 featured-item" on:click={navigateToDashboard}>
+            <Button size="lg" class="text-lg px-8 py-6 featured-item hover:scale-105" on:click={navigateToDashboard}>
               <BookOpen class="w-5 h-5 mr-2" />
               Go to Your Dashboard
               <ArrowRight class="w-5 h-5 ml-2" />
             </Button>
           {:else}
-            <Button size="lg" class="text-lg px-8 py-6 featured-item" on:click={navigateToAuth}>
+            <Button size="lg" class="text-lg px-8 py-6 featured-item hover:scale-105" on:click={navigateToAuth}>
               <BookOpen class="w-5 h-5 mr-2" />
               Create Your Own Story
               <ArrowRight class="w-5 h-5 ml-2" />
             </Button>
           {/if}
-          <Button variant="outline" size="lg" class="text-lg px-8 py-6 bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full">
+          <Button variant="outline" size="lg" class="text-lg px-8 py-6 bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full hover:scale-105">
             Learn More
           </Button>
         </div>
@@ -287,14 +287,14 @@
         <div class="self-start">
           <h4 class="font-medium mb-4 text-white">Company</h4>
           <ul class="space-y-3 text-white">
-            <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
+            <li><a href="#/about" class="hover:text-golden-apricot transition-colors">About</a></li>
             <!--li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li-->
             <li><a href="#/privacy" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
             <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
           </ul>
         </div>
 
-        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" class="self-start btn-child-friendly">
+        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" class="self-start btn-child-friendly hover:scale-105">
           <img 
             src="/white_circle_360x360.png" 
             alt="Powered by Bolt.new" 
