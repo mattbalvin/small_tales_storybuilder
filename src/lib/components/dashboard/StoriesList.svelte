@@ -334,8 +334,19 @@
 
           <!-- Content -->
           <div class="p-6">
-            <div class="flex items-start justify-between mb-3">
-              <!-- Editable Title -->
+            <!-- Metadata row with date and status -->
+            <div class="flex items-center justify-between mb-3 text-sm text-muted-foreground">
+              <div class="flex items-center gap-1">
+                <Calendar class="w-4 h-4" />
+                {formatDate(story.created_at)}
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-medium {getStatusColor(story.status)}">
+                {story.status}
+              </span>
+            </div>
+            
+            <!-- Title row with edit button -->
+            <div class="flex items-center justify-between mb-3">
               {#if editingStoryId === story.id}
                 <div class="flex-1 flex items-center gap-2">
                   <Input
@@ -353,22 +364,18 @@
                   </Button>
                 </div>
               {:else}
-                <div class="flex-1 flex items-center gap-2 group">
-                  <h3 class="font-bold text-xl truncate text-coral-sunset">{story.title}</h3>
+                <div class="flex items-center gap-2 group">
+                  <h3 class="font-bold text-xl truncate text-coral-sunset max-w-[calc(100%-40px)]">{story.title}</h3>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    class="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 flex-shrink-0"
                     on:click={() => startEditingTitle(story)}
                   >
                     <Pencil class="w-4 h-4" />
                   </Button>
                 </div>
               {/if}
-              
-              <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusColor(story.status)} ml-3">
-                {story.status}
-              </span>
             </div>
 
             {#if story.description}
@@ -377,16 +384,10 @@
               </p>
             {/if}
 
-            <!-- Metadata -->
-            <div class="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-              <div class="flex items-center gap-1">
-                <Calendar class="w-4 h-4" />
-                {formatDate(story.created_at)}
-              </div>
-              <div class="flex items-center gap-1">
-                <Clock class="w-4 h-4" />
-                {formatDate(story.updated_at)}
-              </div>
+            <!-- Last updated -->
+            <div class="flex items-center gap-1 text-sm text-muted-foreground mb-6">
+              <Clock class="w-4 h-4" />
+              Updated: {formatDate(story.updated_at)}
             </div>
 
             <!-- Actions -->
