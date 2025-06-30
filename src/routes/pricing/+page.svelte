@@ -32,7 +32,7 @@
 
   <!-- Content -->
   <div class="container py-12">
-    <div class="max-w-5xl mx-auto">
+    <div class="max-w-5xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
       <!-- Heading -->
       <div class="text-center mb-12">
         <h1 class="text-4xl font-bold mb-4 text-coral-sunset">Simple, Transparent Pricing</h1>
@@ -42,7 +42,7 @@
       </div>
 
       <!-- Creator Credits Explanation -->
-      <div class="bg-white rounded-2xl p-6 mb-12 shadow-lg border border-periwinkle-blue/20">
+      <div class="bg-soft-buttercream rounded-2xl p-6 mb-12 shadow-lg border border-periwinkle-blue/20">
         <div class="flex items-start gap-4">
           <div class="w-12 h-12 bg-golden-apricot/20 rounded-xl flex items-center justify-center flex-shrink-0">
             <Zap class="w-6 h-6 text-golden-apricot" />
@@ -267,28 +267,28 @@
       <div class="mt-16">
         <h2 class="text-2xl font-bold text-coral-sunset mb-8 text-center">Frequently Asked Questions</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-white p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
+          <div class="bg-soft-buttercream p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
             <h3 class="text-lg font-semibold mb-3 text-coral-sunset">What happens when I run out of Creator Credits?</h3>
             <p class="text-dusty-teal">
               You can continue to use all non-AI features of Small Tales. To use AI features again, you can purchase additional Creator Credit packs or upgrade to a paid plan.
             </p>
           </div>
 
-          <div class="bg-white p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
+          <div class="bg-soft-buttercream p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
             <h3 class="text-lg font-semibold mb-3 text-coral-sunset">Do unused credits roll over?</h3>
             <p class="text-dusty-teal">
               Yes! Any unused credits from your monthly allowance will roll over for up to 3 months, ensuring you never lose your credits.
             </p>
           </div>
 
-          <div class="bg-white p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
+          <div class="bg-soft-buttercream p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
             <h3 class="text-lg font-semibold mb-3 text-coral-sunset">Can I cancel my subscription anytime?</h3>
             <p class="text-dusty-teal">
               Absolutely. You can cancel your subscription at any time. You'll continue to have access to your plan benefits until the end of your current billing cycle.
             </p>
           </div>
 
-          <div class="bg-white p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
+          <div class="bg-soft-buttercream p-6 rounded-xl shadow-md border border-periwinkle-blue/20">
             <h3 class="text-lg font-semibold mb-3 text-coral-sunset">Do I own the content I create?</h3>
             <p class="text-dusty-teal">
               Yes, you retain full ownership of all content you create with Small Tales, including AI-generated assets. See our Terms of Service for complete details.
