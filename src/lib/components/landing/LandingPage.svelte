@@ -294,7 +294,7 @@
           </ul>
         </div>
 
-        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" class="self-start">
+        <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" class="self-start btn-child-friendly">
           <img 
             src="/white_circle_360x360.png" 
             alt="Powered by Bolt.new" 
