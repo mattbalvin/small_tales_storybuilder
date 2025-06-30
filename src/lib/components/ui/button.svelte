@@ -6,10 +6,10 @@
     base: 'inline-flex items-center justify-center rounded-xl text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 touch-friendly btn-child-friendly',
     variants: {
       variant: {
-        default: 'bg-coral-sunset text-white hover:bg-coral-sunset/90 shadow-md hover:shadow-lg',
-        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md hover:shadow-lg',
+        default: 'bg-coral-sunset text-white hover:bg-coral-sunset shadow-md hover:shadow-lg',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive shadow-md hover:shadow-lg',
         outline: 'border border-periwinkle-blue/30 bg-background hover:bg-periwinkle-blue/10 hover:text-periwinkle-blue shadow-sm hover:shadow-md',
-        secondary: 'bg-golden-apricot text-white hover:bg-golden-apricot/90 shadow-md hover:shadow-lg',
+        secondary: 'bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg',
         ghost: 'hover:bg-periwinkle-blue/10 hover:text-periwinkle-blue',
         link: 'text-coral-sunset underline-offset-4 hover:underline'
       },

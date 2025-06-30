@@ -220,18 +220,18 @@
 
 /* Featured item styles */
 .featured-item {
-  @apply bg-coral-sunset/10 border-coral-sunset/30;
+  @apply bg-coral-sunset text-white;
   @apply shadow-lg;
 }
 
 .featured-item:hover {
-  @apply bg-coral-sunset/15 border-coral-sunset/40;
+  @apply bg-coral-sunset scale-105 shadow-xl;
 }
 
 /* Interactive element styles */
 .interactive-element {
   @apply bg-golden-apricot text-white;
-  @apply hover:bg-golden-apricot/90;
+  @apply hover:bg-golden-apricot;
   @apply shadow-md hover:shadow-lg;
   @apply transition-all duration-200;
 }
