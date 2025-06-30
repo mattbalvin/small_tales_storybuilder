@@ -587,7 +587,7 @@
               title="Add new page"
               class="h-6 w-6 p-0"
             >
-              <Plus class="w-3 h-3" />
+              <Plus class="w-3 h-3" />Add Page
             </Button>
           {/if}
         </div>
