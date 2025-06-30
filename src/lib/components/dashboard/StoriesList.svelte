@@ -6,7 +6,7 @@
   import Button from '$lib/components/ui/button.svelte'
   import Input from '$lib/components/ui/input.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Plus, FileEdit as Edit, Eye, Trash2, Calendar, Clock, AlertTriangle, Image, Upload, Check, X, Pencil, Play, Share, Copy, ExternalLink } from 'lucide-svelte'
+  import { Plus, FileEdit as Edit, Eye, Trash2, Clock, AlertTriangle, Image, Upload, Check, X, Pencil, Play, Share, Copy, ExternalLink } from 'lucide-svelte'
   import { createEventDispatcher } from 'svelte'
 
   const dispatch = createEventDispatcher()
@@ -242,15 +242,6 @@
     return new Date(dateString).toLocaleDateString()
   }
 
-  function getStatusColor(status: string) {
-    switch (status) {
-      case 'published': return 'status-published'
-      case 'draft': return 'status-draft'
-      case 'archived': return 'status-archived'
-      default: return 'status-archived'
-    }
-  }
-
   // Filter media assets to only show images
   $: imageAssets = mediaAssets.filter(asset => asset.type === 'image')
 </script>
@@ -334,17 +325,6 @@
 
           <!-- Content -->
           <div class="p-6">
-            <!-- Metadata row with date and status -->
-            <div class="flex items-center justify-between mb-3 text-sm text-muted-foreground">
-              <div class="flex items-center gap-1">
-                <Calendar class="w-4 h-4" />
-                {formatDate(story.created_at)}
-              </div>
-              <span class="px-3 py-1 rounded-full text-xs font-medium {getStatusColor(story.status)}">
-                {story.status}
-              </span>
-            </div>
-            
             <!-- Title row with edit button -->
             <div class="flex items-center justify-between mb-3">
               {#if editingStoryId === story.id}
