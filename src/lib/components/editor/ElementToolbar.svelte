@@ -250,7 +250,7 @@
 
     // If we're already playing this element's narration, stop it
     if (playingNarrationElementId === element.id && activeNarrationPlayer) {
-      activeNarrationPlayer.stop()
+      activeNarrationPlayer.destroy()
       activeNarrationPlayer = null
       playingNarrationElementId = null
       currentWord = null
@@ -527,6 +527,38 @@
                   />
                 </div>
               {/if}
+
+              <!-- Narration Highlight Color -->
+              <div>
+                <label class="text-xs font-medium mb-1 block text-dusty-teal">Highlight Color</label>
+                <div class="flex gap-2">
+                  <Input
+                    type="color"
+                    value={textProperties.narrationHighlightColor || '#F0B464'}
+                    on:input={(e) => e.target && updateElementProperty('narrationHighlightColor', e.target.value)}
+                    class="w-12 h-8 p-1"
+                  />
+                  <Input
+                    type="text"
+                    value={textProperties.narrationHighlightColor || '#F0B464'}
+                    on:input={(e) => e.target && updateElementProperty('narrationHighlightColor', e.target.value)}
+                    class="flex-1 text-xs h-8"
+                    placeholder="#F0B464"
+                  />
+                </div>
+              </div>
+
+              <!-- Highlight Glow Effect -->
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="narrationHighlightGlow"
+                  checked={textProperties.narrationHighlightGlow !== false}
+                  on:change={(e) => e.target && updateElementProperty('narrationHighlightGlow', e.target.checked)}
+                  class="rounded accent-golden-apricot w-4 h-4"
+                />
+                <label for="narrationHighlightGlow" class="text-xs font-medium text-dusty-teal">Enable glow effect</label>
+              </div>
 
               <!-- Generate Narration Button -->
               <div class="flex gap-2">

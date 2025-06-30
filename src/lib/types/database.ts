@@ -93,7 +93,29 @@ export interface Database {
               id: string
               type: 'text' | 'image' | 'audio'
               // Shared content properties
-              properties: any
+              properties: {
+                // Text element properties
+                text?: string
+                fontSize?: number
+                color?: string
+                backgroundColor?: string
+                backgroundAlpha?: number
+                lineHeight?: number
+                narrationId?: string
+                narrationData?: any
+                narrationSequence?: number
+                inMainNarration?: boolean
+                narrationHighlightColor?: string
+                narrationHighlightGlow?: boolean
+                // Image element properties
+                src?: string
+                alt?: string
+                opacity?: number
+                scale?: number
+                // Audio element properties
+                autoplay?: boolean
+                volume?: number
+              }
               // Layout-specific properties (only for text and image elements)
               layouts?: {
                 landscape: {

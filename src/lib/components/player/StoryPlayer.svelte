@@ -19,7 +19,7 @@
 
   let currentPageIndex = initialPageIndex
   let isPlaying = isPreviewMode // Auto-start in preview mode
-  let isAutoReading = isPreviewMode // Auto-read in preview mode
+  let isAutoReading = false // Don't auto-advance in preview mode
   let orientation: 'landscape' | 'portrait' = 'landscape'
   let showSettings = false
   let audioElement: HTMLAudioElement | null = null
@@ -29,6 +29,7 @@
   let currentNarrationPlayer: NarrationPlayer | null = null
   let highlightedWordIndex: number = -1
   let activeNarrationElementId: string | null = null
+  let currentWord: string | null = null
 
   // Story settings
   let volume = 0.7
@@ -179,8 +180,8 @@
       if (isAutoReading) {
         playPageAudio()
       }
-    } else if (isPlaying) {
-      // Story finished
+    } else if (isPlaying && !isPreviewMode) {
+      // Story finished - only stop if not in preview mode
       stopReading()
     }
   }
@@ -212,6 +213,7 @@
     // Reset narration state
     highlightedWordIndex = -1
     activeNarrationElementId = null
+    currentWord = null
     
     // Find text elements with narration data
     const textElements = (currentPage.content.elements || [])
@@ -237,6 +239,7 @@
         currentNarrationPlayer.onWordHighlight = (word, index) => {
           console.log('Word highlight:', word.word, 'index:', index)
           highlightedWordIndex = index
+          currentWord = word.word
         }
         
         currentNarrationPlayer.onPlaybackEnd = () => {
@@ -244,9 +247,10 @@
           currentNarrationPlayer = null
           activeNarrationElementId = null
           highlightedWordIndex = -1
+          currentWord = null
           
-          // Auto-advance to next page if auto-reading
-          if (isAutoReading) {
+          // Auto-advance to next page if auto-reading and not in preview mode
+          if (isAutoReading && !isPreviewMode) {
             setTimeout(() => nextPage(), 1000) // Small delay before advancing
           }
         }
@@ -280,7 +284,7 @@
       // No audio, auto-advance after reading time
       const readingTime = estimateReadingTime()
       setTimeout(() => {
-        if (isAutoReading) {
+        if (isAutoReading && !isPreviewMode) {
           nextPage()
         }
       }, readingTime)
@@ -296,7 +300,7 @@
     audioElement.playbackRate = readingSpeed
     
     audioElement.addEventListener('ended', () => {
-      if (isAutoReading) {
+      if (isAutoReading && !isPreviewMode) {
         nextPage()
       }
     })
@@ -306,7 +310,7 @@
       // Auto-advance after estimated reading time if audio fails
       const readingTime = estimateReadingTime()
       setTimeout(() => {
-        if (isAutoReading) {
+        if (isAutoReading && !isPreviewMode) {
           nextPage()
         }
       }, readingTime)
@@ -331,6 +335,7 @@
       currentNarrationPlayer = null
       activeNarrationElementId = null
       highlightedWordIndex = -1
+      currentWord = null
     }
   }
 
@@ -399,6 +404,71 @@
   // Canvas dimensions (logical size)
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
   $: canvasHeight = orientation === 'landscape' ? 900 : 1600
+
+  // Function to render text with highlighted words
+  function renderTextWithHighlights(element) {
+    if (!element.properties?.text) return '';
+    
+    // If this element has narration and is currently being narrated
+    if (element.properties?.narrationData && activeNarrationElementId === element.id && highlightedWordIndex >= 0) {
+      const text = element.properties.text;
+      const wordTimestamps = element.properties.narrationData.wordTimestamps;
+      
+      if (!wordTimestamps || wordTimestamps.length === 0) {
+        return text;
+      }
+      
+      // Get the current highlighted word
+      const highlightedWord = wordTimestamps[highlightedWordIndex]?.word;
+      
+      if (!highlightedWord) {
+        return text;
+      }
+      
+      // Create a regex that matches the word with word boundaries
+      // This helps avoid matching parts of words
+      const regex = new RegExp(`\\b${highlightedWord}\\b`, 'gi');
+      
+      // Split the text by the regex
+      const parts = text.split(regex);
+      
+      // If there's only one part, the word wasn't found
+      if (parts.length === 1) {
+        return text;
+      }
+      
+      // Create the result with highlighted word
+      let result = '';
+      for (let i = 0; i < parts.length; i++) {
+        result += parts[i];
+        
+        // Add the highlighted word between parts (except after the last part)
+        if (i < parts.length - 1) {
+          const highlightColor = element.properties.narrationHighlightColor || '#F0B464';
+          const useGlow = element.properties.narrationHighlightGlow !== false;
+          
+          const glowStyle = useGlow ? 
+            `text-shadow: 0 0 5px ${highlightColor}, 0 0 10px ${highlightColor}80;` : '';
+          
+          result += `<span style="
+            background-color: ${highlightColor}40; 
+            color: ${element.properties.color || '#000000'};
+            font-weight: bold; 
+            transform: scale(1.05); 
+            display: inline-block;
+            border-radius: 4px;
+            padding: 0 2px;
+            ${glowStyle}
+          ">${highlightedWord}</span>`;
+        }
+      }
+      
+      return result;
+    }
+    
+    // If not being narrated, return the original text
+    return element.properties.text;
+  }
 </script>
 
 <div class="min-h-screen bg-gradient-to-br from-soft-buttercream via-soft-buttercream to-periwinkle-blue/10 flex flex-col">
@@ -648,22 +718,18 @@
                           : 'transparent'};
                         padding: 8px;
                         border-radius: 8px;
-                        line-height: 1.4;
+                        line-height: {element.properties?.lineHeight || 1.4};
                         width: 100%;
                         height: 100%;
                         overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                       "
                     >
                       {#if element.properties?.narrationData && activeNarrationElementId === element.id}
-                        <!-- Render with word-by-word highlighting -->
-                        {#each element.properties.narrationData.wordTimestamps as wordData, index}
-                          <span 
-                            class="inline {highlightedWordIndex === index ? 'word-highlight' : ''}"
-                          >
-                            {wordData.word}
-                          </span>
-                          {" "}
-                        {/each}
+                        <!-- Parse the original text and highlight the current word -->
+                        {@html renderTextWithHighlights(element)}
                       {:else}
                         <!-- Render as normal text -->
                         {element.properties?.text || ''}
@@ -797,8 +863,13 @@
   /* Word highlighting animation */
   .word-highlight {
     background-color: hsl(var(--golden-apricot) / 0.3);
+    color: inherit;
+    font-weight: bold;
+    transform: scale(1.05);
+    display: inline-block;
     border-radius: 4px;
     padding: 0 2px;
-    transition: background-color 0.2s ease-in-out;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 5px hsl(var(--golden-apricot) / 0.5);
   }
 </style>
