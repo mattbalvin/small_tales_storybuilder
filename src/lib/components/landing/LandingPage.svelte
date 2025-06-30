@@ -31,7 +31,7 @@
   <!-- Header -->
   <header class="border-b border-periwinkle-blue/20 bg-coral-sunset/90 backdrop-blur-sm sticky top-0 z-50">
     <div class="container flex items-center justify-between py-4">
-      <div class="flex items-center gap-3">
+      <div class="flex items-center">
         <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#558A80] p-2">
           <img 
             src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
@@ -246,7 +246,7 @@
   <!-- Footer -->
   <footer class="bg-[#558A80] text-white py-12 px-4">
     <div class="container">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+      <div class="flex flex-col md:flex-row justify-between mb-8">
         <div class="flex items-center mb-6 md:mb-0">
           <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#E2684F] p-2">
             <img 
@@ -261,7 +261,7 @@
           <img 
             src="/white_circle_360x360.png" 
             alt="Powered by Bolt.new" 
-            class="h-20"
+            class="h-30"
           />
         </a>
       </div>
