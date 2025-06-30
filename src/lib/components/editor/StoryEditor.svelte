@@ -578,7 +578,7 @@
     <aside class="w-16 border-r border-periwinkle-blue/20 bg-soft-buttercream p-2 flex flex-col  min-w-60">
       <div class="space-y-2 flex-1 overflow-y-auto">
         <!-- Pages Header with Add Button - ALWAYS VISIBLE -->
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-2">
           <h2 class="text-xs font-medium text-coral-sunset">Pages</h2>
           {#if canEdit()}
             <Button 
@@ -610,7 +610,7 @@
             {#each pages as page, index (page.id)}
               <!-- Use a button instead of Card for better click handling -->
               <button
-                class="w-full p-1 text-center rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
+                class="w-full mt=1 p-1 text-center rounded-lg border bg-card text-card-foreground shadow-sm cursor-pointer transition-colors group relative {currentPageIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted'} {isDraggingPage && draggedPageIndex === index ? 'opacity-50' : ''}"
                 draggable={canEdit()}
                 on:click={(event) => {
                   // Only handle click if we haven't started dragging
