@@ -14,7 +14,6 @@
 
   let currentPageIndex = 0
   let orientation: 'landscape' | 'portrait' = 'landscape'
-  let showSafetyZones = false
   let showCollaborators = false
   let editingTitle = false
   let editingTitleValue = ''
@@ -541,7 +540,6 @@
         </div>
       {/if}
 
-      <!--OrientationToggle bind:orientation bind:showSafetyZones /-->
       <OrientationToggle bind:orientation />
       
       {#if canEdit()}
@@ -709,7 +707,6 @@
     </aside>
 
     <!-- Main Editor -->
-      <!-- {showSafetyZones}  after {orientation} -->
     <main class="flex-1 flex min-w-0">
       <div class="flex-1 p-4 min-w-0">
         {#if currentPage}

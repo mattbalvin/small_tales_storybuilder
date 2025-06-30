@@ -11,7 +11,6 @@
 
   export let page: StoryPage
   export let orientation: 'landscape' | 'portrait' = 'landscape'
-  export let showSafetyZones = true
   export let readonly = false
 
   const dispatch = createEventDispatcher()
@@ -98,9 +97,6 @@
   $: selectedElement = selectedElementId ? displayElements.find(el => el.id === selectedElementId) : null
 
   $: aspectRatio = orientation === 'landscape' ? '16/9' : '9/16'
-  $: safetyZoneClass = showSafetyZones 
-    ? (orientation === 'landscape' ? 'safety-zone-16-9' : 'safety-zone-9-16')
-    : ''
 
   // Canvas dimensions (logical size)
   $: canvasWidth = orientation === 'landscape' ? 1600 : 900
@@ -1070,7 +1066,6 @@
         bind:this={canvasElement}
         class={cn(
           "absolute bg-white border-3 border-periwinkle-blue/30 rounded-2xl shadow-xl canvas-area overflow-hidden",
-          safetyZoneClass,
           readonly && 'border-muted'
         )}
         style="
@@ -1125,7 +1120,6 @@
                 />
               {/if}
             {:else}
-              <!-- Hidden element placeholder -->
               <!--div class="w-full h-full border-2 border-dashed border-periwinkle-blue/30 bg-periwinkle-blue/5 flex items-center justify-center rounded-xl">
                 <span class="text-sm text-periwinkle-blue">Hidden</span>
               </div-->

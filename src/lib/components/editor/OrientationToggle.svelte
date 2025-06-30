@@ -1,9 +1,8 @@
 <script lang="ts">
   import Button from '$lib/components/ui/button.svelte'
-  import { Monitor, Smartphone, Eye, EyeOff } from 'lucide-svelte'
+  import { Monitor, Smartphone } from 'lucide-svelte'
 
   export let orientation: 'landscape' | 'portrait'
-  export let showSafetyZones: boolean
 </script>
 
 <div class="flex items-center gap-3">
@@ -27,18 +26,4 @@
       9:16
     </Button>
   </div>
-
-  <Button
-    variant={showSafetyZones ? 'secondary' : 'outline'}
-    size="sm"
-    on:click={() => showSafetyZones = !showSafetyZones}
-    class="accent-element"
-  >
-    {#if showSafetyZones}
-      <Eye class="w-4 h-4 mr-1" />
-    {:else}
-      <EyeOff class="w-4 h-4 mr-1" />
-    {/if}
-    Safety Zones
-  </Button>
 </div>
