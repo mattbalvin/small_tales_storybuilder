@@ -1,8 +1,21 @@
 <script lang="ts">
   import Button from '$lib/components/ui/button.svelte'
   import Card from '$lib/components/ui/card.svelte'
-  import { Home, Check, Star, Zap, Sparkles } from 'lucide-svelte'
+  import { Home, Check, Star, Zap, Sparkles, Loader2 } from 'lucide-svelte'
   import { authStore } from '$lib/stores/auth'
+  import { stripeService } from '$lib/services/stripeService'
+  import { stripeConfig } from '$lib/stripe-config'
+  import { onMount } from 'svelte'
+
+  let isLoading = false
+  let loadingProduct = ''
+  let userSubscription: any = null
+
+  onMount(async () => {
+    if ($authStore.user) {
+      userSubscription = await stripeService.getUserSubscription()
+    }
+  })
 
   function navigateToAuth() {
     window.location.hash = '#/auth'
@@ -11,6 +24,54 @@
   function navigateToHome() {
     window.location.hash = '#/'
   }
+
+  async function handleSubscribe(priceId: string) {
+    if (!$authStore.user) {
+      navigateToAuth()
+      return
+    }
+
+    try {
+      isLoading = true
+      loadingProduct = priceId
+      
+      const checkoutUrl = await stripeService.createCheckoutSession(priceId, 'subscription')
+      window.location.href = checkoutUrl
+    } catch (error) {
+      console.error('Failed to create checkout session:', error)
+      alert('Failed to create checkout session. Please try again.')
+    } finally {
+      isLoading = false
+      loadingProduct = ''
+    }
+  }
+
+  async function handlePurchaseCredits(priceId: string) {
+    if (!$authStore.user) {
+      navigateToAuth()
+      return
+    }
+
+    try {
+      isLoading = true
+      loadingProduct = priceId
+      
+      const checkoutUrl = await stripeService.createCheckoutSession(priceId, 'payment')
+      window.location.href = checkoutUrl
+    } catch (error) {
+      console.error('Failed to create checkout session:', error)
+      alert('Failed to create checkout session. Please try again.')
+    } finally {
+      isLoading = false
+      loadingProduct = ''
+    }
+  }
+
+  // Get subscription products
+  const subscriptionProducts = stripeConfig.products.filter(p => p.mode === 'subscription')
+  
+  // Get credit pack products
+  const creditPackProducts = stripeConfig.products.filter(p => p.mode === 'payment')
 </script>
 
 <svelte:head>
@@ -131,9 +192,15 @@
             <Button 
               variant="secondary" 
               class="w-full" 
-              on:click={$authStore.user ? navigateToHome : navigateToAuth}
+              on:click={() => handleSubscribe(subscriptionProducts[1].priceId)}
+              disabled={isLoading && loadingProduct === subscriptionProducts[1].priceId}
             >
-              {$authStore.user ? 'Upgrade Plan' : 'Get Started'}
+              {#if isLoading && loadingProduct === subscriptionProducts[1].priceId}
+                <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              {:else}
+                {$authStore.user ? 'Upgrade Plan' : 'Get Started'}
+              {/if}
             </Button>
           </div>
           <div class="p-6">
@@ -182,9 +249,15 @@
             </div>
             <Button 
               class="w-full featured-item" 
-              on:click={$authStore.user ? navigateToHome : navigateToAuth}
+              on:click={() => handleSubscribe(subscriptionProducts[0].priceId)}
+              disabled={isLoading && loadingProduct === subscriptionProducts[0].priceId}
             >
-              {$authStore.user ? 'Upgrade Plan' : 'Get Started'}
+              {#if isLoading && loadingProduct === subscriptionProducts[0].priceId}
+                <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              {:else}
+                {$authStore.user ? 'Upgrade Plan' : 'Get Started'}
+              {/if}
             </Button>
           </div>
           <div class="p-6">
@@ -226,39 +299,74 @@
             <div class="w-12 h-12 bg-periwinkle-blue/20 rounded-xl flex items-center justify-center mb-4">
               <Sparkles class="w-6 h-6 text-periwinkle-blue" />
             </div>
-            <h3 class="text-lg font-semibold mb-2 text-periwinkle-blue">Starter Pack</h3>
+            <h3 class="text-lg font-semibold mb-2 text-periwinkle-blue">{creditPackProducts[2].name}</h3>
             <div class="flex items-end gap-1 mb-4">
-              <span class="text-2xl font-bold text-coral-sunset">$5</span>
-              <span class="text-dusty-teal mb-0.5">for 50 credits</span>
+              <span class="text-2xl font-bold text-coral-sunset">${creditPackProducts[2].price}</span>
+              <span class="text-dusty-teal mb-0.5">for {creditPackProducts[2].credits} credits</span>
             </div>
-            <p class="text-sm text-dusty-teal mb-4">Perfect for trying out AI features</p>
-            <Button variant="outline" class="w-full accent-element">Purchase</Button>
+            <p class="text-sm text-dusty-teal mb-4">{creditPackProducts[2].description}</p>
+            <Button 
+              variant="outline" 
+              class="w-full accent-element"
+              on:click={() => handlePurchaseCredits(creditPackProducts[2].priceId)}
+              disabled={isLoading && loadingProduct === creditPackProducts[2].priceId}
+            >
+              {#if isLoading && loadingProduct === creditPackProducts[2].priceId}
+                <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              {:else}
+                Purchase
+              {/if}
+            </Button>
           </Card>
 
           <Card class="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
             <div class="w-12 h-12 bg-golden-apricot/20 rounded-xl flex items-center justify-center mb-4">
               <Star class="w-6 h-6 text-golden-apricot" />
             </div>
-            <h3 class="text-lg font-semibold mb-2 text-golden-apricot">Standard Pack</h3>
+            <h3 class="text-lg font-semibold mb-2 text-golden-apricot">{creditPackProducts[1].name}</h3>
             <div class="flex items-end gap-1 mb-4">
-              <span class="text-2xl font-bold text-coral-sunset">$20</span>
-              <span class="text-dusty-teal mb-0.5">for 250 credits</span>
+              <span class="text-2xl font-bold text-coral-sunset">${creditPackProducts[1].price}</span>
+              <span class="text-dusty-teal mb-0.5">for {creditPackProducts[1].credits} credits</span>
             </div>
-            <p class="text-sm text-dusty-teal mb-4">Most popular option for regular creators</p>
-            <Button variant="secondary" class="w-full">Purchase</Button>
+            <p class="text-sm text-dusty-teal mb-4">{creditPackProducts[1].description}</p>
+            <Button 
+              variant="secondary" 
+              class="w-full"
+              on:click={() => handlePurchaseCredits(creditPackProducts[1].priceId)}
+              disabled={isLoading && loadingProduct === creditPackProducts[1].priceId}
+            >
+              {#if isLoading && loadingProduct === creditPackProducts[1].priceId}
+                <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              {:else}
+                Purchase
+              {/if}
+            </Button>
           </Card>
 
           <Card class="p-6 hover:shadow-xl transition-all duration-300 hover:scale-105">
             <div class="w-12 h-12 bg-coral-sunset/20 rounded-xl flex items-center justify-center mb-4">
               <Zap class="w-6 h-6 text-coral-sunset" />
             </div>
-            <h3 class="text-lg font-semibold mb-2 text-coral-sunset">Pro Pack</h3>
+            <h3 class="text-lg font-semibold mb-2 text-coral-sunset">{creditPackProducts[0].name}</h3>
             <div class="flex items-end gap-1 mb-4">
-              <span class="text-2xl font-bold text-coral-sunset">$50</span>
-              <span class="text-dusty-teal mb-0.5">for 750 credits</span>
+              <span class="text-2xl font-bold text-coral-sunset">${creditPackProducts[0].price}</span>
+              <span class="text-dusty-teal mb-0.5">for {creditPackProducts[0].credits} credits</span>
             </div>
-            <p class="text-sm text-dusty-teal mb-4">Best value for power users</p>
-            <Button class="w-full featured-item">Purchase</Button>
+            <p class="text-sm text-dusty-teal mb-4">{creditPackProducts[0].description}</p>
+            <Button 
+              class="w-full featured-item"
+              on:click={() => handlePurchaseCredits(creditPackProducts[0].priceId)}
+              disabled={isLoading && loadingProduct === creditPackProducts[0].priceId}
+            >
+              {#if isLoading && loadingProduct === creditPackProducts[0].priceId}
+                <Loader2 class="w-4 h-4 mr-2 animate-spin" />
+                Processing...
+              {:else}
+                Purchase
+              {/if}
+            </Button>
           </Card>
         </div>
       </div>

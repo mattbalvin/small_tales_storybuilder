@@ -15,6 +15,8 @@
   import Terms from './routes/terms/+page.svelte'
   import Pricing from './routes/pricing/+page.svelte'
   import Account from './routes/account/+page.svelte'
+  import CheckoutSuccess from './routes/checkout/success/+page.svelte'
+  import CheckoutCanceled from './routes/checkout/canceled/+page.svelte'
   //import Analytics from './routes/analytics/+page.svelte'
 
   const routes = {
@@ -29,6 +31,8 @@
     '/terms': Terms,
     '/pricing': Pricing,
     '/account': Account,
+    '/checkout/success': CheckoutSuccess,
+    '/checkout/canceled': CheckoutCanceled,
     //'/analytics': Analytics
   }
 
