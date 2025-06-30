@@ -12,20 +12,12 @@
   <!-- Header -->
   <header class="border-b border-periwinkle-blue/20 bg-coral-sunset/90 backdrop-blur-sm sticky top-0 z-50">
     <div class="container flex items-center justify-between py-4">
-      <div class="flex items-center gap-3">
-        <div class="bg-[#FEF5E1] rounded-lg border-2 border-[#558A80] p-2">
-          <img 
-            src="/a-vibrant-logo-illustration-of-an-open-s_cW_N4un2Sn2tPv27_2LPKA_ihURQ9I_SK6GaVnhM6m41Q.png" 
-            alt="Small Tales Logo" 
-            class="h-24"
-          />
-        </div>
-      </div>
-      
       <Button variant="ghost" on:click={() => window.location.hash = '#/'} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6 hover:scale-105">
         <Home class="w-5 h-5 mr-2" />
         Back to Home
       </Button>
+      
+      <h1 class="text-2xl font-bold text-white">About Us</h1>
     </div>
   </header>
 
