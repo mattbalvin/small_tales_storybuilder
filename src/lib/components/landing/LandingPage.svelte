@@ -255,43 +255,42 @@
               class="h-20"
             />
           </div>
-          <div class="w-80">
+          <div class="mt-8 w-80">
             <p class="text-white">
               Interactive storytelling platform for creators, educators, and storytellers.
             </p>
           </div>                   
         </div>
-        <!--div class="grid md:grid-cols-3 gap-8"-->
-          <div>
-            <h4 class="font-medium mb-4 text-white">Product</h4>
-            <ul class="space-y-3 text-white">
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li>
-            </ul>
-          </div>
-        
-          <div>
-            <h4 class="font-medium mb-4 text-white">Resources</h4>
-            <ul class="space-y-3 text-white">
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li>
-            </ul>
-          </div>
-        
-          <div>
-            <h4 class="font-medium mb-4 text-white">Company</h4>
-            <ul class="space-y-3 text-white">
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li>
-              <li><a href="#/privacy" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
-              <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
-            </ul>
-          </div>
-        <!--/div-->
+
+        <div>
+          <h4 class="font-medium mb-4 text-white">Product</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Features</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Pricing</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Templates</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Examples</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-medium mb-4 text-white">Resources</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Documentation</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Tutorials</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Blog</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Community</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-medium mb-4 text-white">Company</h4>
+          <ul class="space-y-3 text-white">
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">About</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Contact</a></li>
+            <li><a href="#/privacy" class="hover:text-golden-apricot transition-colors">Privacy</a></li>
+            <li><a href="#" class="hover:text-golden-apricot transition-colors">Terms</a></li>
+          </ul>
+        </div>
 
         <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" class="self-start">
           <img 
