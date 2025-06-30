@@ -21,7 +21,7 @@
         </div>
       </div>
       
-      <Button variant="ghost" on:click={() => window.location.hash = '#/'} class="text-white hover:text-white hover:scale-105">
+      <Button variant="ghost" on:click={() => window.location.hash = '#/'} class="bg-golden-apricot text-white hover:bg-golden-apricot shadow-md hover:shadow-lg rounded-full px-6 hover:scale-105">
         <Home class="w-5 h-5 mr-2" />
         Back to Home
       </Button>
@@ -81,7 +81,7 @@
             <p class="mb-4">
               Our platform provides teachers with customizable story templates, curriculum-aligned content, and analytics to track student engagement and comprehension.
             </p>
-            <Button variant="outline" class="accent-element">Learn More</Button>
+            <!--Button variant="outline" class="accent-element">Learn More</Button-->
           </div>
           
           <div class="flex-1 bg-coral-sunset/10 p-6 rounded-xl border border-coral-sunset/20">
@@ -89,7 +89,7 @@
             <p class="mb-4">
               Create personalized stories featuring your child's name, interests, and adventures. Build a library of meaningful tales that grow with your family.
             </p>
-            <Button variant="outline" class="accent-element">Learn More</Button>
+            <!--Button variant="outline" class="accent-element">Learn More</Button-->
           </div>
         </div>
         
@@ -99,7 +99,9 @@
             We're just getting started, and we'd love for you to be part of our story. Create an account today and begin crafting magical tales that inspire, educate, and delight.
           </p>
           <Button on:click={() => window.location.hash = '#/auth'} class="featured-item px-8 py-3 text-lg">
+            <BookOpen class="w-5 h-5 mr-2" />
             Start Creating
+            <ArrowRight class="w-5 h-5 ml-2" />
           </Button>
         </div>
       </div>
