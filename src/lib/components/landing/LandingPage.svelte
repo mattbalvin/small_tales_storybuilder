@@ -45,7 +45,6 @@
         <a href="#" class="text-white font-medium">Home</a>
         <!--a href="#" class="text-white hover:text-golden-apricot transition-colors">Stories</a-->
         <a href="#/about" class="text-white hover:text-golden-apricot transition-colors">About Us</a>
-        <a href="#/terms" class="text-white hover:text-golden-apricot transition-colors">Terms</a>
       </div>
       
       <div class="flex items-center gap-4">
