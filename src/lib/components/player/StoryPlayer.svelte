@@ -840,7 +840,6 @@
   .interactive-word {
     display: inline;
     cursor: pointer;
-    border-radius: 2px;
     padding: 0;
     margin: 0;
     transition: all 0.15s ease-in-out;
