@@ -859,6 +859,8 @@
     word-wrap: break-word;
     overflow-wrap: break-word;
     display: inline;
+    margin: 0;
+    padding: 0;    
   }
   
   .text-space {
