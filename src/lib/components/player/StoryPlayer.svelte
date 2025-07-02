@@ -825,7 +825,7 @@
     white-space: pre-wrap;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    word-spacing: -1px;
+    word-spacing: -2px;
   }
   
   .word-highlight {
